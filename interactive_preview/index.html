@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Macondo Express · Simulador Interactivo Dual (Pasajero & Conductor)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <!-- QRCode.js para generación nativa de códigos QR -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    :root {
+      --bg-space: #06090e;
+      --bg-card: #0d131f;
+      --bg-elevated: #162032;
+      --border: #223048;
+      --accent: #10b981;
+      --accent-glow: rgba(16, 185, 129, 0.25);
+      --amber: #f59e0b;
+      --amber-glow: rgba(245, 158, 11, 0.25);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: var(--bg-space);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Top Studio Bar */
+    header {
+      background: rgba(13, 19, 31, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
+
+    .brand-text h1 {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      color: #fff;
+    }
+
+    .brand-text p {
+      font-size: 11px;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .studio-pills {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .pill {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    .pill.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(16, 185, 129, 0.1);
+    }
+
+    /* Dual Simulator Stage */
+    .studio-stage {
+      flex: 1;
+      padding: 30px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 40px;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .device-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      flex: 1;
+      max-width: 440px;
+    }
+
+    .device-header-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .device-header-label.pasajero { color: var(--accent); }
+    .device-header-label.conductor { color: var(--amber); }
+
+    /* Phone Shell */
+    .phone-shell {
+      width: 100%;
+      height: 820px;
+      background: #000;
+      border-radius: 46px;
+      border: 4px solid #2a3850;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 30px rgba(16, 185, 129, 0.1);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .phone-shell.conductor-shell {
+      box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 30px rgba(245, 158, 11, 0.1);
+      border-color: #3b3a2a;
+    }
+
+    /* Dynamic Island */
+    .dynamic-island {
+      width: 110px;
+      height: 25px;
+      background: #000;
+      border-radius: 20px;
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 12px;
+    }
+
+    .camera-lens {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #111a2e;
+    }
+
+    /* App View Container */
+    .app-viewport {
+      flex: 1;
+      background: var(--bg-space);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding-top: 40px;
+      position: relative;
+    }
+
+    .app-header {
+      padding: 14px 18px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .app-title-box h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .app-title-box p {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .badge-cash {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid var(--amber);
+      color: var(--amber);
+    }
+
+    /* Screens & Navigation */
+    .app-content {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+
+    .card:hover {
+      border-color: rgba(255,255,255,0.15);
+    }
+
+    .card-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Seat Selector UI (4 Seats Limit) */
+    .seats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .seat-slot {
+      background: var(--bg-elevated);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 4px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .seat-slot.selected {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .seat-slot.occupied {
+      background: #151b24;
+      border-color: #202735;
+      color: #4b5563;
+      cursor: not-allowed;
+    }
+
+    .seat-icon {
+      font-size: 18px;
+      margin-bottom: 2px;
+    }
+
+    .seat-name {
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    /* Input Fields */
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .field-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .field-input {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .field-input:focus {
+      border-color: var(--accent);
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 12px;
+      border-radius: 12px;
+      border: none;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #06090e;
+    }
+
+    .btn-primary:hover {
+      background: #34d399;
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
+
+    .btn-amber {
+      background: var(--amber);
+      color: #06090e;
+    }
+
+    .btn-amber:hover {
+      background: #fbbf24;
+      box-shadow: 0 0 15px var(--amber-glow);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-main);
+    }
+
+    .btn-outline:hover {
+      background: var(--bg-elevated);
+      border-color: var(--accent);
+    }
+
+    /* QR Code Display Box */
+    .qr-box {
+      background: #fff;
+      padding: 14px;
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 8px auto;
+      width: fit-content;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+    }
+
+    .qr-token {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      background: var(--bg-elevated);
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-top: 8px;
+      border: 1px solid var(--border);
+    }
+
+    /* Tabs */
+    .nav-tabs {
+      display: flex;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      padding: 8px 12px 20px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .tab-btn.active {
+      color: var(--accent);
+    }
+
+    .tab-btn.active-amber {
+      color: var(--amber);
+    }
+
+    .tab-icon {
+      font-size: 18px;
+    }
+
+    /* Scanner Simulation HUD */
+    .scanner-hud {
+      height: 180px;
+      background: #000;
+      border-radius: 16px;
+      position: relative;
+      border: 2px solid var(--amber);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .scanner-line {
+      width: 100%;
+      height: 2px;
+      background: #ef4444;
+      position: absolute;
+      box-shadow: 0 0 10px #ef4444;
+      animation: scanAnim 2s infinite ease-in-out;
+    }
+
+    @keyframes scanAnim {
+      0% { top: 15%; }
+      50% { top: 85%; }
+      100% { top: 15%; }
+    }
+
+    .scanner-reticle {
+      width: 110px;
+      height: 110px;
+      border: 2px dashed rgba(255,255,255,0.4);
+      border-radius: 12px;
+    }
+
+    /* Notification Banner */
+    .notif-banner {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1.5px solid var(--accent);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Responsive */
+    @media (max-width: 950px) {
+      .studio-stage {
+        flex-direction: column;
+        align-items: center;
+      }
+      .device-column {
+        max-width: 400px;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Studio Header -->
+  <header>
+    <div class="brand-logo">
+      <div class="brand-icon">🚗</div>
+      <div class="brand-text">
+        <h1>MACONDO EXPRESS · CONSOLA DUAL</h1>
+        <p>COOPERATIVA PUERTA A PUERTA · 4 CUPOS POR UNIDAD · QR DELIVERY</p>
+      </div>
+    </div>
+    <div class="studio-pills">
+      <div class="pill active"><span>●</span> Supabase Reactive Sync Activo</div>
+      <div class="pill">💵 100% Efectivo</div>
+      <div class="pill">🗺️ GPS Waze / Google Maps</div>
+    </div>
+  </header>
+
+  <!-- Stage with Both Linked Simulators -->
+  <main class="studio-stage">
+    
+    <!-- LEFT PHONE: APP PASAJERO & ENCOMIENDAS -->
+    <div class="device-column">
+      <div class="device-header-label pasajero">
+        <span>📱</span> App Pasajero & Encomiendas
+      </div>
+      <div class="phone-shell">
+        <div class="dynamic-island"><div class="camera-lens"></div></div>
+        
+        <!-- Viewport -->
+        <div class="app-viewport" id="pasajeroViewport">
+          <!-- App Header -->
+          <div class="app-header">
+            <div class="app-title-box">
+              <h3>Macondo Pasajero</h3>
+              <p id="pasajeroNombreHeader">Carlos Mendoza (0987654321)</p>
+            </div>
+            <span class="badge-cash">💵 Efectivo</span>
+          </div>
+
+          <!-- Content: Tab 1 (Viajes) -->
+          <div class="app-content" id="pasajeroViajesContent">
+            <!-- Route Card -->
+            <div class="card">
+              <div class="card-title"><span>🛣️</span> Ruta Interprovincial</div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-size: 15px; font-weight: 800;" id="txtOrigen">Guayaquil</div>
+                  <div style="font-size: 11px; color: var(--text-dim);">Puerta a Puerta</div>
+                </div>
+                <div style="color: var(--accent); font-weight: 800;">➔</div>
+                <div>
+                  <div style="font-size: 15px; font-weight: 800;" id="txtDestino">Machala</div>
+                  <div style="font-size: 11px; color: var(--text-dim);">Directo</div>
+                </div>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; color: var(--text-muted);">
+                <span>Salida: <strong style="color: #fff;">09:30 AM</strong></span>
+                <span>Tarifa: <strong style="color: var(--accent);">$12.00 / puesto</strong></span>
+              </div>
+            </div>
+
+            <!-- Seat Selector (Max 4) -->
+            <div class="card">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="card-title"><span>💺</span> Capacidad Unidad (Auto/Camioneta)</div>
+                <span id="labelCuposLibres" style="font-size: 11px; color: var(--accent); font-weight: 700;">1 puesto libre</span>
+              </div>
+              
+              <div class="seats-grid" id="seatsGrid">
+                <!-- 4 Slots generados dinámicamente -->
+              </div>
+              <div style="font-size: 11px; color: var(--text-dim); margin-top: 4px;">
+                Seleccione cuántos puestos desea reservar (1 a 4).
+              </div>
+            </div>
+
+            <!-- Door-to-Door Pickup Location Field -->
+            <div class="card">
+              <div class="card-title" style="color: var(--amber);"><span>📍</span> Dirección de Recogida (Puerta a Puerta)</div>
+              <div class="field-group">
+                <label class="field-label">Calle o Dirección Exacta *</label>
+                <input type="text" id="inputDirPasajero" class="field-input" value="Cdla. Alborada 8va etapa, Mz 812 v 4">
+              </div>
+              <div class="field-group">
+                <label class="field-label">Referencia para el Chofer</label>
+                <input type="text" id="inputRefPasajero" class="field-input" value="Casa esquinera de 2 pisos color blanco">
+              </div>
+              <button class="btn btn-outline" style="padding: 6px 10px; font-size: 11px;" onclick="fijarGpsPasajero()">
+                <span>🛰️</span> Fijar Mi GPS Actual (-2.1481, -79.9011)
+              </button>
+            </div>
+
+            <!-- Total and Cash Notice -->
+            <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 10px; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
+              <span>Monto a pagar en EFECTIVO:</span>
+              <strong style="color: var(--amber); font-size: 15px;" id="totalPagarPasajero">$12.00</strong>
+            </div>
+
+            <button class="btn btn-primary" id="btnReservarPasajero" onclick="confirmarReservaPasajero()">
+              <span>✅</span> Confirmar Reserva de Asientos
+            </button>
+            
+            <div id="reservaAlert" style="display: none;"></div>
+          </div>
+
+          <!-- Content: Tab 2 (Encomiendas) -->
+          <div class="app-content" id="pasajeroEncomiendasContent" style="display: none;">
+            <div class="card">
+              <div class="card-title"><span>📦</span> Enviar Encomienda Puerta a Puerta</div>
+              <div class="field-group">
+                <label class="field-label">Nombre Destinatario *</label>
+                <input type="text" id="encDestNombre" class="field-input" value="Luisa Mora">
+              </div>
+              <div class="field-group">
+                <label class="field-label">Teléfono Destinatario *</label>
+                <input type="text" id="encDestTel" class="field-input" value="0981122334">
+              </div>
+              <div class="field-group">
+                <label class="field-label">Punto de Entrega *</label>
+                <input type="text" id="encDirEntrega" class="field-input" value="Av. 25 de Junio y Junín (Machala)">
+              </div>
+              <div class="field-group">
+                <label class="field-label">Descripción del Paquete *</label>
+                <input type="text" id="encDesc" class="field-input" value="Sobre con documentos notariales y llaves">
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                <span style="font-size: 12px; color: var(--text-muted);">Costo Encomienda:</span>
+                <strong style="color: var(--accent); font-size: 14px;">$5.00 Efectivo</strong>
+              </div>
+              <button class="btn btn-primary" onclick="crearEncomiendaQR()">
+                <span>📲</span> Generar Encomienda & QR de Entrega
+              </button>
+            </div>
+
+            <!-- Active QR Delivery Card -->
+            <div class="card" id="qrCardPasajero">
+              <div class="card-title" style="color: var(--accent);"><span>🔐</span> Código QR de Entrega Activo</div>
+              <div style="font-size: 11px; color: var(--text-muted); text-align: center;">
+                El destinatario debe mostrar este código al conductor al recibir el paquete:
+              </div>
+              <div class="qr-box">
+                <div id="qrcodeDisplay"></div>
+                <div class="qr-token" id="qrTokenText">MCND-QR-7FA89B1C</div>
+              </div>
+              <div id="encomiendaNotifStatus" style="font-size: 11px; color: var(--amber); text-align: center;">
+                ⏳ Estado: En tránsito en la unidad del chofer
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Navigation -->
+          <div class="nav-tabs">
+            <button class="tab-btn active" id="tabBtnViajes" onclick="switchPasajeroTab('viajes')">
+              <span class="tab-icon">💺</span>
+              <span>Viajes</span>
+            </button>
+            <button class="tab-btn" id="tabBtnEncomiendas" onclick="switchPasajeroTab('encomiendas')">
+              <span class="tab-icon">📦</span>
+              <span>Encomiendas</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PHONE: APP CONDUCTOR & DESPACHO -->
+    <div class="device-column">
+      <div class="device-header-label conductor">
+        <span>🚐</span> App Chofer & Despacho
+      </div>
+      <div class="phone-shell conductor-shell">
+        <div class="dynamic-island"><div class="camera-lens"></div></div>
+
+        <!-- Viewport -->
+        <div class="app-viewport" id="conductorViewport">
+          <!-- App Header -->
+          <div class="app-header">
+            <div class="app-title-box">
+              <h3 style="color: var(--amber);">Macondo Conductor</h3>
+              <p>Manuel Palacios · Unidad: GBA-4123 (Auto)</p>
+            </div>
+            <span class="badge-cash" style="background: rgba(16,185,129,0.15); border-color: var(--accent); color: var(--accent);">Turno Activo</span>
+          </div>
+
+          <!-- Conductor Content -->
+          <div class="app-content">
+            <!-- Shift Header Status -->
+            <div class="card" style="border-color: rgba(245, 158, 11, 0.4);">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="card-title" style="color: var(--amber);"><span>🏁</span> Turno Guayaquil ➔ Machala</div>
+                <span id="tagEstadoTurno" style="font-size: 10px; font-weight: 700; color: var(--amber); background: rgba(245,158,11,0.15); padding: 3px 6px; border-radius: 4px;">RECOGIENDO</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                <span>Ocupación Unidad: <strong style="color: var(--accent);" id="condOcupacion">3 de 4 puestos</strong></span>
+                <span>Efectivo: <strong style="color: var(--amber);" id="condEfectivoTotal">$41.00</strong></span>
+              </div>
+            </div>
+
+            <!-- Passenger Pickup Manifest (Door to Door) -->
+            <div class="card">
+              <div class="card-title"><span>👥</span> Manifiesto de Recogida Puerta a Puerta</div>
+              <div id="listaPasajerosCond" style="display: flex; flex-direction: column; gap: 8px;">
+                <!-- Dinámico -->
+              </div>
+            </div>
+
+            <!-- Parcel Deliveries & QR Scanner -->
+            <div class="card">
+              <div class="card-title" style="color: var(--accent);"><span>📦</span> Encomienda Asignada</div>
+              <div id="listaEncomiendasCond" style="display: flex; flex-direction: column; gap: 8px;">
+                <!-- Dinámico -->
+              </div>
+
+              <!-- Scanner HUD Simulator -->
+              <div class="card-title" style="margin-top: 6px;"><span>📷</span> Escáner QR de Entrega</div>
+              <div class="scanner-hud">
+                <div class="scanner-line"></div>
+                <div class="scanner-reticle"></div>
+              </div>
+              
+              <button class="btn btn-amber" onclick="simularEscaneoQR()">
+                <span>⚡</span> Escanear QR y Confirmar Entrega
+              </button>
+
+              <div id="entregaExitoBanner" style="display: none;"></div>
+            </div>
+          </div>
+
+          <!-- Bottom Navigation Conductor -->
+          <div class="nav-tabs">
+            <button class="tab-btn active-amber">
+              <span class="tab-icon">📋</span>
+              <span>Manifiesto</span>
+            </button>
+            <button class="tab-btn" onclick="mostrarModalDespacho()">
+              <span class="tab-icon">🏢</span>
+              <span>Admin Despacho</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // ── ESTADO REACTIVO COMPARTIDO (Simula la Base de Datos Supabase) ──────────
+    const state = {
+      cuposTotales: 4,
+      cuposOcupados: 3,
+      selectedPasajeroSeats: 1,
+      pasajeros: [
+        {
+          id: 1,
+          nombre: 'Elena Viteri',
+          telefono: '0995544332',
+          puestos: 1,
+          direccion: 'Boyacá 1204 y 9 de Octubre',
+          monto: 12.00,
+          aBordo: true
+        },
+        {
+          id: 2,
+          nombre: 'Roberto Gómez',
+          telefono: '0981234567',
+          puestos: 2,
+          direccion: 'Av. Kennedy y Olimpo #310',
+          monto: 24.00,
+          aBordo: false
+        }
+      ],
+      encomienda: {
+        id: 'ENC-098',
+        destinatario: 'Luisa Mora',
+        telefono: '0981122334',
+        direccion: 'Av. 25 de Junio y Junín (Machala)',
+        descripcion: 'Sobre con documentos notariales y llaves',
+        precio: 5.00,
+        tokenQR: 'MCND-QR-7FA89B1C',
+        entregada: false
+      }
+    };
+
+    // ── RENDER DE ASIENTOS (MÁXIMO 4 POR UNIDAD) ──────────────────────────────
+    function renderSeats() {
+      const grid = document.getElementById('seatsGrid');
+      const libres = state.cuposTotales - state.cuposOcupados;
+      document.getElementById('labelCuposLibres').innerText = libres > 0 ? `${libres} disponibles` : 'Viaje Completo';
+
+      grid.innerHTML = '';
+      for (let i = 1; i <= 4; i++) {
+        const slot = document.createElement('div');
+        const isOccupied = i <= state.cuposOcupados;
+        const isSelected = !isOccupied && (i <= state.cuposOcupados + state.selectedPasajeroSeats);
+
+        slot.className = 'seat-slot ' + (isOccupied ? 'occupied' : (isSelected ? 'selected' : ''));
+        slot.innerHTML = `
+          <div class="seat-icon">${isOccupied ? '🚫' : (isSelected ? '👤' : '💺')}</div>
+          <div class="seat-name">Puesto ${i}</div>
+          <div style="font-size: 8px; font-weight: 700; margin-top: 2px;">
+            ${isOccupied ? 'OCUPADO' : (isSelected ? 'RESERVA' : 'LIBRE')}
+          </div>
+        `;
+
+        if (!isOccupied) {
+          slot.onclick = () => {
+            const desired = i - state.cuposOcupados;
+            if (desired > 0 && desired <= libres) {
+              state.selectedPasajeroSeats = desired;
+              document.getElementById('totalPagarPasajero').innerText = `$${(desired * 12).toFixed(2)}`;
+              renderSeats();
+            }
+          };
+        }
+        grid.appendChild(slot);
+      }
+    }
+
+    // ── RENDER DEL MANIFIESTO DEL CHOFER ─────────────────────────────────────
+    function renderConductorManifest() {
+      const listPasajeros = document.getElementById('listaPasajerosCond');
+      listPasajeros.innerHTML = '';
+
+      state.pasajeros.forEach((p, idx) => {
+        const row = document.createElement('div');
+        row.style.background = 'var(--bg-elevated)';
+        row.style.borderRadius = '10px';
+        row.style.padding = '10px';
+        row.style.border = p.aBordo ? '1.5px solid var(--accent)' : '1px solid var(--border)';
+
+        row.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong style="font-size: 13px; color: ${p.aBordo ? 'var(--accent)' : '#fff'};">
+              ${p.aBordo ? '✅' : '⏳'} ${p.nombre} (${p.puestos} ${p.puestos === 1 ? 'puesto' : 'puestos'})
+            </strong>
+            <button onclick="toggleABordo(${idx})" style="background: none; border: 1px solid var(--border); color: #fff; padding: 3px 8px; border-radius: 6px; font-size: 10px; cursor: pointer;">
+              ${p.aBordo ? 'A Bordo' : 'Marcar A Bordo'}
+            </button>
+          </div>
+          <div style="font-size: 11px; color: var(--amber); margin-top: 4px;">
+            📍 Recogida: ${p.direccion}
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+            <span style="font-size: 11px; color: var(--text-dim);">Cobrar: <strong style="color: var(--amber);">$${p.monto.toFixed(2)}</strong></span>
+            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.direccion)}" target="_blank" style="font-size: 10px; color: var(--accent); text-decoration: none; font-weight: 700;">
+              🗺️ Abrir Maps/Waze ➔
+            </a>
+          </div>
+        `;
+        listPasajeros.appendChild(row);
+      });
+
+      // Actualizar métricas del conductor
+      document.getElementById('condOcupacion').innerText = `${state.cuposOcupados} de 4 puestos`;
+      const totalRecaudado = state.pasajeros.reduce((sum, p) => sum + p.monto, 0) + (state.encomienda ? state.encomienda.precio : 0);
+      document.getElementById('condEfectivoTotal').innerText = `$${totalRecaudado.toFixed(2)}`;
+
+      // Render encomienda del chofer
+      const listEnc = document.getElementById('listaEncomiendasCond');
+      listEnc.innerHTML = `
+        <div style="background: var(--bg-elevated); border-radius: 10px; padding: 10px; border: 1px solid var(--border);">
+          <div style="display: flex; justify-content: space-between;">
+            <strong style="font-size: 12px;">Guía: ${state.encomienda.id}</strong>
+            <span style="font-size: 10px; font-weight: 700; color: ${state.encomienda.entregada ? 'var(--accent)' : 'var(--amber)'};">
+              ${state.encomienda.entregada ? 'ENTREGADA' : 'EN TRÁNSITO'}
+            </span>
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">
+            Para: <strong>${state.encomienda.destinatario}</strong> (${state.encomienda.telefono})
+          </div>
+          <div style="font-size: 11px; color: var(--amber); margin-top: 2px;">
+            📍 Entrega: ${state.encomienda.direccion}
+          </div>
+          <div style="font-size: 11px; color: var(--accent); margin-top: 4px; font-family: monospace;">
+            Token QR: ${state.encomienda.tokenQR}
+          </div>
+        </div>
+      `;
+    }
+
+    function toggleABordo(idx) {
+      state.pasajeros[idx].aBordo = !state.pasajeros[idx].aBordo;
+      renderConductorManifest();
+    }
+
+    // ── RESERVA ATÓMICA DE PASAJERO (LEFT PHONE) ─────────────────────────────
+    function confirmarReservaPasajero() {
+      const libres = state.cuposTotales - state.cuposOcupados;
+      if (state.selectedPasajeroSeats > libres) {
+        alert('Cupos insuficientes en la unidad.');
+        return;
+      }
+
+      const dir = document.getElementById('inputDirPasajero').value;
+      const ref = document.getElementById('inputRefPasajero').value;
+      const nombre = 'Carlos Mendoza';
+      const monto = state.selectedPasajeroSeats * 12.00;
+
+      // Actualizar estado reactivo
+      state.cuposOcupados += state.selectedPasajeroSeats;
+      state.pasajeros.push({
+        id: Date.now(),
+        nombre: nombre,
+        telefono: '0987654321',
+        puestos: state.selectedPasajeroSeats,
+        direccion: `${dir} (${ref})`,
+        monto: monto,
+        aBordo: false
+      });
+
+      // Mostrar banner de éxito
+      const alertBox = document.getElementById('reservaAlert');
+      alertBox.style.display = 'block';
+      alertBox.className = 'notif-banner';
+      alertBox.innerHTML = `
+        <span>🎉</span>
+        <div>
+          <strong style="color: var(--accent);">¡Reserva Confirmada Exitosamente!</strong>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+            Reservaste ${state.selectedPasajeroSeats} puesto(s). El chofer Manuel Palacios ya recibió tu punto de recogida en su teléfono.
+          </div>
+        </div>
+      `;
+
+      state.selectedPasajeroSeats = 1;
+      renderSeats();
+      renderConductorManifest();
+    }
+
+    function fijarGpsPasajero() {
+      document.getElementById('inputDirPasajero').value = 'Ubicación GPS fijada (-2.1481, -79.9011)';
+      alert('Coordenadas GPS de recogida fijadas con precisión puerta a puerta.');
+    }
+
+    // ── ENCOMIENDAS & QR CODE ────────────────────────────────────────────────
+    function switchPasajeroTab(tab) {
+      if (tab === 'viajes') {
+        document.getElementById('pasajeroViajesContent').style.display = 'flex';
+        document.getElementById('pasajeroEncomiendasContent').style.display = 'none';
+        document.getElementById('tabBtnViajes').className = 'tab-btn active';
+        document.getElementById('tabBtnEncomiendas').className = 'tab-btn';
+      } else {
+        document.getElementById('pasajeroViajesContent').style.display = 'none';
+        document.getElementById('pasajeroEncomiendasContent').style.display = 'flex';
+        document.getElementById('tabBtnViajes').className = 'tab-btn';
+        document.getElementById('tabBtnEncomiendas').className = 'tab-btn active';
+        generarQRCode(state.encomienda.tokenQR);
+      }
+    }
+
+    function generarQRCode(texto) {
+      const container = document.getElementById('qrcodeDisplay');
+      container.innerHTML = '';
+      new QRCode(container, {
+        text: texto,
+        width: 140,
+        height: 140,
+        colorDark: '#06090e',
+        colorLight: '#ffffff'
+      });
+      document.getElementById('qrTokenText').innerText = texto;
+    }
+
+    function crearEncomiendaQR() {
+      const token = 'MCND-QR-' + Math.random().toString(16).substring(2, 10).toUpperCase();
+      state.encomienda.tokenQR = token;
+      state.encomienda.destinatario = document.getElementById('encDestNombre').value;
+      state.encomienda.telefono = document.getElementById('encDestTel').value;
+      state.encomienda.direccion = document.getElementById('encDirEntrega').value;
+      state.encomienda.descripcion = document.getElementById('encDesc').value;
+      state.encomienda.entregada = false;
+
+      generarQRCode(token);
+      renderConductorManifest();
+      alert('¡Encomienda registrada! Se ha generado el código QR de entrega único.');
+    }
+
+    // ── SIMULACIÓN DE ESCANEO DE QR POR EL CONDUCTOR (RIGHT PHONE) ───────────
+    function simularEscaneoQR() {
+      if (state.encomienda.entregada) {
+        alert('Esta encomienda ya fue entregada y verificada.');
+        return;
+      }
+
+      state.encomienda.entregada = true;
+
+      // Banner en el teléfono del chofer
+      const banner = document.getElementById('entregaExitoBanner');
+      banner.style.display = 'block';
+      banner.className = 'notif-banner';
+      banner.innerHTML = `
+        <span style="font-size: 20px;">✅</span>
+        <div>
+          <strong style="color: var(--accent);">¡ENTREGA FÍSICA CONFIRMADA CON QR!</strong>
+          <div style="font-size: 11px; color: #fff; margin-top: 2px;">
+            Destinatario: ${state.encomienda.destinatario} · Notificación automática enviada al remitente por SMS/WhatsApp.
+          </div>
+        </div>
+      `;
+
+      // Notificación instantánea en el teléfono del pasajero
+      document.getElementById('encomiendaNotifStatus').innerHTML = `
+        <span style="color: var(--accent); font-weight: 800;">🔔 ¡TU PAQUETE HA SIDO ENTREGADO!</span><br>
+        Recibido por ${state.encomienda.destinatario} · Confirmado con Código QR.
+      `;
+
+      renderConductorManifest();
+    }
+
+    function mostrarModalDespacho() {
+      alert('Módulo de Despacho Macondo Express:\n- Crear Rutas y Salidas\n- Asignar Choferes y Autos/Camionetas de 4 puestos\n- Monitorear Recaudación de Efectivo');
+    }
+
+    // Inicialización
+    renderSeats();
+    renderConductorManifest();
+    generarQRCode(state.encomienda.tokenQR);
+  </script>
+</body>
+</html>
