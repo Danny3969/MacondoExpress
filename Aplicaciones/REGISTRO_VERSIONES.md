@@ -12,6 +12,7 @@ En este directorio se almacenan de manera versionada todas las compilaciones gen
 
 | Versión | Fecha y Hora | Commit Git | Componentes Empaquetados | Estado |
 |---|---|---|---|---|
+| **`v1.5.0_Redisenio_Minimalista_Consola`** | 21/9/2026, 12:53:45 p. m. | `e29b732` | Pasajero, Conductor, Consola Admin, Suite | ✅ Compilado & Verificado |
 | **`v1.4.0_Modulo_Encomiendas`** | 21/9/2026, 12:27:28 p. m. | `b93bc1d` | Pasajero, Conductor, Consola Admin, Suite | ✅ Compilado & Verificado |
 | **`v1.3.0_Datos_Reales_Formularios_Limpios`** | 21/9/2026, 11:54:17 a. m. | `e0c08b2` | Pasajero, Conductor, Consola Admin, Suite | ✅ Compilado & Verificado |
 | **`v1.2.0_Ciudades_Navegacion_Pagina_Completa`** | 21/9/2026, 11:23:03 a. m. | `23913c6` | Pasajero, Conductor, Consola Admin, Suite | ✅ Compilado & Verificado |
