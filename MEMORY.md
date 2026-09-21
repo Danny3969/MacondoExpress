@@ -157,4 +157,5 @@ Para subir el proyecto a GitHub en la cuenta del Señor (`Danny3969`):
 ---
 
 ## 📅 Bitácora de Versiones
+- **2026-09-21 (v1.1.0):** Implementación integral de autenticación y registro por número de teléfono (+593 Ecuador / internacional), verificación OTP de 6 dígitos (SMS / WhatsApp) y registro de Cédula de Identidad en `macondo_pasajero`, `macondo_conductor`, `macondo_core`, `macondo_schema.sql` y en el Simulador Dual interactivo (`http://localhost:8092`). Repositorio oficial conectado y sincronizado con GitHub en `https://github.com/Danny3969/MacondoExpress`.
 - **2026-09-18 (v1.0.0-alpha):** Creación del proyecto, DDL de base de datos Supabase, paquete compartido `macondo_core`, aplicaciones `macondo_pasajero` y `macondo_conductor`, simulador dual en puerto `8092` e integración con el ecosistema Alberth.
