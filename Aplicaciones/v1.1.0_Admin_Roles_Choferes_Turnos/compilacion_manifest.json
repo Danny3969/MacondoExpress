@@ -1,0 +1,34 @@
+{
+  "version": "v1.1.0_Admin_Roles_Choferes_Turnos",
+  "fechaCompilacion": "2026-09-21T15:51:32.280Z",
+  "gitCommit": "da78288",
+  "flutterStatus": "No instalado en PATH (usando distribución Standalone Web/PWA + Códigos Fuente listos para build)",
+  "artefactos": {
+    "pasajero": {
+      "carpeta": "MacondoPasajero_v1.1.0_Admin_Roles_Choferes_Turnos",
+      "hashIndexHtml": "67f739b922f266c6e534ecb1ea58f71df79f3693438a0c44bc7f6e98b0649044",
+      "lanzador": "Lanzar_AppPasajero.command"
+    },
+    "conductor": {
+      "carpeta": "MacondoConductor_v1.1.0_Admin_Roles_Choferes_Turnos",
+      "hashIndexHtml": "48b028b4ba03af9401b0cb5745683c165a80774c06181347027d867764b00643",
+      "lanzador": "Lanzar_AppConductor.command"
+    },
+    "consolaAdmin": {
+      "carpeta": "MacondoConsolaAdmin_v1.1.0_Admin_Roles_Choferes_Turnos",
+      "hashIndexHtml": "facfd41fbe35a82fb4f67038558284875ccd91a506fa8fc9cc6e978a695c9c8f",
+      "lanzador": "Lanzar_ConsolaAdmin.command"
+    },
+    "suiteCompleta": {
+      "carpeta": "MacondoSuiteCompleta_v1.1.0_Admin_Roles_Choferes_Turnos",
+      "lanzador": "Lanzar_Suite_Macondo.command"
+    }
+  },
+  "especificaciones": {
+    "rutas": "Guayaquil ⇄ Machala",
+    "limiteCapacidad": "4 Pasajeros Estricto por Auto",
+    "seguridad": "PIN 4 dígitos + Validación Cédula M10",
+    "liquidacion": "$6.00 cuota cooperativa por turno finalizado",
+    "transitoANT": "Resolución N° 0482-2025"
+  }
+}

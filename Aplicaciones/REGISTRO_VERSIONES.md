@@ -12,6 +12,7 @@ En este directorio se almacenan de manera versionada todas las compilaciones gen
 
 | Versión | Fecha y Hora | Commit Git | Componentes Empaquetados | Estado |
 |---|---|---|---|---|
+| **`v1.1.0_Admin_Roles_Choferes_Turnos`** | 21/9/2026, 10:51:32 a. m. | `da78288` | Pasajero, Conductor, Consola Admin, Suite | ✅ Compilado & Verificado |
 | **`v1.0.0_Oficial_20260921`** | 21/9/2026, 10:17:35 a. m. | `217ebe4` | Pasajero, Conductor, Consola Admin, Suite | ✅ Compilado & Verificado |
 
 ---
