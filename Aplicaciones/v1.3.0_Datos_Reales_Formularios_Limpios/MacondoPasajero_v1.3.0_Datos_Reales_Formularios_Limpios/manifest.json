@@ -1,0 +1,9 @@
+{
+  "name": "Macondo Express Pasajero v1.3.0_Datos_Reales_Formularios_Limpios",
+  "short_name": "MacondoPasajero",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#06090e",
+  "theme_color": "#10b981",
+  "orientation": "portrait"
+}

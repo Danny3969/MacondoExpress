@@ -1,0 +1,9 @@
+{
+  "name": "Macondo Express Conductor v1.3.0_Datos_Reales_Formularios_Limpios",
+  "short_name": "MacondoConductor",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#06090e",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait"
+}
