@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Macondo Express · Consola Central de Administración y Despacho</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+  <!-- SIDEBAR DE NAVEGACIÓN -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo-icon">🚐</div>
+      <div class="sidebar-brand">
+        <h2>MACONDO EXPRESS</h2>
+        <p>CONSOLA DE CONTROL</p>
+      </div>
+    </div>
+
+    <div class="sidebar-nav">
+      <div class="nav-section-title">OPERACIONES & DESPACHO</div>
+      <a class="nav-item active" id="nav-despacho" onclick="switchAdminTab('despacho')">
+        <span class="icon">📋</span>
+        <span>Despacho de Turnos</span>
+      </a>
+      <a class="nav-item" id="nav-manifiesto" onclick="switchAdminTab('manifiesto')">
+        <span class="icon">📜</span>
+        <span>Manifiesto Oficial ANT</span>
+      </a>
+      <a class="nav-item" id="nav-radar" onclick="switchAdminTab('radar')">
+        <span class="icon">🛰️</span>
+        <span>Radar GPS & Telemetría</span>
+      </a>
+
+      <div class="nav-section-title" style="margin-top: 14px;">FINANZAS & ARQUEOS</div>
+      <a class="nav-item" id="nav-liquidaciones" onclick="switchAdminTab('liquidaciones')">
+        <span class="icon">💵</span>
+        <span>Liquidaciones ($6/Turno)</span>
+      </a>
+
+      <div class="nav-section-title" style="margin-top: 14px;">RECURSOS & FLOTA</div>
+      <a class="nav-item" id="nav-flota" onclick="switchAdminTab('flota')">
+        <span class="icon">🚘</span>
+        <span>Flota & Conductores</span>
+      </a>
+
+      <div class="nav-section-title" style="margin-top: 14px;">ENLACES RÁPIDOS</div>
+      <a class="nav-item" href="http://localhost:8092" target="_blank" style="color: var(--amber);">
+        <span class="icon">📱</span>
+        <span>Simulador Móvil Dual ↗</span>
+      </a>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="system-status-indicator">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; box-shadow: 0 0 8px var(--accent);"></span>
+        <span>Servidor Activo · En Línea</span>
+      </div>
+      <div>Reg. ANT N° 0482-2025</div>
+      <div style="font-family: monospace; font-size: 10px;">Macondo Express v1.0.0</div>
+    </div>
+  </aside>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="admin-main">
+
+    <!-- TOPBAR -->
+    <header class="admin-topbar">
+      <div class="topbar-title-group">
+        <div style="font-size: 11px; color: var(--amber); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+          COOPERATIVA DE TRANSPORTE MACONDO EXPRESS
+        </div>
+        <h1 style="font-size: 20px; font-weight: 800; color: #fff; margin-top: 2px;">
+          Panel Central de Despacho, Tránsito y Auditoría
+        </h1>
+      </div>
+
+      <div class="topbar-actions">
+        <div class="kpi-pill">
+          <span style="color: var(--text-dim);">Rutas Hoy:</span>
+          <strong style="color: var(--accent);">Guayaquil ⇄ Machala</strong>
+        </div>
+        <button class="btn btn-primary" onclick="abrirModalNuevoTurno()">
+          <span>+</span> Despachar Nuevo Turno
+        </button>
+      </div>
+    </header>
+
+    <div class="admin-content-area">
+
+      <!-- ======================================================== -->
+      <!-- SECCIÓN 1: DESPACHO DE TURNOS                            -->
+      <!-- ======================================================== -->
+      <section id="section-despacho" class="admin-section" style="display: flex; flex-direction: column; gap: 20px;">
+        
+        <!-- KPI METRICS GRID -->
+        <div class="kpis-grid">
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">Pasajeros Trasladados Hoy</span>
+              <span class="kpi-icon">👥</span>
+            </div>
+            <div class="kpi-value" id="kpiPasajeros">19</div>
+            <div class="kpi-subtext" style="color: var(--accent-light);">↑ 100% Puerta a Puerta</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">Unidades en Ruta Activas</span>
+              <span class="kpi-icon">🚗</span>
+            </div>
+            <div class="kpi-value" id="kpiUnidades" style="color: var(--blue);">3</div>
+            <div class="kpi-subtext">Capacidad 4 pax máx / auto</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">Efectivo Recaudado (Total)</span>
+              <span class="kpi-icon">💵</span>
+            </div>
+            <div class="kpi-value" id="kpiRecaudacion" style="color: var(--amber);">$268.00</div>
+            <div class="kpi-subtext">Cobro 100% Cash al abordaje</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">Fondo Cooperativa ($6/Turno)</span>
+              <span class="kpi-icon">🏛️</span>
+            </div>
+            <div class="kpi-value" id="kpiCooperativa" style="color: var(--accent);">$36.00</div>
+            <div class="kpi-subtext">6 turnos liquidados en caja</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">Promedio Ocupación</span>
+              <span class="kpi-icon">📊</span>
+            </div>
+            <div class="kpi-value" id="kpiOcupacion">3.8 / 4</div>
+            <div class="kpi-subtext" style="color: var(--accent-light);">95% factor de carga</div>
+          </div>
+        </div>
+
+        <!-- TABLA DE TURNOS ACTIVOS Y PROGRAMADOS -->
+        <div class="panel-card">
+          <div class="panel-header">
+            <div>
+              <h2 style="font-size: 16px; font-weight: 800; color: #fff;">Turnos del Día (Guayaquil ⇄ Machala)</h2>
+              <p style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">
+                Despacho en tiempo real, asignación de chofer y control de cupos (Máx 4 pasajeros por automóvil).
+              </p>
+            </div>
+            <button class="btn btn-outline" onclick="renderDespachoTable()">
+              🔄 Actualizar
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Código Turno</th>
+                  <th>Ruta & Horario</th>
+                  <th>Chofer Asignado</th>
+                  <th>Vehículo (Placa)</th>
+                  <th>Ocupación (Máx 4)</th>
+                  <th>Total Efectivo</th>
+                  <th>Estado</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyDespacho">
+                <!-- Se inyecta con adminState.turnos -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- SECCIÓN 2: MANIFIESTO OFICIAL DE TRÁNSITO ANT            -->
+      <!-- ======================================================== -->
+      <section id="section-manifiesto" class="admin-section" style="display: none; flex-direction: column; gap: 20px;">
+        
+        <div class="panel-card">
+          <div class="panel-header" style="flex-wrap: wrap; gap: 14px;">
+            <div>
+              <span class="badge badge-blue" style="margin-bottom: 6px;">CUMPLIMIENTO LEGAL ANT</span>
+              <h2 style="font-size: 18px; font-weight: 800; color: #fff;">Manifiesto de Pasajeros & Hoja de Ruta Oficial</h2>
+              <p style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">
+                Documento legal con Cédulas verificadas (Módulo 10), teléfonos, direcciones puerta a puerta y PINs de seguridad para controles de la CTE / ANT.
+              </p>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="display: flex; flex-direction: column;">
+                <label style="font-size: 11px; color: var(--text-dim); margin-bottom: 4px;">Seleccionar Turno:</label>
+                <select id="selectTurnoManifiesto" class="admin-select" onchange="cambiarTurnoManifiesto(this.value)">
+                  <!-- Inyectado dinámicamente -->
+                </select>
+              </div>
+
+              <button class="btn btn-primary" style="margin-top: 18px;" onclick="imprimirManifiestoANT()">
+                🖨️ Imprimir Manifiesto ANT
+              </button>
+            </div>
+          </div>
+
+          <!-- RESUMEN DEL TURNO SELECCIONADO -->
+          <div class="manifest-meta-box" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; background: var(--bg-elevated); padding: 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px;">
+            <div>
+              <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Ruta Homologada:</span>
+              <div id="mftRuta" style="font-size: 15px; font-weight: 800; color: var(--accent);">--</div>
+            </div>
+            <div>
+              <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Fecha y Hora:</span>
+              <div id="mftFechaHora" style="font-size: 14px; font-weight: 700; color: #fff;">--</div>
+            </div>
+            <div>
+              <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Conductor Profesional:</span>
+              <div id="mftChofer" style="font-size: 13px; font-weight: 600; color: var(--amber);">--</div>
+            </div>
+            <div>
+              <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Vehículo Homologado:</span>
+              <div id="mftVehiculo" style="font-size: 13px; font-weight: 600; color: #fff;">--</div>
+            </div>
+            <div>
+              <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Ocupación Real:</span>
+              <div id="mftOcupacion" style="font-size: 14px; font-weight: 800; color: var(--accent-light);">--</div>
+            </div>
+          </div>
+
+          <!-- TABLA DE PASAJEROS -->
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>N°</th>
+                  <th>Pasajero (Cédula)</th>
+                  <th>Teléfono</th>
+                  <th>Dirección Puerta a Puerta</th>
+                  <th>Puestos</th>
+                  <th>PIN Seguridad</th>
+                  <th>Tarifa Efectivo</th>
+                  <th>Estado Abordaje</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyManifiestoPasajeros">
+                <!-- Inyectado dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- SECCIÓN 3: RADAR GPS & TELEMETRÍA                        -->
+      <!-- ======================================================== -->
+      <section id="section-radar" class="admin-section" style="display: none; flex-direction: column; gap: 20px;">
+        
+        <div class="panel-card">
+          <div class="panel-header">
+            <div>
+              <span class="badge badge-green" style="margin-bottom: 6px;">SEGUIMIENTO SATELITAL EN VIVO</span>
+              <h2 style="font-size: 18px; font-weight: 800; color: #fff;">Radar de Posicionamiento Satelital en Carretera</h2>
+              <p style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">
+                Monitoreo en tiempo real de velocidad y ubicación sobre el corredor Guayas - El Oro (Troncal E25).
+              </p>
+            </div>
+            <button class="btn btn-outline" onclick="renderRadarTelemetria()">
+              📡 Sincronizar GPS
+            </button>
+          </div>
+
+          <!-- MAPA CONCEPTUAL / RADAR RADIAL -->
+          <div style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+              <div>
+                <strong style="color: #fff; font-size: 14px;">Corredor Vial E25: Guayaquil ➔ Naranjal ➔ Ponce Enríquez ➔ Machala</strong>
+                <div style="font-size: 11px; color: var(--text-muted);">Distancia total: 184 Km · Tiempo promedio de viaje: 3h 15m</div>
+              </div>
+              <span class="badge badge-green">3 Satélites Enlazados</span>
+            </div>
+
+            <!-- FEED DE TELEMETRÍA -->
+            <div id="telemetriaFeed" style="display: flex; flex-direction: column; gap: 12px;">
+              <!-- Inyectado dinámicamente -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- SECCIÓN 4: AUDITORÍA DE LIQUIDACIONES                    -->
+      <!-- ======================================================== -->
+      <section id="section-liquidaciones" class="admin-section" style="display: none; flex-direction: column; gap: 20px;">
+        
+        <div class="panel-card">
+          <div class="panel-header">
+            <div>
+              <span class="badge badge-green" style="margin-bottom: 6px;">MODELO ECONÓMICO COOPERATIVO</span>
+              <h2 style="font-size: 18px; font-weight: 800; color: #fff;">Auditoría de Liquidaciones y Caja de Turnos</h2>
+              <p style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">
+                Cierre de caja por turno finalizado. Cada conductor retiene el efectivo de pasajes y cancela $6.00 fijos de cuota de administración cooperativa.
+              </p>
+            </div>
+            <button class="btn btn-outline" onclick="renderLiquidacionesTable()">
+              🔄 Actualizar Arqueos
+            </button>
+          </div>
+
+          <!-- SUMMARY STRIP -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 20px;">
+            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid var(--accent); border-radius: 10px; padding: 14px;">
+              <div style="font-size: 11px; color: var(--accent-light); font-weight: 700;">CUOTA FIJA COOPERATIVA</div>
+              <div style="font-size: 24px; font-weight: 900; color: #fff; margin-top: 4px;">$6.00 <span style="font-size: 13px; color: var(--text-muted);">/ turno</span></div>
+              <div style="font-size: 11px; color: var(--text-dim); margin-top: 2px;">Aporte de sostenimiento gremial</div>
+            </div>
+
+            <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid var(--amber); border-radius: 10px; padding: 14px;">
+              <div style="font-size: 11px; color: var(--amber-light); font-weight: 700;">FONDO COOPERATIVA ACUMULADO</div>
+              <div style="font-size: 24px; font-weight: 900; color: var(--amber); margin-top: 4px;">$36.00</div>
+              <div style="font-size: 11px; color: var(--text-dim); margin-top: 2px;">Recaudado en ventanilla hoy</div>
+            </div>
+
+            <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid var(--blue); border-radius: 10px; padding: 14px;">
+              <div style="font-size: 11px; color: #60a5fa; font-weight: 700;">PAGO CONDUCTORES</div>
+              <div style="font-size: 24px; font-weight: 900; color: #fff; margin-top: 4px;">Inmediato</div>
+              <div style="font-size: 11px; color: var(--text-dim); margin-top: 2px;">100% Cash en mano del chofer</div>
+            </div>
+          </div>
+
+          <!-- TABLA DE LIQUIDACIONES -->
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Código Turno</th>
+                  <th>Fecha & Hora Cierre</th>
+                  <th>Conductor & Unidad</th>
+                  <th>Total Recaudado</th>
+                  <th>Cuota Coop.</th>
+                  <th>Peajes</th>
+                  <th>Combustible</th>
+                  <th>Neto Conductor</th>
+                  <th>Estado Auditoría</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyLiquidaciones">
+                <!-- Inyectado dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- SECCIÓN 5: FLOTA & CHOFERES                              -->
+      <!-- ======================================================== -->
+      <section id="section-flota" class="admin-section" style="display: none; flex-direction: column; gap: 20px;">
+        
+        <!-- PANEL CONDUCTORES -->
+        <div class="panel-card">
+          <div class="panel-header">
+            <div>
+              <span class="badge badge-blue" style="margin-bottom: 6px;">TALENTO HUMANO REGISTRADO</span>
+              <h2 style="font-size: 18px; font-weight: 800; color: #fff;">Conductores Profesionales Afiliados</h2>
+              <p style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">
+                Choferes con licencia Tipo C / D habilitados por la Agencia Nacional de Tránsito.
+              </p>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>N°</th>
+                  <th>Nombre Completo</th>
+                  <th>Cédula Identidad</th>
+                  <th>Licencia de Conducir</th>
+                  <th>Teléfono Móvil</th>
+                  <th>Estado Actual</th>
+                  <th>Viajes Hoy</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyChoferes">
+                <!-- Inyectado dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- PANEL VEHÍCULOS -->
+        <div class="panel-card">
+          <div class="panel-header">
+            <div>
+              <span class="badge badge-green" style="margin-bottom: 6px;">PARQUE AUTOMOTOR HOMOLOGADO</span>
+              <h2 style="font-size: 18px; font-weight: 800; color: #fff;">Vehículos Homologados (Sedanes y Camionetas Doble Cabina)</h2>
+              <p style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">
+                Unidades limitadas estrictamente a 4 pasajeros por regulación ANT para servicio interprovincial ejecutivo.
+              </p>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Placa Oficial</th>
+                  <th>Marca & Modelo</th>
+                  <th>Tipo y Año</th>
+                  <th>Límite Normativo</th>
+                  <th>Seguro Obligatorio</th>
+                  <th>Estado Operativo</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyVehiculos">
+                <!-- Inyectado dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- MODAL: NUEVO DESPACHO DE TURNO -->
+  <div id="modalNuevoTurno" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3 style="color: #fff; font-size: 16px; font-weight: 800;">Programar & Despachar Turno</h3>
+          <p style="color: var(--text-dim); font-size: 12px; margin-top: 2px;">
+            El turno se publicará de inmediato en la App Móvil de Pasajeros.
+          </p>
+        </div>
+        <button class="btn-close" onclick="cerrarModalNuevoTurno()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Ciudad Origen:</label>
+            <select id="nuevoTurnoOrigen" class="admin-select">
+              <option value="Guayaquil" selected>Guayaquil</option>
+              <option value="Machala">Machala</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Ciudad Destino:</label>
+            <select id="nuevoTurnoDestino" class="admin-select">
+              <option value="Machala" selected>Machala</option>
+              <option value="Guayaquil">Guayaquil</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Hora de Salida:</label>
+            <input type="time" id="nuevoTurnoHora" class="admin-input" value="14:30">
+          </div>
+          <div class="form-group">
+            <label>Capacidad Máxima Normativa:</label>
+            <input type="text" class="admin-input" value="4 Pasajeros (Estricto)" disabled style="background: var(--bg-space); color: var(--accent); font-weight: bold;">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Conductor Profesional:</label>
+          <select id="nuevoTurnoChofer" class="admin-select">
+            <option value="Víctor Hugo Mendoza">Víctor Hugo Mendoza (0912837465 · Lic. D)</option>
+            <option value="Segundo Alvarado">Segundo Alvarado (0702847192 · Lic. C)</option>
+            <option value="Manuel Palacios">Manuel Palacios (0703849201 · Lic. C)</option>
+            <option value="Carlos Zambrano">Carlos Zambrano (0701928374 · Lic. C)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Vehículo Asignado (Placa):</label>
+          <select id="nuevoTurnoPlaca" class="admin-select">
+            <option value="GBC-9041">GBC-9041 · Nissan Versa Advance (Sedán 2024)</option>
+            <option value="OBA-3120">OBA-3120 · Chevrolet D-Max Doble Cabina (2021)</option>
+            <option value="GBA-4123">GBA-4123 · Chevrolet Aveo Activo (2022)</option>
+            <option value="OBA-5892">OBA-5892 · Toyota Yaris Sedan (2023)</option>
+          </select>
+        </div>
+
+        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid var(--amber); border-radius: 8px; padding: 10px; font-size: 11px; color: var(--amber-light); margin-top: 10px;">
+          ⚠️ <strong>Recordatorio Normativo:</strong> Queda terminantemente prohibido superar los 4 pasajeros en automóviles sedán y camionetas doble cabina según disposición de la ANT.
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="cerrarModalNuevoTurno()">Cancelar</button>
+        <button class="btn btn-primary" onclick="crearNuevoTurno()">✓ Despachar Turno Ahora</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ÁREA EXCLUSIVA PARA IMPRESIÓN DEL MANIFIESTO ANT -->
+  <div id="printableArea" class="print-only"></div>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>

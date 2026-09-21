@@ -1,0 +1,24 @@
+{
+  "name": "macondo-express",
+  "version": "1.0.0",
+  "description": "Sistema de Transporte Cooperativo Puerta a Puerta Guayaquil - Machala (App Pasajero, App Conductor y Consola de Administración)",
+  "main": "consola_administracion/server.js",
+  "scripts": {
+    "start:admin": "node consola_administracion/server.js",
+    "start:simulator": "npx -y serve -l 8092 -s interactive_preview",
+    "build:apps": "node scripts/compilar_aplicaciones.js",
+    "build:version": "node scripts/compilar_aplicaciones.js"
+  },
+  "keywords": [
+    "transporte",
+    "cooperativa",
+    "flutter",
+    "ecuador",
+    "machala",
+    "guayaquil",
+    "despacho",
+    "ant"
+  ],
+  "author": "Macondo Express",
+  "license": "ISC"
+}

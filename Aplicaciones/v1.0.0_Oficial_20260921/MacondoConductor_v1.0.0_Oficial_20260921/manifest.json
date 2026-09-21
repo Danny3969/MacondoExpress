@@ -1,0 +1,9 @@
+{
+  "name": "Macondo Express Conductor v1.0.0_Oficial_20260921",
+  "short_name": "MacondoConductor",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#06090e",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait"
+}
