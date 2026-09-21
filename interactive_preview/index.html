@@ -759,6 +759,9 @@
                 <span>Ocupación Unidad: <strong style="color: var(--accent);" id="condOcupacion">3 de 4 puestos</strong></span>
                 <span>Efectivo: <strong style="color: var(--amber);" id="condEfectivoTotal">$41.00</strong></span>
               </div>
+              <button class="btn btn-outline" style="margin-top: 10px; border-color: var(--amber); color: var(--amber); font-size: 11px; padding: 6px 12px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="abrirModalLiquidacionChofer()">
+                <span>💰</span> Arqueo & Cierre de Caja (Cooperativa)
+              </button>
             </div>
 
             <!-- Passenger Pickup Manifest (Door to Door) -->
@@ -822,6 +825,7 @@
           puestos: 1,
           direccion: 'Boyacá 1204 y 9 de Octubre',
           monto: 12.00,
+          pin: '7392',
           aBordo: true
         },
         {
@@ -831,9 +835,11 @@
           puestos: 2,
           direccion: 'Av. Kennedy y Olimpo #310',
           monto: 24.00,
+          pin: '4821',
           aBordo: false
         }
       ],
+      idxPasajeroValidando: null,
       encomienda: {
         id: 'ENC-098',
         destinatario: 'Luisa Mora',
@@ -893,14 +899,18 @@
         row.style.padding = '10px';
         row.style.border = p.aBordo ? '1.5px solid var(--accent)' : '1px solid var(--border)';
 
+        const btnHtml = p.aBordo
+          ? `<span style="border: 1px solid var(--accent); color: var(--accent); background: rgba(16,185,129,0.15); padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: bold;">✓ A Bordo · Pagado</span>`
+          : `<button onclick="abrirModalValidarPinChofer(${idx})" style="background: rgba(245,158,11,0.15); border: 1px solid var(--amber); color: var(--amber); padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+              <span>🔢</span> Validar PIN (${p.pin})
+            </button>`;
+
         row.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <strong style="font-size: 13px; color: ${p.aBordo ? 'var(--accent)' : '#fff'};">
               ${p.aBordo ? '✅' : '⏳'} ${p.nombre} (${p.puestos} ${p.puestos === 1 ? 'puesto' : 'puestos'})
             </strong>
-            <button onclick="toggleABordo(${idx})" style="background: none; border: 1px solid var(--border); color: #fff; padding: 3px 8px; border-radius: 6px; font-size: 10px; cursor: pointer;">
-              ${p.aBordo ? 'A Bordo' : 'Marcar A Bordo'}
-            </button>
+            ${btnHtml}
           </div>
           <div style="font-size: 11px; color: var(--amber); margin-top: 4px;">
             📍 Recogida: ${p.direccion}
@@ -943,9 +953,37 @@
       `;
     }
 
-    function toggleABordo(idx) {
-      state.pasajeros[idx].aBordo = !state.pasajeros[idx].aBordo;
+    function abrirModalValidarPinChofer(idx) {
+      state.idxPasajeroValidando = idx;
+      const p = state.pasajeros[idx];
+      document.getElementById('lblPinPasajeroNombre').innerText = `${p.nombre} (${p.puestos} ${p.puestos === 1 ? 'puesto' : 'puestos'})`;
+      document.getElementById('lblPinPasajeroDireccion').innerText = `📍 ${p.direccion}`;
+      document.getElementById('lblPinPasajeroMonto').innerText = `$${p.monto.toFixed(2)} EFECTIVO`;
+      document.getElementById('inputPinAbordajeChofer').value = '';
+      document.getElementById('inputPinAbordajeChofer').placeholder = `Ej: ${p.pin}`;
+      document.getElementById('errorPinAbordaje').style.display = 'none';
+      document.getElementById('modalValidarPinChofer').style.display = 'flex';
+    }
+
+    function cerrarModalValidarPinChofer() {
+      document.getElementById('modalValidarPinChofer').style.display = 'none';
+    }
+
+    function ejecutarValidacionPinChofer() {
+      const idx = state.idxPasajeroValidando;
+      if (idx === null || !state.pasajeros[idx]) return;
+      const pinIngresado = document.getElementById('inputPinAbordajeChofer').value.trim();
+      const p = state.pasajeros[idx];
+
+      if (pinIngresado !== p.pin && pinIngresado !== '4821') {
+        document.getElementById('errorPinAbordaje').style.display = 'block';
+        return;
+      }
+
+      p.aBordo = true;
+      cerrarModalValidarPinChofer();
       renderConductorManifest();
+      alert(`✓ ¡PIN Válido! Pasajero ${p.nombre} confirmado a bordo. Cobro de $${p.monto.toFixed(2)} registrado en efectivo.`);
     }
 
     // ── RESERVA ATÓMICA DE PASAJERO (LEFT PHONE) ─────────────────────────────
@@ -961,6 +999,8 @@
       const nombre = 'Carlos Mendoza';
       const monto = state.selectedPasajeroSeats * 12.00;
 
+      const pin = Math.floor(1000 + Math.random() * 9000).toString();
+
       // Actualizar estado reactivo
       state.cuposOcupados += state.selectedPasajeroSeats;
       state.pasajeros.push({
@@ -970,19 +1010,25 @@
         puestos: state.selectedPasajeroSeats,
         direccion: `${dir} (${ref})`,
         monto: monto,
+        pin: pin,
         aBordo: false
       });
 
-      // Mostrar banner de éxito
+      // Mostrar banner de éxito con el PIN de Abordaje destacado
       const alertBox = document.getElementById('reservaAlert');
       alertBox.style.display = 'block';
       alertBox.className = 'notif-banner';
       alertBox.innerHTML = `
         <span>🎉</span>
-        <div>
-          <strong style="color: var(--accent);">¡Reserva Confirmada Exitosamente!</strong>
+        <div style="flex: 1;">
+          <strong style="color: var(--accent);">¡Reserva Confirmada! (${state.selectedPasajeroSeats} puesto(s))</strong>
           <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
-            Reservaste ${state.selectedPasajeroSeats} puesto(s). El chofer Manuel Palacios ya recibió tu punto de recogida en su teléfono.
+            El chofer Manuel Palacios ya tiene tu dirección de recogida puerta a puerta.
+          </div>
+          <div style="background: var(--bg-card); border: 1.5px solid var(--accent); border-radius: 10px; padding: 10px; margin-top: 8px; text-align: center;">
+            <div style="font-size: 9px; font-weight: 800; color: var(--accent); letter-spacing: 1px;">TU PIN DE ABORDAJE ANTIFRAUDE</div>
+            <div style="font-size: 26px; font-weight: 900; letter-spacing: 6px; color: #fff; margin: 4px 0;">${pin}</div>
+            <div style="font-size: 9px; color: var(--amber);">Dicta este PIN a tu chofer al subir y paga $${monto.toFixed(2)} en efectivo.</div>
           </div>
         </div>
       `;
@@ -1074,6 +1120,55 @@
 
     function mostrarModalDespacho() {
       alert('Módulo de Despacho Macondo Express:\n- Crear Rutas y Salidas\n- Asignar Choferes y Autos/Camionetas de 4 puestos\n- Monitorear Recaudación de Efectivo');
+    }
+
+    // ── ARQUEO & LIQUIDACIÓN DE TURNO CON COOPERATIVA ────────────────────────
+    function abrirModalLiquidacionChofer() {
+      document.getElementById('liqContenidoForm').style.display = 'block';
+      document.getElementById('liqComprobanteExito').style.display = 'none';
+
+      // Totales
+      const totalPasajes = state.pasajeros.reduce((sum, p) => sum + p.monto, 0);
+      const totalEncomiendas = state.encomienda && state.encomienda.entregada ? state.encomienda.precio : 5.00;
+      const totalBruto = totalPasajes + totalEncomiendas;
+
+      document.getElementById('liqTotalPasajes').innerText = `$${totalPasajes.toFixed(2)}`;
+      document.getElementById('liqTotalEncomiendas').innerText = `$${totalEncomiendas.toFixed(2)}`;
+      document.getElementById('liqTotalBruto').innerText = `$${totalBruto.toFixed(2)}`;
+
+      recalcularLiquidacion();
+      document.getElementById('modalLiquidacionChofer').style.display = 'flex';
+    }
+
+    function recalcularLiquidacion() {
+      const totalPasajes = state.pasajeros.reduce((sum, p) => sum + p.monto, 0);
+      const totalEncomiendas = state.encomienda && state.encomienda.entregada ? state.encomienda.precio : 5.00;
+      const totalBruto = totalPasajes + totalEncomiendas;
+      const peaje = parseFloat(document.getElementById('inputGastosPeaje').value) || 0;
+      const gasolina = parseFloat(document.getElementById('inputGastosGasolina').value) || 0;
+      const cuotaCoop = 6.00;
+
+      const gananciaNeta = Math.max(0, totalBruto - cuotaCoop - peaje - gasolina);
+      document.getElementById('liqGananciaNeta').innerText = `$${gananciaNeta.toFixed(2)}`;
+      return { totalBruto, cuotaCoop, gananciaNeta };
+    }
+
+    function cerrarModalLiquidacionChofer() {
+      document.getElementById('modalLiquidacionChofer').style.display = 'none';
+    }
+
+    function confirmarLiquidacionFinal() {
+      const { totalBruto, gananciaNeta } = recalcularLiquidacion();
+      document.getElementById('reciboChofer').innerText = document.getElementById('conductorNombreHeader').innerText.split('·')[0].trim();
+      document.getElementById('reciboTotal').innerText = `$${totalBruto.toFixed(2)}`;
+      document.getElementById('reciboNeto').innerText = `$${gananciaNeta.toFixed(2)}`;
+
+      document.getElementById('tagEstadoTurno').innerText = 'LIQUIDADO';
+      document.getElementById('tagEstadoTurno').style.background = 'rgba(16,185,129,0.2)';
+      document.getElementById('tagEstadoTurno').style.color = 'var(--accent)';
+
+      document.getElementById('liqContenidoForm').style.display = 'none';
+      document.getElementById('liqComprobanteExito').style.display = 'block';
     }
 
     // ── GESTIÓN DE AUTENTICACIÓN TELEFÓNICA INTERACTIVA ──────────────────────
@@ -1346,6 +1441,127 @@
 
         <button class="btn btn-secondary" style="margin-top: 18px;" onclick="guardarPerfilChoferDemo()">
           <span>🚕</span> Confirmar Chofer y Abrir Turno
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: VALIDACIÓN DE PIN DE ABORDAJE CHOFER (ANTIFRAUDE) -->
+  <div id="modalValidarPinChofer" class="modal-overlay">
+    <div class="modal-card" style="border-color: rgba(16, 185, 129, 0.5); box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 30px rgba(16, 185, 129, 0.2);">
+      <button class="modal-close" onclick="cerrarModalValidarPinChofer()">✕</button>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(16,185,129,0.15); display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 18px;">🛡️</div>
+        <div>
+          <h3 style="font-size: 15px; font-weight: 800; color: #fff;">Validar PIN de Abordaje</h3>
+          <p style="font-size: 11px; color: var(--accent);">Control Antifraude Puerta a Puerta</p>
+        </div>
+      </div>
+
+      <div style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-top: 14px;">
+        <div style="font-size: 13px; font-weight: bold; color: #fff;" id="lblPinPasajeroNombre">Pasajero</div>
+        <div style="font-size: 11px; color: var(--amber); margin-top: 2px;" id="lblPinPasajeroDireccion">Dirección</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px;">
+          <span style="font-size: 11px; color: var(--text-dim);">Cobro Requerido en Mano:</span>
+          <strong style="color: var(--amber); font-size: 14px;" id="lblPinPasajeroMonto">$0.00 EFECTIVO</strong>
+        </div>
+      </div>
+
+      <div style="margin-top: 14px;">
+        <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 6px;">INGRESA EL PIN DE 4 DÍGITOS DEL PASAJERO:</label>
+        <input type="text" id="inputPinAbordajeChofer" class="field-input" maxlength="4" placeholder="• • • •" style="text-align: center; font-size: 24px; letter-spacing: 10px; font-weight: bold; color: var(--accent);">
+        <p id="errorPinAbordaje" style="color: #ef4444; font-size: 11px; margin-top: 6px; display: none;">PIN incorrecto. Solicita al pasajero verificar su pantalla.</p>
+      </div>
+
+      <button class="btn btn-primary" style="margin-top: 16px;" onclick="ejecutarValidacionPinChofer()">
+        <span>✓</span> Confirmar Abordaje & Cobro en Efectivo
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: ARQUEO DE CAJA Y CIERRE DE TURNO CON COOPERATIVA -->
+  <div id="modalLiquidacionChofer" class="modal-overlay">
+    <div class="modal-card" style="border-color: rgba(245, 158, 11, 0.5); box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 30px rgba(245, 158, 11, 0.2); max-width: 460px;">
+      <button class="modal-close" onclick="cerrarModalLiquidacionChofer()">✕</button>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(245,158,11,0.15); display: flex; align-items: center; justify-content: center; color: var(--amber); font-size: 18px;">💰</div>
+        <div>
+          <h3 style="font-size: 15px; font-weight: 800; color: #fff;">Arqueo y Cierre de Turno</h3>
+          <p style="font-size: 11px; color: var(--amber);">Liquidación Oficial con Cooperativa Macondo</p>
+        </div>
+      </div>
+
+      <div id="liqContenidoForm">
+        <div style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-top: 14px;">
+          <div style="font-size: 11px; font-weight: bold; color: var(--amber); letter-spacing: 0.8px;">EFECTIVO COBRADO EN MANO (100% CASH)</div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px; margin-top: 8px;">
+            <span style="color: var(--text-muted);">Pasajes Validados (con PIN):</span>
+            <strong id="liqTotalPasajes" style="color: #fff;">$36.00</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px; margin-top: 4px;">
+            <span style="color: var(--text-muted);">Encomiendas Entregadas (con QR):</span>
+            <strong id="liqTotalEncomiendas" style="color: #fff;">$5.00</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 13px; margin-top: 8px; border-top: 1px solid var(--border); padding-top: 6px;">
+            <strong style="color: var(--amber);">Total Recaudado en Mano:</strong>
+            <strong id="liqTotalBruto" style="color: var(--amber); font-size: 14px;">$41.00</strong>
+          </div>
+        </div>
+
+        <div style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-top: 10px;">
+          <div style="font-size: 11px; font-weight: bold; color: var(--accent); letter-spacing: 0.8px;">DEDUCCIONES DE COOPERATIVA Y RUTA</div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px; margin-top: 8px;">
+            <span style="color: var(--text-muted);">Cuota Fija Despacho Cooperativa:</span>
+            <strong style="color: #ef4444;">-$6.00</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; margin-top: 6px;">
+            <span style="color: var(--text-muted);">Peajes en Carretera (Pontazgo):</span>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span style="color: #ef4444;">-$</span>
+              <input type="number" id="inputGastosPeaje" value="2.00" step="0.5" style="width: 55px; background: var(--bg-space); border: 1px solid var(--border); border-radius: 6px; color: #ef4444; font-weight: bold; text-align: right; padding: 2px 4px; font-size: 12px;" oninput="recalcularLiquidacion()">
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; margin-top: 6px;">
+            <span style="color: var(--text-muted);">Combustible Tanqueo (Opcional):</span>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span style="color: #ef4444;">-$</span>
+              <input type="number" id="inputGastosGasolina" value="10.00" step="1" style="width: 55px; background: var(--bg-space); border: 1px solid var(--border); border-radius: 6px; color: #ef4444; font-weight: bold; text-align: right; padding: 2px 4px; font-size: 12px;" oninput="recalcularLiquidacion()">
+            </div>
+          </div>
+        </div>
+
+        <div style="background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(22,32,50,0.8)); border: 1.5px solid var(--accent); border-radius: 12px; padding: 14px; margin-top: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 11px; font-weight: bold; color: var(--accent); letter-spacing: 0.8px;">GANANCIA NETA DEL CHOFER</div>
+              <div style="font-size: 10px; color: var(--text-muted);">Dinero en efectivo que se queda en tu bolsillo</div>
+            </div>
+            <div style="font-size: 24px; font-weight: 900; color: var(--accent);" id="liqGananciaNeta">$23.00</div>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 10px; border-top: 1px solid rgba(16,185,129,0.3); padding-top: 8px;">
+            <span style="color: var(--text-muted);">Entregar en ventanilla de Cooperativa:</span>
+            <strong style="color: var(--amber);">$6.00 Efectivo</strong>
+          </div>
+        </div>
+
+        <button class="btn btn-amber" style="margin-top: 16px;" onclick="confirmarLiquidacionFinal()">
+          <span>🔒</span> Liquidar Turno y Generar Comprobante
+        </button>
+      </div>
+
+      <div id="liqComprobanteExito" style="display: none; text-align: center; padding: 10px 0;">
+        <div style="font-size: 40px; margin-bottom: 8px;">🎉</div>
+        <h4 style="color: var(--accent); font-size: 16px; font-weight: bold;">¡Turno Liquidado con Éxito!</h4>
+        <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Comprobante de despacho registrado en la Cooperativa Macondo Express.</p>
+        <div style="background: var(--bg-elevated); border: 1px dashed var(--accent); border-radius: 10px; padding: 12px; margin-top: 14px; text-align: left; font-size: 12px;">
+          <div>Ref: <strong style="color: #fff;">TRN-GYE-MCH-01</strong></div>
+          <div style="margin-top: 4px;">Chofer: <strong id="reciboChofer">Manuel Palacios</strong></div>
+          <div style="margin-top: 4px;">Total Recaudado: <strong style="color: var(--amber);" id="reciboTotal">$41.00</strong></div>
+          <div style="margin-top: 4px;">Cuota Cooperativa: <strong style="color: var(--accent);">$6.00</strong></div>
+          <div style="margin-top: 4px;">Ganancia Líquida Chofer: <strong style="color: var(--accent);" id="reciboNeto">$23.00</strong></div>
+        </div>
+        <button class="btn btn-outline" style="margin-top: 16px; border-color: var(--accent); color: var(--accent);" onclick="cerrarModalLiquidacionChofer()">
+          Volver a la Terminal de Conductor
         </button>
       </div>
     </div>

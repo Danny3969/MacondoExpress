@@ -3,6 +3,7 @@ import 'package:macondo_core/constants/app_colors.dart';
 import 'package:macondo_core/models/turno_viaje.dart';
 import 'package:macondo_core/models/usuario.dart';
 import 'package:macondo_core/services/macondo_supabase_service.dart';
+import 'package:macondo_core/utils/validadores.dart';
 import '../widgets/app_header.dart';
 import '../widgets/seat_counter.dart';
 import '../widgets/location_picker_field.dart';
@@ -139,6 +140,57 @@ class _BookingScreenState extends State<BookingScreen> {
               style: const TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 12),
+            // Boleto con PIN de Abordaje Antifraude (4 dígitos)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceElevated,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.accent, width: 1.5),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.shield_outlined, color: AppColors.accent, size: 16),
+                      SizedBox(width: 6),
+                      Text(
+                        'PIN DE ABORDAJE ANTIFRAUDE',
+                        style: TextStyle(
+                          color: AppColors.accentLight,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.1,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // Dígitos en cajas destacadas
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildPinBox('4'),
+                      const SizedBox(width: 8),
+                      _buildPinBox('8'),
+                      const SizedBox(width: 8),
+                      _buildPinBox('2'),
+                      const SizedBox(width: 8),
+                      _buildPinBox('1'),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Dicta este PIN a tu chofer al subir para validar tu puesto.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: AppColors.textDim, fontSize: 10),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -179,6 +231,28 @@ class _BookingScreenState extends State<BookingScreen> {
             child: const Text('Volver al Inicio', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPinBox(String digit) {
+    return Container(
+      width: 38,
+      height: 46,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.accent, width: 1.5),
+      ),
+      child: Text(
+        digit,
+        style: const TextStyle(
+          color: AppColors.accentLight,
+          fontSize: 22,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0,
+        ),
       ),
     );
   }

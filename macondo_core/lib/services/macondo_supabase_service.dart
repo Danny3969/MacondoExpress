@@ -4,6 +4,8 @@ import '../models/turno_viaje.dart';
 import '../models/reserva_pasajero.dart';
 import '../models/encomienda.dart';
 import '../models/usuario.dart';
+import '../models/liquidacion_turno.dart';
+import '../models/posicion_gps.dart';
 
 class MacondoSupabaseService {
   static final MacondoSupabaseService _instance = MacondoSupabaseService._internal();
@@ -229,4 +231,115 @@ class MacondoSupabaseService {
         .order('created_at', ascending: false);
     return (res as List).map((e) => ReservaPasajero.fromJson(e as Map<String, dynamic>)).toList();
   }
+
+  // ── 8. Validación de PIN de Abordaje (Control Antifraude 4 Dígitos) ──────
+  /// El chofer solicita y valida el PIN de 4 dígitos que el pasajero dicta al subir al vehículo.
+  /// Confirma el abordaje y el cobro en efectivo.
+  Future<Map<String, dynamic>> confirmarAbordajeConPin({
+    required String reservaId,
+    required String pin,
+    required String choferId,
+  }) async {
+    try {
+      final response = await client.rpc('confirmar_abordaje_pasajero', params: {
+        'p_reserva_id': reservaId,
+        'p_pin': pin,
+        'p_chofer_id': choferId,
+      });
+      return Map<String, dynamic>.from(response as Map);
+    } catch (e) {
+      return {
+        'ok': false,
+        'error': 'Error de conexión RPC: $e',
+      };
+    }
+  }
+
+  // ── 9. Telemetría GPS y Tracking de Proximidad ───────────────────────────
+  /// Envía la posición GPS actual del chofer para el tracking puerta a puerta
+  Future<void> actualizarPosicionGps({
+    required String turnoId,
+    required String choferId,
+    required double latitud,
+    required double longitud,
+    double velocidadKmh = 0.0,
+    double rumboGrados = 0.0,
+  }) async {
+    try {
+      await client.from('posiciones_gps_turnos').insert({
+        'turno_id': turnoId,
+        'chofer_id': choferId,
+        'latitud': latitud,
+        'longitud': longitud,
+        'velocidad_kmh': velocidadKmh,
+        'rumbo_grados': rumboGrados,
+      });
+    } catch (e) {
+      print('Aviso envío GPS: $e');
+    }
+  }
+
+  /// Obtiene la última posición GPS registrada de un turno
+  Future<PosicionGps?> obtenerUltimaPosicionGps(String turnoId) async {
+    try {
+      final res = await client
+          .from('posiciones_gps_turnos')
+          .select()
+          .eq('turno_id', turnoId)
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (res == null) return null;
+      return PosicionGps.fromJson(res as Map<String, dynamic>);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // ── 10. Arqueo de Caja y Liquidación con la Cooperativa ──────────────────
+  /// Liquida el turno del chofer, descuenta cuota de cooperativa ($6) y peajes,
+  /// calculando la ganancia neta líquida en mano.
+  Future<Map<String, dynamic>> liquidarTurnoChofer({
+    required String turnoId,
+    required String choferId,
+    double gastosPeaje = 0.00,
+    double gastosCombustible = 0.00,
+    double cuotaCooperativa = 6.00,
+    String observaciones = '',
+  }) async {
+    try {
+      final response = await client.rpc('liquidar_turno_chofer', params: {
+        'p_turno_id': turnoId,
+        'p_chofer_id': choferId,
+        'p_gastos_peaje': gastosPeaje,
+        'p_gastos_combustible': gastosCombustible,
+        'p_cuota_cooperativa': cuotaCooperativa,
+        'p_observaciones': observaciones,
+      });
+      return Map<String, dynamic>.from(response as Map);
+    } catch (e) {
+      return {
+        'ok': false,
+        'error': 'Error al liquidar turno: $e',
+      };
+    }
+  }
+
+  /// Obtiene la liquidación generada de un turno
+  Future<LiquidacionTurno?> obtenerLiquidacionTurno(String turnoId) async {
+    try {
+      final res = await client
+          .from('liquidaciones_turnos')
+          .select()
+          .eq('turno_id', turnoId)
+          .maybeSingle();
+
+      if (res == null) return null;
+      return LiquidacionTurno.fromJson(res as Map<String, dynamic>);
+    } catch (e) {
+      return null;
+    }
+  }
 }
+

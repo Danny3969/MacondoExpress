@@ -12,6 +12,8 @@ class ReservaPasajero {
   final String? referenciaRecogida;
   final String telefonoContacto;
   final double montoTotalEfectivo;
+  final String codigoAbordajePin; // PIN de 4 dígitos
+  final DateTime? horaRecogidaReal;
   final String estado; // 'confirmada', 'chofer_en_camino', 'a_bordo', 'completado', 'cancelado'
   final DateTime createdAt;
 
@@ -29,6 +31,8 @@ class ReservaPasajero {
     this.referenciaRecogida,
     required this.telefonoContacto,
     required this.montoTotalEfectivo,
+    this.codigoAbordajePin = '0000',
+    this.horaRecogidaReal,
     this.estado = 'confirmada',
     required this.createdAt,
     this.turno,
@@ -53,6 +57,10 @@ class ReservaPasajero {
       referenciaRecogida: json['referencia_recogida'] as String?,
       telefonoContacto: json['telefono_contacto'] as String? ?? '',
       montoTotalEfectivo: (json['monto_total_efectivo'] as num?)?.toDouble() ?? 0.0,
+      codigoAbordajePin: json['codigo_abordaje_pin'] as String? ?? '0000',
+      horaRecogidaReal: json['hora_recogida_real'] != null
+          ? DateTime.parse(json['hora_recogida_real'] as String)
+          : null,
       estado: json['estado'] as String? ?? 'confirmada',
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
@@ -78,6 +86,8 @@ class ReservaPasajero {
       'referencia_recogida': referenciaRecogida,
       'telefono_contacto': telefonoContacto,
       'monto_total_efectivo': montoTotalEfectivo,
+      'codigo_abordaje_pin': codigoAbordajePin,
+      'hora_recogida_real': horaRecogidaReal?.toIso8601String(),
       'estado': estado,
       'created_at': createdAt.toIso8601String(),
     };

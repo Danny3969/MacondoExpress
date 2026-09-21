@@ -8,6 +8,7 @@ import '../widgets/conductor_header.dart';
 import 'passenger_manifest_screen.dart';
 import 'parcel_manifest_screen.dart';
 import 'qr_scanner_screen.dart';
+import 'driver_settlement_screen.dart';
 
 class DriverHomeScreen extends StatefulWidget {
   final Usuario choferActual;
@@ -64,6 +65,14 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         _estadoTurno = 'en_camino';
       } else if (_estadoTurno == 'en_camino') {
         _estadoTurno = 'finalizado';
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => DriverSettlementScreen(
+              turno: _turnoActivo,
+              choferActual: widget.choferActual,
+            ),
+          ),
+        );
       }
       _turnoActivo = _turnoActivo.copyWith(estado: _estadoTurno);
     });
@@ -176,9 +185,20 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                         width: double.infinity,
                         height: 46,
                         child: ElevatedButton.icon(
-                          onPressed: _estadoTurno == 'finalizado' ? null : _avanzarEstado,
+                          onPressed: _estadoTurno == 'finalizado'
+                              ? () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => DriverSettlementScreen(
+                                        turno: _turnoActivo,
+                                        choferActual: widget.choferActual,
+                                      ),
+                                    ),
+                                  );
+                                }
+                              : _avanzarEstado,
                           icon: Icon(_getIconForState(_estadoTurno), size: 20),
-                          label: Text(_getButtonTextForState(_estadoTurno)),
+                          label: Text(_estadoTurno == 'finalizado' ? 'Ver Liquidación & Cierre de Caja' : _getButtonTextForState(_estadoTurno)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _getColorForState(_estadoTurno),
                             foregroundColor: AppColors.primary,
@@ -236,6 +256,26 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) => QRScannerScreen(choferActual: widget.choferActual),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 14),
+
+                // 5. Arqueo y Liquidación de Turno (Cierre de Caja)
+                _buildActionCard(
+                  title: 'Arqueo & Cierre de Caja',
+                  subtitle: 'Cuota cooperativa (\$6), peajes y balance neto en mano',
+                  icon: Icons.point_of_sale,
+                  badgeText: 'Liquidación',
+                  badgeColor: AppColors.amber,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => DriverSettlementScreen(
+                          turno: _turnoActivo,
+                          choferActual: widget.choferActual,
+                        ),
                       ),
                     );
                   },

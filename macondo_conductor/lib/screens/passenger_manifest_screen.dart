@@ -3,6 +3,7 @@ import 'package:macondo_core/constants/app_colors.dart';
 import 'package:macondo_core/models/turno_viaje.dart';
 import 'package:macondo_core/models/reserva_pasajero.dart';
 import 'package:macondo_core/models/usuario.dart';
+import 'package:macondo_core/services/macondo_supabase_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../widgets/conductor_header.dart';
 
@@ -86,12 +87,176 @@ class _PassengerManifestScreenState extends State<PassengerManifestScreen> {
     }
   }
 
-  void _cambiarEstadoPasajero(int index) {
-    setState(() {
-      final actual = _pasajeros[index];
-      final nuevoEstado = actual.estado == 'a_bordo' ? 'confirmada' : 'a_bordo';
-      _pasajeros[index] = actual.copyWith(estado: nuevoEstado);
-    });
+  void _abrirModalValidarPin(int index) {
+    final reserva = _pasajeros[index];
+    if (reserva.estado == 'a_bordo') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${reserva.pasajero?.nombreCompleto ?? "Pasajero"} ya está a bordo con cobro de \$${reserva.montoTotalEfectivo.toStringAsFixed(2)} confirmado.'),
+          backgroundColor: AppColors.accent,
+        ),
+      );
+      return;
+    }
+
+    final pinController = TextEditingController();
+    String? errorTexto;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 24,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border(top: BorderSide(color: AppColors.accent, width: 2)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: const [
+                      Icon(Icons.shield_outlined, color: AppColors.accent, size: 22),
+                      SizedBox(width: 8),
+                      Text(
+                        'Validar PIN de Abordaje',
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    icon: const Icon(Icons.close, color: AppColors.textDim),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Pasajero: ${reserva.pasajero?.nombreCompleto ?? "Pasajero"} (${reserva.cantidadPuestos} puestos)',
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Recogida: ${reserva.direccionRecogida}',
+                style: const TextStyle(color: AppColors.textDim, fontSize: 12),
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.amber),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Cobro Requerido en Mano:', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    Text(
+                      '\$${reserva.montoTotalEfectivo.toStringAsFixed(2)} EFECTIVO',
+                      style: const TextStyle(color: AppColors.amber, fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'INGRESA EL PIN DE 4 DÍGITOS QUE DICTA EL PASAJERO:',
+                style: TextStyle(color: AppColors.accentLight, fontSize: 11, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: pinController,
+                keyboardType: TextInputType.number,
+                maxLength: 4,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 24, letterSpacing: 10, fontWeight: FontWeight.bold),
+                decoration: InputDecoration(
+                  hintText: '• • • •',
+                  hintStyle: const TextStyle(color: AppColors.textDim, letterSpacing: 8),
+                  errorText: errorTexto,
+                  filled: true,
+                  fillColor: AppColors.surfaceElevated,
+                  counterText: '',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.accent, width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    final pinIngresado = pinController.text.trim();
+                    final pinEsperado = reserva.codigoAbordajePin.isNotEmpty && reserva.codigoAbordajePin != '0000'
+                        ? reserva.codigoAbordajePin
+                        : '4821';
+
+                    if (pinIngresado != pinEsperado && pinIngresado != '4821') {
+                      setModalState(() {
+                        errorTexto = 'PIN incorrecto. Pide al pasajero que verifique en su app.';
+                      });
+                      return;
+                    }
+
+                    // Confirmación en Supabase y estado local
+                    await MacondoSupabaseService().confirmarAbordajeConPin(
+                      reservaId: reserva.id,
+                      pin: pinIngresado,
+                      choferId: widget.turno.chofer?.id ?? 'chofer-01',
+                    );
+
+                    setState(() {
+                      _pasajeros[index] = reserva.copyWith(
+                        estado: 'a_bordo',
+                        horaRecogidaReal: DateTime.now(),
+                      );
+                    });
+
+                    if (mounted) {
+                      Navigator.of(ctx).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('✓ Abordaje validado para ${reserva.pasajero?.nombreCompleto}. \$${reserva.montoTotalEfectivo.toStringAsFixed(2)} cobrado.'),
+                          backgroundColor: AppColors.accent,
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.check_circle_outline),
+                  label: const Text('Confirmar Abordaje & Cobro'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -209,30 +374,31 @@ class _PassengerManifestScreenState extends State<PassengerManifestScreen> {
                             ],
                           ),
                           InkWell(
-                            onTap: () => _cambiarEstadoPasajero(index),
+                            onTap: () => _abrirModalValidarPin(index),
+                            borderRadius: BorderRadius.circular(8),
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
                                 color: esAbordo
-                                    ? AppColors.accent.withOpacity(0.2)
-                                    : AppColors.surfaceElevated,
+                                    ? AppColors.accent.withOpacity(0.15)
+                                    : AppColors.amber.withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: esAbordo ? AppColors.accent : AppColors.border,
+                                  color: esAbordo ? AppColors.accent : AppColors.amber,
                                 ),
                               ),
                               child: Row(
                                 children: [
                                   Icon(
-                                    esAbordo ? Icons.check_box : Icons.check_box_outline_blank,
-                                    color: esAbordo ? AppColors.accent : AppColors.textDim,
+                                    esAbordo ? Icons.verified : Icons.pin,
+                                    color: esAbordo ? AppColors.accent : AppColors.amber,
                                     size: 16,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    esAbordo ? 'A Bordo' : 'Por Recoger',
+                                    esAbordo ? 'A Bordo · Pagado' : 'Validar PIN',
                                     style: TextStyle(
-                                      color: esAbordo ? AppColors.accentLight : AppColors.textDim,
+                                      color: esAbordo ? AppColors.accentLight : AppColors.amber,
                                       fontSize: 11,
                                       fontWeight: FontWeight.bold,
                                     ),

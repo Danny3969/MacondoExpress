@@ -80,6 +80,10 @@ class _MisViajesScreenState extends State<MisViajesScreen> with SingleTickerProv
           direccionRecogida: 'Cdla. Alborada 8va etapa, Mz 812 v 4',
           referencia: 'Frente al parque',
           estado: 'confirmada',
+          codigoPin: '4821',
+          choferNombre: 'Marco Proaño (Prof. Tipo C)',
+          placaVehiculo: 'GBA-4123',
+          telefonoChofer: '0987654321',
         ),
       ],
     );
@@ -94,13 +98,17 @@ class _MisViajesScreenState extends State<MisViajesScreen> with SingleTickerProv
     required String direccionRecogida,
     required String referencia,
     required String estado,
+    required String codigoPin,
+    required String choferNombre,
+    required String placaVehiculo,
+    required String telefonoChofer,
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
+      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
@@ -113,7 +121,7 @@ class _MisViajesScreenState extends State<MisViajesScreen> with SingleTickerProv
                 '$origen ➔ $destino',
                 style: const TextStyle(
                   color: AppColors.textPrimary,
-                  fontSize: 15,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -136,16 +144,109 @@ class _MisViajesScreenState extends State<MisViajesScreen> with SingleTickerProv
           ),
           const SizedBox(height: 8),
           Text('Salida: $fecha', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-          Text('Puestos reservados: $puestos', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+          Text('Puestos: $puestos cupos en sedán/camioneta', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
           Text('Recogida: $direccionRecogida ($referencia)', style: const TextStyle(color: AppColors.textDim, fontSize: 12)),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
+
+          // ── TARJETA DESTACADA: BOLETO PIN DE ABORDAJE (ANTIFRAUDE) ──
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceElevated,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.accent, width: 1.2),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(Icons.pin, color: AppColors.accentLight, size: 16),
+                        SizedBox(width: 4),
+                        Text(
+                          'PIN DE ABORDAJE:',
+                          style: TextStyle(
+                            color: AppColors.accentLight,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      'DICTA ESTE CÓDIGO AL SUBIR',
+                      style: TextStyle(color: AppColors.textDim, fontSize: 9, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: codigoPin.split('').map((digit) => Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: AppColors.accent),
+                    ),
+                    child: Text(
+                      digit,
+                      style: const TextStyle(
+                        color: AppColors.accentLight,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  )).toList(),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // ── RADAR DE PROXIMIDAD DEL CHOFER ──
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceElevated,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.amber.withOpacity(0.5)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.radar, color: AppColors.amber, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Chofer: $choferNombre (Placa: $placaVehiculo)',
+                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Aproximándose a tu puerta (A ~1.4 km · 4 min)',
+                        style: TextStyle(color: AppColors.amber, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Pago al Chofer:', style: TextStyle(color: AppColors.textDim, fontSize: 12)),
+              const Text('Cobro en Efectivo en Mano:', style: TextStyle(color: AppColors.textDim, fontSize: 12)),
               Text(
                 '\$${montoEfectivo.toStringAsFixed(2)} Efectivo',
-                style: const TextStyle(color: AppColors.amber, fontSize: 13, fontWeight: FontWeight.bold),
+                style: const TextStyle(color: AppColors.amber, fontSize: 14, fontWeight: FontWeight.bold),
               ),
             ],
           ),
