@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.MacondoExpress" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="colorPrimary">#10b981</item>
+        <item name="colorPrimaryDark">#070b14</item>
+        <item name="colorAccent">#10b981</item>
+        <item name="android:windowBackground">#070b14</item>
+        <item name="android:statusBarColor">#070b14</item>
+        <item name="android:navigationBarColor">#070b14</item>
+    </style>
+</resources>

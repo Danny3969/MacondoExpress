@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Macondo Pasajero</title>
+  <script src="qrcode.min.js"></script>
+  <style>
+    :root {
+      --bg-space: #070b14;
+      --bg-card: #0d1527;
+      --bg-elevated: #131f38;
+      --border: #1a273f;
+      --accent: #10b981;
+      --accent-light: #34d399;
+      --accent-glow: rgba(16, 185, 129, 0.25);
+      --amber: #f59e0b;
+      --amber-light: #fbbf24;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+    }
+    body {
+      background-color: var(--bg-space);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    /* Top Bar */
+    .app-header {
+      background: rgba(13, 21, 39, 0.95);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: max(14px, env(safe-area-inset-top));
+    }
+    .app-title-box h3 {
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+    }
+    .app-title-box p {
+      font-size: 11px;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .badge-cash {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid var(--amber);
+      color: var(--amber-light);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    /* Main Content */
+    .app-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding-bottom: 80px;
+    }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .card-title {
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    /* Seats Grid */
+    .seats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 4px 0;
+    }
+    .seat-slot {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 4px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .seat-slot.selected {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--accent);
+      color: var(--accent-light);
+    }
+    .seat-slot.occupied {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.3);
+      color: #ef4444;
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .seat-icon { font-size: 18px; margin-bottom: 2px; }
+    .seat-name { font-size: 11px; font-weight: 700; }
+    /* Form Inputs */
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .field-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .field-input {
+      background: #080d19;
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+      width: 100%;
+    }
+    .field-input:focus {
+      border-color: var(--accent);
+    }
+    /* Buttons */
+    .btn {
+      padding: 11px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.18s;
+      width: 100%;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #041e14;
+    }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-outline {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+    }
+    /* Bottom Navigation */
+    .nav-tabs {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(13, 21, 39, 0.98);
+      border-top: 1px solid var(--border);
+      display: flex;
+      padding-bottom: max(6px, env(safe-area-inset-bottom));
+      z-index: 100;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px 0;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      color: var(--accent);
+    }
+    .tab-icon { font-size: 18px; }
+    /* QR and Pin Cards */
+    .pin-display {
+      background: #080d19;
+      border: 2px dashed var(--accent);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+      margin: 10px 0;
+    }
+    .pin-code {
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: 10px;
+      color: var(--accent);
+      font-family: monospace;
+    }
+    .qr-container {
+      background: #fff;
+      padding: 14px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 10px auto;
+      width: 170px;
+      height: 170px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <div class="app-header">
+    <div class="app-title-box">
+      <h3>Macondo Pasajero</h3>
+      <p id="txtUsuario">Servicio Puerta a Puerta</p>
+    </div>
+    <div style="display: flex; gap: 6px; align-items: center;">
+      <span class="badge-cash">💵 Cobro Cash</span>
+    </div>
+  </div>
+
+  <!-- Tab 1: Reserva de Viajes -->
+  <div class="app-content" id="viewViajes">
+    <div class="card">
+      <div class="card-title"><span>🛣️</span> Ruta Operativa</div>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-size: 16px; font-weight: 800;">Guayaquil</div>
+          <div style="font-size: 11px; color: var(--text-dim);">Recogida a Domicilio</div>
+        </div>
+        <div style="color: var(--accent); font-weight: 900; font-size: 18px;">➔</div>
+        <div>
+          <div style="font-size: 16px; font-weight: 800;">Machala</div>
+          <div style="font-size: 11px; color: var(--text-dim);">Destino Directo</div>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; color: var(--text-muted);">
+        <span>Salida Programada: <strong style="color: #fff;">Inmediata</strong></span>
+        <span>Tarifa: <strong style="color: var(--accent);">$12.00 / puesto</strong></span>
+      </div>
+    </div>
+
+    <!-- Cupos (Máximo 4 pasajeros por auto) -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="card-title"><span>💺</span> Capacidad Unidad (Auto 4 Pax)</div>
+        <span id="labelCupos" style="font-size: 11px; color: var(--accent); font-weight: 700;">Seleccione cupos</span>
+      </div>
+      <div class="seats-grid" id="gridAsientos"></div>
+      <div style="font-size: 11px; color: var(--text-dim);">
+        Seleccione el número de asientos a reservar para este turno.
+      </div>
+    </div>
+
+    <!-- Datos del Pasajero -->
+    <div class="card">
+      <div class="card-title" style="color: var(--amber);"><span>📍</span> Datos y Recogida Puerta a Puerta</div>
+      <div class="field-group">
+        <label class="field-label">Nombres y Apellidos *</label>
+        <input type="text" id="paxNombre" class="field-input" value="">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Teléfono Móvil (WhatsApp) *</label>
+        <input type="tel" id="paxTelefono" class="field-input" value="">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Dirección Exacta de Recogida *</label>
+        <input type="text" id="paxDireccion" class="field-input" value="">
+      </div>
+      <button class="btn btn-outline" style="padding: 8px; font-size: 11px;" onclick="fijarGps()">
+        <span>🛰️</span> Usar Mi Ubicación GPS Actual
+      </button>
+    </div>
+
+    <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+      <span>Monto a pagar en EFECTIVO:</span>
+      <strong style="color: var(--amber); font-size: 17px;" id="lblTotal">$12.00</strong>
+    </div>
+
+    <button class="btn btn-primary" onclick="confirmarReserva()">
+      <span>✅</span> Confirmar Reserva y Obtener PIN
+    </button>
+
+    <!-- Tarjeta PIN generado -->
+    <div class="card" id="cardPinConfirmado" style="display: none; border-color: var(--accent);">
+      <div class="card-title" style="color: var(--accent);"><span>🔑</span> Su PIN Seguro de Abordaje</div>
+      <div style="font-size: 11px; color: var(--text-muted); text-align: center;">
+        Entregue este PIN de 4 dígitos al conductor al momento de subir al automóvil:
+      </div>
+      <div class="pin-display">
+        <div class="pin-code" id="pinDisplay">--</div>
+      </div>
+      <div style="font-size: 11px; color: var(--accent-light); text-align: center;">
+        ✓ Reserva Confirmada en Turno Activo · Unidad en camino
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 2: Encomiendas -->
+  <div class="app-content" id="viewEncomiendas" style="display: none;">
+    <div class="card">
+      <div class="card-title"><span>📦</span> Enviar Encomienda o Valija</div>
+      <div class="field-group">
+        <label class="field-label">Nombre Destinatario *</label>
+        <input type="text" id="encDestNombre" class="field-input" value="">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Teléfono Destinatario *</label>
+        <input type="tel" id="encDestTel" class="field-input" value="">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Dirección de Entrega en Destino *</label>
+        <input type="text" id="encEntrega" class="field-input" value="">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Descripción del Paquete *</label>
+        <input type="text" id="encDesc" class="field-input" value="">
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+        <span style="font-size: 12px; color: var(--text-muted);">Tarifa de Envío:</span>
+        <strong style="color: var(--accent); font-size: 15px;">$5.00 Efectivo</strong>
+      </div>
+      <button class="btn btn-primary" onclick="crearEncomienda()">
+        <span>📲</span> Generar Guía & Código QR de Entrega
+      </button>
+    </div>
+
+    <!-- QR Generado -->
+    <div class="card" id="cardQrGenerado" style="display: none; border-color: var(--accent);">
+      <div class="card-title" style="color: var(--accent);"><span>🔐</span> Código QR de Entrega</div>
+      <div style="font-size: 11px; color: var(--text-muted); text-align: center;">
+        Muestre este código al conductor al recibir su paquete:
+      </div>
+      <div class="qr-container" id="qrTarget"></div>
+      <div style="text-align: center; font-family: monospace; font-size: 13px; font-weight: 800; color: var(--amber);" id="qrTokenLabel">
+        MCND-000
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Tabs -->
+  <div class="nav-tabs">
+    <button class="tab-btn active" id="btnTabViajes" onclick="mostrarTab('viajes')">
+      <span class="tab-icon">💺</span>
+      <span>Viajes</span>
+    </button>
+    <button class="tab-btn" id="btnTabEncomiendas" onclick="mostrarTab('encomiendas')">
+      <span class="tab-icon">📦</span>
+      <span>Encomiendas</span>
+    </button>
+  </div>
+
+  <script>
+    let asientosSeleccionados = 1;
+
+    function renderAsientos() {
+      const grid = document.getElementById('gridAsientos');
+      grid.innerHTML = '';
+      for (let i = 1; i <= 4; i++) {
+        const slot = document.createElement('div');
+        const sel = i <= asientosSeleccionados;
+        slot.className = 'seat-slot ' + (sel ? 'selected' : '');
+        slot.innerHTML = `
+          <div class="seat-icon">${sel ? '👤' : '💺'}</div>
+          <div class="seat-name">Puesto ${i}</div>
+          <div style="font-size: 8px; font-weight: 800; margin-top: 2px;">
+            ${sel ? 'RESERVA' : 'LIBRE'}
+          </div>
+        `;
+        slot.onclick = () => {
+          asientosSeleccionados = i;
+          renderAsientos();
+          document.getElementById('lblTotal').innerText = `$${(asientosSeleccionados * 12).toFixed(2)}`;
+        };
+        grid.appendChild(slot);
+      }
+      document.getElementById('labelCupos').innerText = `${asientosSeleccionados} de 4 puestos`;
+    }
+
+    function fijarGps() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            document.getElementById('paxDireccion').value = `GPS: Lat ${pos.coords.latitude.toFixed(4)}, Lng ${pos.coords.longitude.toFixed(4)}`;
+            alert('✓ Ubicación GPS detectada con éxito.');
+          },
+          err => {
+            document.getElementById('paxDireccion').value = 'Av. 9 de Octubre y Malecón (Guayaquil)';
+            alert('Ubicación predeterminada asignada.');
+          }
+        );
+      } else {
+        document.getElementById('paxDireccion').value = 'Terminal Guayaquil';
+      }
+    }
+
+    function confirmarReserva() {
+      const nom = document.getElementById('paxNombre').value.trim();
+      const tel = document.getElementById('paxTelefono').value.trim();
+      const dir = document.getElementById('paxDireccion').value.trim();
+
+      if (!nom || !tel || !dir) {
+        alert('Por favor complete todos los datos de contacto y recogida.');
+        return;
+      }
+
+      const pin = Math.floor(1000 + Math.random() * 9000);
+      document.getElementById('pinDisplay').innerText = pin;
+      document.getElementById('cardPinConfirmado').style.display = 'flex';
+      document.getElementById('cardPinConfirmado').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function crearEncomienda() {
+      const dest = document.getElementById('encDestNombre').value.trim();
+      const tel = document.getElementById('encDestTel').value.trim();
+      const dir = document.getElementById('encEntrega').value.trim();
+      const desc = document.getElementById('encDesc').value.trim();
+
+      if (!dest || !tel || !dir || !desc) {
+        alert('Por favor complete los datos de la encomienda.');
+        return;
+      }
+
+      const token = 'ENC-' + Math.floor(100000 + Math.random() * 900000);
+      const target = document.getElementById('qrTarget');
+      target.innerHTML = '';
+      new QRCode(target, {
+        text: `MACONDO|${token}|${dest}|${tel}|MACHALA|5.00`,
+        width: 140,
+        height: 140,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      document.getElementById('qrTokenLabel').innerText = `Guía: ${token}`;
+      document.getElementById('cardQrGenerado').style.display = 'flex';
+      document.getElementById('cardQrGenerado').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function mostrarTab(tab) {
+      document.getElementById('viewViajes').style.display = (tab === 'viajes') ? 'flex' : 'none';
+      document.getElementById('viewEncomiendas').style.display = (tab === 'encomiendas') ? 'flex' : 'none';
+      document.getElementById('btnTabViajes').className = 'tab-btn ' + (tab === 'viajes' ? 'active' : '');
+      document.getElementById('btnTabEncomiendas').className = 'tab-btn ' + (tab === 'encomiendas' ? 'active' : '');
+    }
+
+    renderAsientos();
+  </script>
+</body>
+</html>

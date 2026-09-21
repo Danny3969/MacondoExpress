@@ -241,12 +241,41 @@ try {
   console.log(`ℹ️ Flutter CLI no disponible en el PATH del sistema. Se empaquetaron los paquetes completos con fuentes Dart validados y lanzadores standalone.`);
 }
 
-// ── 5. GENERAR MANIFIESTO DE LA COMPILACIÓN ─────────────────────────────────
+// ── 5. EMPAQUETAR APKs NATIVAS DE ANDROID ──────────────────────────────────
+console.log(`[5/5] 🤖 Empaquetando APKs Nativas de Android...`);
+const apkTargetDir = path.join(targetDir, 'APKs');
+if (!fs.existsSync(apkTargetDir)) fs.mkdirSync(apkTargetDir, { recursive: true });
+
+const apkBuildOutputs = path.join(ROOT_DIR, 'android_app', 'app', 'build', 'outputs', 'apk');
+const apkSources = [
+  { flavor: 'pasajero', filename: `MacondoPasajero_${versionName}.apk`, targetFolder: pasajeroDir },
+  { flavor: 'conductor', filename: `MacondoConductor_${versionName}.apk`, targetFolder: conductorDir },
+  { flavor: 'suite', filename: `MacondoExpress_Suite_${versionName}.apk`, targetFolder: suiteDir }
+];
+
+let apksGeneradas = [];
+apkSources.forEach(item => {
+  const srcApk = path.join(apkBuildOutputs, item.flavor, 'release', `app-${item.flavor}-release.apk`);
+  if (fs.existsSync(srcApk)) {
+    const destInApks = path.join(apkTargetDir, item.filename);
+    const destInApp = path.join(item.targetFolder, item.filename);
+    fs.copyFileSync(srcApk, destInApks);
+    fs.copyFileSync(srcApk, destInApp);
+    apksGeneradas.push({
+      nombre: item.filename,
+      tamanoMB: (fs.statSync(destInApks).size / (1024 * 1024)).toFixed(2) + ' MB',
+      sha256: getFileHash(destInApks)
+    });
+  }
+});
+
+// ── 6. GENERAR MANIFIESTO DE LA COMPILACIÓN ─────────────────────────────────
 const manifestData = {
   version: versionName,
   fechaCompilacion: now.toISOString(),
   gitCommit: gitCommit,
   flutterStatus: flutterStatus,
+  apksAndroid: apksGeneradas,
   artefactos: {
     pasajero: {
       carpeta: `MacondoPasajero_${versionName}`,
@@ -273,6 +302,9 @@ const manifestData = {
     limiteCapacidad: "4 Pasajeros Estricto por Auto",
     seguridad: "PIN 4 dígitos + Validación Cédula M10",
     liquidacion: "$6.00 cuota cooperativa por turno finalizado",
+    transitoANT: "Resolución N° 0482-2025"
+  }
+};
     transitoANT: "Resolución N° 0482-2025"
   }
 };
