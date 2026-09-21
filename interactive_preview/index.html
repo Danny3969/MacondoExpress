@@ -502,6 +502,57 @@
         width: 100%;
       }
     }
+
+    /* Modal System */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(4, 7, 14, 0.88);
+      backdrop-filter: blur(10px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    .modal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      width: 100%;
+      max-width: 420px;
+      padding: 24px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 30px rgba(16, 185, 129, 0.2);
+      animation: fadeIn 0.25s ease;
+      position: relative;
+    }
+    .modal-close {
+      position: absolute;
+      top: 16px; right: 18px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .step-pill-indicator {
+      display: flex;
+      gap: 6px;
+      margin: 14px 0 18px;
+    }
+    .step-dot {
+      flex: 1;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      transition: all 0.3s ease;
+    }
+    .step-dot.active {
+      background: var(--accent);
+    }
+    .step-dot.active-amber {
+      background: var(--amber);
+    }
   </style>
 </head>
 <body>
@@ -516,9 +567,10 @@
       </div>
     </div>
     <div class="studio-pills">
-      <div class="pill active"><span>●</span> Supabase Reactive Sync Activo</div>
+      <div class="pill active"><span>●</span> Supabase Sync</div>
+      <div class="pill active" style="border-color: #38bdf8; color: #38bdf8; background: rgba(56, 189, 248, 0.1);">📱 Registro Telefónico + OTP</div>
       <div class="pill">💵 100% Efectivo</div>
-      <div class="pill">🗺️ GPS Waze / Google Maps</div>
+      <div class="pill">🗺️ GPS Waze / Maps</div>
     </div>
   </header>
 
@@ -541,7 +593,10 @@
               <h3>Macondo Pasajero</h3>
               <p id="pasajeroNombreHeader">Carlos Mendoza (0987654321)</p>
             </div>
-            <span class="badge-cash">💵 Efectivo</span>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <button class="btn btn-outline" style="padding: 4px 8px; font-size: 10px; border-color: var(--accent); color: var(--accent);" onclick="abrirModalAuthPasajero()">📱 Mi Celular</button>
+              <span class="badge-cash">💵 Efectivo</span>
+            </div>
           </div>
 
           <!-- Content: Tab 1 (Viajes) -->
@@ -684,9 +739,12 @@
           <div class="app-header">
             <div class="app-title-box">
               <h3 style="color: var(--amber);">Macondo Conductor</h3>
-              <p>Manuel Palacios · Unidad: GBA-4123 (Auto)</p>
+              <p id="conductorNombreHeader">Manuel Palacios · GBA-4123 (Auto 4p)</p>
             </div>
-            <span class="badge-cash" style="background: rgba(16,185,129,0.15); border-color: var(--accent); color: var(--accent);">Turno Activo</span>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <button class="btn btn-outline" style="padding: 4px 8px; font-size: 10px; border-color: var(--amber); color: var(--amber);" onclick="abrirModalAuthChofer()">🚕 Chofer / OTP</button>
+              <span class="badge-cash" style="background: rgba(16,185,129,0.15); border-color: var(--accent); color: var(--accent);">Turno</span>
+            </div>
           </div>
 
           <!-- Conductor Content -->
@@ -1018,10 +1076,279 @@
       alert('Módulo de Despacho Macondo Express:\n- Crear Rutas y Salidas\n- Asignar Choferes y Autos/Camionetas de 4 puestos\n- Monitorear Recaudación de Efectivo');
     }
 
+    // ── GESTIÓN DE AUTENTICACIÓN TELEFÓNICA INTERACTIVA ──────────────────────
+    let authStepPasajero = 1;
+    let authStepChofer = 1;
+
+    // Pasajero Modal Handlers
+    function abrirModalAuthPasajero() {
+      authStepPasajero = 1;
+      document.getElementById('pStep1').style.display = 'block';
+      document.getElementById('pStep2').style.display = 'none';
+      document.getElementById('pStep3').style.display = 'none';
+      actualizarDotsPasajero(1);
+      document.getElementById('modalAuthPasajero').style.display = 'flex';
+    }
+
+    function cerrarModalAuthPasajero() {
+      document.getElementById('modalAuthPasajero').style.display = 'none';
+    }
+
+    function actualizarDotsPasajero(step) {
+      document.getElementById('pDot1').className = 'step-dot' + (step >= 1 ? ' active' : '');
+      document.getElementById('pDot2').className = 'step-dot' + (step >= 2 ? ' active' : '');
+      document.getElementById('pDot3').className = 'step-dot' + (step >= 3 ? ' active' : '');
+    }
+
+    function solicitarOtpPasajeroDemo() {
+      const tel = document.getElementById('authPasajeroTel').value.trim();
+      if (tel.length < 9) {
+        alert('Por favor ingrese un número celular válido.');
+        return;
+      }
+      authStepPasajero = 2;
+      document.getElementById('pStep1').style.display = 'none';
+      document.getElementById('pStep2').style.display = 'block';
+      document.getElementById('pStep3').style.display = 'none';
+      document.getElementById('lblTelEnviadoPasajero').innerText = '+593 ' + tel;
+      document.getElementById('authPasajeroOtp').value = '123456';
+      actualizarDotsPasajero(2);
+    }
+
+    function verificarOtpPasajeroDemo() {
+      const otp = document.getElementById('authPasajeroOtp').value.trim();
+      if (otp.length !== 6) {
+        alert('Ingrese el código de 6 dígitos.');
+        return;
+      }
+      authStepPasajero = 3;
+      document.getElementById('pStep1').style.display = 'none';
+      document.getElementById('pStep2').style.display = 'none';
+      document.getElementById('pStep3').style.display = 'block';
+      actualizarDotsPasajero(3);
+    }
+
+    function guardarPerfilPasajeroDemo() {
+      const nombre = document.getElementById('authPasajeroNombre').value.trim();
+      const cedula = document.getElementById('authPasajeroCedula').value.trim();
+      const tel = document.getElementById('authPasajeroTel').value.trim();
+
+      if (!nombre || cedula.length < 10) {
+        alert('Nombre y Cédula oficial (10 dígitos) son obligatorios para el seguro de transporte.');
+        return;
+      }
+
+      state.pasajeroActual = {
+        nombre: nombre,
+        telefono: tel,
+        cedula: cedula
+      };
+
+      document.getElementById('pasajeroNombreHeader').innerText = `${nombre} (${tel})`;
+      cerrarModalAuthPasajero();
+      alert(`✅ ¡Bienvenido a Macondo Express!\nPasajero registrado: ${nombre}\nCelular: +593 ${tel} (Verificado)\nCédula: ${cedula}`);
+    }
+
+    // Chofer Modal Handlers
+    function abrirModalAuthChofer() {
+      authStepChofer = 1;
+      document.getElementById('cStep1').style.display = 'block';
+      document.getElementById('cStep2').style.display = 'none';
+      document.getElementById('cStep3').style.display = 'none';
+      actualizarDotsChofer(1);
+      document.getElementById('modalAuthChofer').style.display = 'flex';
+    }
+
+    function cerrarModalAuthChofer() {
+      document.getElementById('modalAuthChofer').style.display = 'none';
+    }
+
+    function actualizarDotsChofer(step) {
+      document.getElementById('cDot1').className = 'step-dot' + (step >= 1 ? ' active-amber' : '');
+      document.getElementById('cDot2').className = 'step-dot' + (step >= 2 ? ' active-amber' : '');
+      document.getElementById('cDot3').className = 'step-dot' + (step >= 3 ? ' active-amber' : '');
+    }
+
+    function solicitarOtpChoferDemo() {
+      const tel = document.getElementById('authChoferTel').value.trim();
+      if (tel.length < 9) {
+        alert('Ingrese un número de celular de chofer válido.');
+        return;
+      }
+      authStepChofer = 2;
+      document.getElementById('cStep1').style.display = 'none';
+      document.getElementById('cStep2').style.display = 'block';
+      document.getElementById('cStep3').style.display = 'none';
+      document.getElementById('lblTelEnviadoChofer').innerText = '+593 ' + tel;
+      document.getElementById('authChoferOtp').value = '654321';
+      actualizarDotsChofer(2);
+    }
+
+    function verificarOtpChoferDemo() {
+      const otp = document.getElementById('authChoferOtp').value.trim();
+      if (otp.length !== 6) {
+        alert('Ingrese el código de 6 dígitos.');
+        return;
+      }
+      authStepChofer = 3;
+      document.getElementById('cStep1').style.display = 'none';
+      document.getElementById('cStep2').style.display = 'none';
+      document.getElementById('cStep3').style.display = 'block';
+      actualizarDotsChofer(3);
+    }
+
+    function guardarPerfilChoferDemo() {
+      const nombre = document.getElementById('authChoferNombre').value.trim();
+      const cedula = document.getElementById('authChoferCedula').value.trim();
+      const licencia = document.getElementById('authChoferLicencia').value;
+      const placa = document.getElementById('authChoferPlaca').value.trim();
+      const tel = document.getElementById('authChoferTel').value.trim();
+
+      if (!nombre || !cedula || !placa) {
+        alert('Por favor complete todos los datos del conductor y vehículo.');
+        return;
+      }
+
+      document.getElementById('conductorNombreHeader').innerText = `${nombre} · ${placa} (4p)`;
+      cerrarModalAuthChofer();
+      alert(`✅ Conductor Verificado:\n${nombre} (${licencia})\nCelular: +593 ${tel}\nUnidad: ${placa} (Auto/Camioneta 4 cupos)`);
+    }
+
     // Inicialización
     renderSeats();
     renderConductorManifest();
     generarQRCode(state.encomienda.tokenQR);
   </script>
+
+  <!-- MODAL: REGISTRO Y LOGIN TELEFÓNICO DE PASAJERO -->
+  <div id="modalAuthPasajero" class="modal-overlay">
+    <div class="modal-card">
+      <button class="modal-close" onclick="cerrarModalAuthPasajero()">✕</button>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(16,185,129,0.15); display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 18px;">📱</div>
+        <div>
+          <h3 style="font-size: 15px; font-weight: 800; color: #fff;">Registro Telefónico · Pasajero</h3>
+          <p style="font-size: 11px; color: var(--accent);">Acceso seguro con código SMS / WhatsApp</p>
+        </div>
+      </div>
+
+      <div class="step-pill-indicator">
+        <div class="step-dot active" id="pDot1"></div>
+        <div class="step-dot" id="pDot2"></div>
+        <div class="step-dot" id="pDot3"></div>
+      </div>
+
+      <!-- Paso 1: Ingreso de Teléfono -->
+      <div id="pStep1">
+        <label class="field-label" style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px; display: block;">Número de Celular *</label>
+        <div style="display: flex; gap: 8px;">
+          <div style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: 13px; font-weight: bold; color: #fff;">🇪🇨 +593</div>
+          <input type="tel" id="authPasajeroTel" class="field-input" value="0987654321" placeholder="0987654321" style="flex: 1;">
+        </div>
+        <p style="font-size: 11px; color: var(--text-dim); margin-top: 8px;">Le enviaremos un código de seguridad para verificar su cuenta de pasajero.</p>
+        <button class="btn btn-primary" style="margin-top: 18px;" onclick="solicitarOtpPasajeroDemo()">
+          <span>💬</span> Enviar Código por SMS / WhatsApp
+        </button>
+      </div>
+
+      <!-- Paso 2: Código OTP -->
+      <div id="pStep2" style="display: none;">
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+          Código enviado a: <strong id="lblTelEnviadoPasajero" style="color: var(--accent);">+593 0987654321</strong>
+        </p>
+        <label class="field-label" style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px; display: block;">Código de Seguridad (6 dígitos)</label>
+        <input type="text" id="authPasajeroOtp" class="field-input" maxlength="6" value="123456" style="text-align: center; font-size: 22px; letter-spacing: 6px; font-weight: bold;">
+        <p style="font-size: 11px; color: var(--text-dim); margin-top: 8px; text-align: center;">⚡ Demo: Código automático pre-cargado (123456)</p>
+        <button class="btn btn-primary" style="margin-top: 18px;" onclick="verificarOtpPasajeroDemo()">
+          <span>✅</span> Verificar Código y Continuar
+        </button>
+      </div>
+
+      <!-- Paso 3: Completar Perfil -->
+      <div id="pStep3" style="display: none;">
+        <label class="field-label" style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px; display: block;">Nombres y Apellidos Completos *</label>
+        <input type="text" id="authPasajeroNombre" class="field-input" value="Carlos Mendoza" style="margin-bottom: 10px;">
+
+        <label class="field-label" style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px; display: block;">Cédula de Identidad / DNI (10 dígitos) *</label>
+        <input type="text" id="authPasajeroCedula" class="field-input" value="0928374651" maxlength="10" placeholder="0928374651" style="margin-bottom: 10px;">
+
+        <div style="background: rgba(16,185,129,0.08); border: 1px solid var(--accent); border-radius: 10px; padding: 10px; font-size: 11px; color: var(--text-muted);">
+          ⚖️ Obligatorio por Ley de Transporte y Póliza de Seguro de Viaje Interurbano.
+        </div>
+
+        <button class="btn btn-primary" style="margin-top: 18px;" onclick="guardarPerfilPasajeroDemo()">
+          <span>🎉</span> Completar Registro e Ingresar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRO Y LOGIN TELEFÓNICO DE CHOFER -->
+  <div id="modalAuthChofer" class="modal-overlay">
+    <div class="modal-card" style="border-color: rgba(245, 158, 11, 0.4); box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 30px rgba(245, 158, 11, 0.2);">
+      <button class="modal-close" onclick="cerrarModalAuthChofer()">✕</button>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(245,158,11,0.15); display: flex; align-items: center; justify-content: center; color: var(--amber); font-size: 18px;">🚕</div>
+        <div>
+          <h3 style="font-size: 15px; font-weight: 800; color: #fff;">Terminal de Chofer · Registro</h3>
+          <p style="font-size: 11px; color: var(--amber);">Validación de Conductor y Vehículo (4 cupos)</p>
+        </div>
+      </div>
+
+      <div class="step-pill-indicator">
+        <div class="step-dot active-amber" id="cDot1"></div>
+        <div class="step-dot" id="cDot2"></div>
+        <div class="step-dot" id="cDot3"></div>
+      </div>
+
+      <!-- Paso 1: Ingreso de Celular Chofer -->
+      <div id="cStep1">
+        <label class="field-label" style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px; display: block;">Número Telefónico Chofer *</label>
+        <div style="display: flex; gap: 8px;">
+          <div style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: 13px; font-weight: bold; color: #fff;">🇪🇨 +593</div>
+          <input type="tel" id="authChoferTel" class="field-input" value="0991234567" placeholder="0991234567" style="flex: 1;">
+        </div>
+        <p style="font-size: 11px; color: var(--text-dim); margin-top: 8px;">Validación mediante código seguro de operador cooperativo.</p>
+        <button class="btn btn-secondary" style="margin-top: 18px;" onclick="solicitarOtpChoferDemo()">
+          <span>🔒</span> Solicitar Clave OTP Chofer
+        </button>
+      </div>
+
+      <!-- Paso 2: OTP Chofer -->
+      <div id="cStep2" style="display: none;">
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+          Código enviado a: <strong id="lblTelEnviadoChofer" style="color: var(--amber);">+593 0991234567</strong>
+        </p>
+        <label class="field-label" style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px; display: block;">Código de Acceso Chofer (6 dígitos)</label>
+        <input type="text" id="authChoferOtp" class="field-input" maxlength="6" value="654321" style="text-align: center; font-size: 22px; letter-spacing: 6px; font-weight: bold;">
+        <button class="btn btn-secondary" style="margin-top: 18px;" onclick="verificarOtpChoferDemo()">
+          <span>🔑</span> Validar Clave Chofer
+        </button>
+      </div>
+
+      <!-- Paso 3: Ficha Conductor y Auto -->
+      <div id="cStep3" style="display: none;">
+        <label class="field-label" style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px; display: block;">Nombres del Chofer *</label>
+        <input type="text" id="authChoferNombre" class="field-input" value="Manuel Palacios" style="margin-bottom: 10px;">
+
+        <label class="field-label" style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px; display: block;">Cédula de Identidad *</label>
+        <input type="text" id="authChoferCedula" class="field-input" value="0703849201" maxlength="10" style="margin-bottom: 10px;">
+
+        <label class="field-label" style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px; display: block;">Tipo de Licencia *</label>
+        <select id="authChoferLicencia" class="field-input" style="margin-bottom: 10px;">
+          <option value="Licencia Tipo C (Profesional)">Licencia Tipo C (Profesional)</option>
+          <option value="Licencia Tipo D (Pasajeros)">Licencia Tipo D (Pasajeros)</option>
+          <option value="Licencia Tipo E (Pesado)">Licencia Tipo E (Pesado)</option>
+        </select>
+
+        <label class="field-label" style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px; display: block;">Placa del Vehículo Asignado (4 Cupos) *</label>
+        <input type="text" id="authChoferPlaca" class="field-input" value="GBA-4123" style="margin-bottom: 10px;">
+
+        <button class="btn btn-secondary" style="margin-top: 18px;" onclick="guardarPerfilChoferDemo()">
+          <span>🚕</span> Confirmar Chofer y Abrir Turno
+        </button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

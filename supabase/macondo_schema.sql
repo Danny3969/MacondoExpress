@@ -11,14 +11,20 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 -- Perfiles de Pasajeros, Choferes y Administradores de la Cooperativa
 CREATE TABLE IF NOT EXISTS public.usuarios (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    auth_user_id UUID UNIQUE, -- Enlace con Supabase Auth si aplica
-    email TEXT UNIQUE,
-    nombre_completo TEXT NOT NULL,
+    auth_user_id UUID UNIQUE, -- Enlace con Supabase Auth (UID de phone auth)
+    email TEXT,
+    codigo_pais TEXT NOT NULL DEFAULT '+593',
     telefono TEXT NOT NULL,
+    telefono_verificado BOOLEAN DEFAULT true,
+    nombre_completo TEXT NOT NULL,
+    cedula TEXT, -- Cédula / DNI para manifiestos de tránsito y seguros
     rol TEXT NOT NULL CHECK (rol IN ('pasajero', 'chofer', 'admin')) DEFAULT 'pasajero',
+    licencia_conducir TEXT, -- Exclusivo para choferes (Tipo Sport / Profesional)
+    estado_chofer TEXT CHECK (estado_chofer IN ('pendiente_aprobacion', 'activo', 'suspendido')) DEFAULT 'activo',
     foto_url TEXT,
     activo BOOLEAN DEFAULT true,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT uq_usuario_pais_telefono UNIQUE (codigo_pais, telefono)
 );
 
 -- ── 2. TABLA: vehiculos ───────────────────────────────────────────────────────

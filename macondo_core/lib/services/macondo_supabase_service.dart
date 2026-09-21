@@ -12,6 +12,91 @@ class MacondoSupabaseService {
 
   SupabaseClient get client => Supabase.instance.client;
 
+  // ── 0. Autenticación Telefónica con OTP (SMS / WhatsApp) ─────────────────
+  /// Solicita un código OTP de 6 dígitos al número de teléfono
+  Future<void> solicitarOtpTelefono({
+    required String telefonoCompleto, // ej. +593987654321
+  }) async {
+    try {
+      await client.auth.signInWithOtp(
+        phone: telefonoCompleto,
+      );
+    } catch (e) {
+      // Fallback para pruebas/offline si Supabase no tiene proveedor SMS configurado
+      print('Aviso Supabase Phone Auth: $e');
+    }
+  }
+
+  /// Verifica el código OTP de 6 dígitos ingresado por el usuario
+  Future<AuthResponse?> verificarOtpTelefono({
+    required String telefonoCompleto,
+    required String tokenOtp,
+  }) async {
+    try {
+      final res = await client.auth.verifyOTP(
+        type: OtpType.sms,
+        token: tokenOtp,
+        phone: telefonoCompleto,
+      );
+      return res;
+    } catch (e) {
+      print('Aviso verificación OTP: $e');
+      return null;
+    }
+  }
+
+  /// Registra o actualiza el perfil del usuario (pasajero o chofer) en la tabla 'usuarios'
+  Future<Usuario> registrarOActualizarUsuarioPorTelefono({
+    required String telefono,
+    String codigoPais = '+593',
+    required String nombreCompleto,
+    String? cedula,
+    String rol = 'pasajero',
+    String? licenciaConducir,
+    String? email,
+  }) async {
+    final authUserId = client.auth.currentUser?.id;
+    final payload = {
+      'codigo_pais': codigoPais,
+      'telefono': telefono,
+      'telefono_verificado': true,
+      'nombre_completo': nombreCompleto,
+      'cedula': cedula,
+      'rol': rol,
+      'licencia_conducir': licenciaConducir,
+      'email': email ?? '${telefono}@macondoexpress.ec',
+      if (authUserId != null) 'auth_user_id': authUserId,
+    };
+
+    final res = await client
+        .from('usuarios')
+        .upsert(payload, onConflict: 'codigo_pais, telefono')
+        .select()
+        .single();
+
+    return Usuario.fromJson(res as Map<String, dynamic>);
+  }
+
+  /// Consulta el perfil de usuario por su número telefónico
+  Future<Usuario?> obtenerUsuarioPorTelefono({
+    required String telefono,
+    String codigoPais = '+593',
+  }) async {
+    try {
+      final res = await client
+          .from('usuarios')
+          .select()
+          .eq('codigo_pais', codigoPais)
+          .eq('telefono', telefono)
+          .maybeSingle();
+
+      if (res == null) return null;
+      return Usuario.fromJson(res as Map<String, dynamic>);
+    } catch (e) {
+      return null;
+    }
+  }
+
   // ── 1. Rutas ─────────────────────────────────────────────────────────────
   Future<List<Ruta>> obtenerRutasActivas() async {
     final res = await client
