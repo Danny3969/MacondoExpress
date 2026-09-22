@@ -244,13 +244,27 @@ try {
 // ── 5. EMPAQUETAR APKs NATIVAS DE ANDROID ──────────────────────────────────
 console.log(`[5/5] 🤖 Empaquetando APKs Nativas de Android...`);
 const apkTargetDir = path.join(targetDir, 'APKs');
+const apkOficialesDir = path.join(APPS_DIR, 'APKs_Oficiales');
 if (!fs.existsSync(apkTargetDir)) fs.mkdirSync(apkTargetDir, { recursive: true });
+if (!fs.existsSync(apkOficialesDir)) fs.mkdirSync(apkOficialesDir, { recursive: true });
+
+// Compilar con Gradle si se solicita o si no existen
+const androidAppDir = path.join(ROOT_DIR, 'android_app');
+if (process.env.BUILD_GRADLE === 'true' && fs.existsSync(path.join(androidAppDir, 'gradlew'))) {
+  console.log(`🔨 Ejecutando compilación nativa Gradle assembleRelease...`);
+  try {
+    execSync('./gradlew assembleRelease', { cwd: androidAppDir, stdio: 'inherit' });
+    console.log(`✓ Compilación Gradle completada con éxito.`);
+  } catch (err) {
+    console.error(`⚠️ Error al compilar con Gradle:`, err.message);
+  }
+}
 
 const apkBuildOutputs = path.join(ROOT_DIR, 'android_app', 'app', 'build', 'outputs', 'apk');
 const apkSources = [
-  { flavor: 'pasajero', filename: `MacondoPasajero_${versionName}.apk`, targetFolder: pasajeroDir },
-  { flavor: 'conductor', filename: `MacondoConductor_${versionName}.apk`, targetFolder: conductorDir },
-  { flavor: 'suite', filename: `MacondoExpress_Suite_${versionName}.apk`, targetFolder: suiteDir }
+  { flavor: 'pasajero', filename: `MacondoPasajero_${versionName}.apk`, oficialName: 'MacondoPasajero.apk', targetFolder: pasajeroDir },
+  { flavor: 'conductor', filename: `MacondoConductor_${versionName}.apk`, oficialName: 'MacondoConductor.apk', targetFolder: conductorDir },
+  { flavor: 'suite', filename: `MacondoExpress_Suite_${versionName}.apk`, oficialName: 'MacondoExpress_Suite.apk', targetFolder: suiteDir }
 ];
 
 let apksGeneradas = [];
@@ -259,8 +273,12 @@ apkSources.forEach(item => {
   if (fs.existsSync(srcApk)) {
     const destInApks = path.join(apkTargetDir, item.filename);
     const destInApp = path.join(item.targetFolder, item.filename);
+    const destOficial = path.join(apkOficialesDir, item.filename);
+    
     fs.copyFileSync(srcApk, destInApks);
     fs.copyFileSync(srcApk, destInApp);
+    fs.copyFileSync(srcApk, destOficial);
+
     apksGeneradas.push({
       nombre: item.filename,
       tamanoMB: (fs.statSync(destInApks).size / (1024 * 1024)).toFixed(2) + ' MB',
@@ -302,9 +320,6 @@ const manifestData = {
     limiteCapacidad: "4 Pasajeros Estricto por Auto",
     seguridad: "PIN 4 dígitos + Validación Cédula M10",
     liquidacion: "$6.00 cuota cooperativa por turno finalizado",
-    transitoANT: "Resolución N° 0482-2025"
-  }
-};
     transitoANT: "Resolución N° 0482-2025"
   }
 };

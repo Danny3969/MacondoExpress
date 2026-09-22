@@ -1,0 +1,9 @@
+{
+  "name": "Macondo Express Pasajero v1.6.0_Autenticacion_y_Registro_Completo",
+  "short_name": "MacondoPasajero",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#06090e",
+  "theme_color": "#10b981",
+  "orientation": "portrait"
+}

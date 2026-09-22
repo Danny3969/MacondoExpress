@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Macondo Express · Consola Central de Administración y Despacho</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css">
+  <!-- QRCode.js para generación de códigos QR de Encomiendas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+  <!-- ======================================================== -->
+  <!-- MODAL DE ONBOARDING: REGISTRO DE SUPERUSUARIO (1RA VEZ) -->
+  <!-- ======================================================== -->
+  <div id="modalSuperUserSetup" class="onboarding-overlay" style="display: none;">
+    <div class="onboarding-card">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <span class="onboarding-badge">🛡️ CONFIGURACIÓN INICIAL DEL SISTEMA</span>
+          <h2 style="color: #fff; font-size: 20px; font-weight: 900; margin-top: 8px;">
+            Registro Único del Superusuario
+          </h2>
+          <p style="color: var(--text-dim); font-size: 12px; margin-top: 4px; line-height: 1.5;">
+            Por disposición de seguridad institucional, la primera vez que se ingresa a la Consola de Administración es mandatorio registrar las credenciales del <strong>Superusuario / Administrador General</strong> de la Cooperativa Macondo Express.<br>
+            <span style="color: var(--accent);">De aquí en adelante, la consola iniciará directamente con la sesión operativa activa.</span>
+          </p>
+        </div>
+        <div style="font-size: 32px;">👑</div>
+      </div>
+
+      <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 12px; font-size: 11px; color: var(--accent-light);">
+        🔒 <strong>Privilegios Maestros:</strong> Control total de despacho de turnos, ciudades de cobertura, manifiestos oficiales ANT, liquidaciones ($6/turno), flota y asignación de roles.
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Nombres y Apellidos Completos *</label>
+            <input type="text" id="suNombre" class="admin-input" value="">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cédula de Identidad Ecuatoriana (Módulo 10) *</label>
+            <input type="text" id="suCedula" class="admin-input" maxlength="10" value="">
+          </div>
+        </div>
+
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label class="form-label">Correo Institucional *</label>
+            <input type="email" id="suCorreo" class="admin-input" value="">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Teléfono Móvil *</label>
+            <input type="tel" id="suTelefono" class="admin-input" value="">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cargo Institucional *</label>
+            <select id="suCargo" class="admin-select">
+              <option value="Gerente General" selected>Gerente General</option>
+              <option value="Presidente del Directorio">Presidente del Directorio</option>
+              <option value="Director de Operaciones">Director de Operaciones</option>
+              <option value="Jefe de Despacho Central">Jefe de Despacho Central</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">Contraseña Maestra de Acceso *</label>
+            <input type="password" id="suPassword" class="admin-input" value="">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirmar Contraseña Maestra *</label>
+            <input type="password" id="suPasswordConfirm" class="admin-input" value="">
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px; border-top: 1px solid var(--border); padding-top: 16px;">
+        <button class="btn btn-primary" style="padding: 12px 24px; font-size: 14px;" onclick="registrarSuperUsuario()">
+          ✓ Registrar Superusuario y Habilitar Consola
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- SIDEBAR DE NAVEGACIÓN                                    -->
+  <!-- ======================================================== -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo-icon">🚐</div>
+      <div class="sidebar-brand">
+        <h2>MACONDO EXPRESS</h2>
+        <p>CONSOLA DE CONTROL</p>
+      </div>
+    </div>
+
+    <div class="sidebar-nav">
+      <div class="nav-section-title">OPERACIONES & DESPACHO</div>
+      <a class="nav-item active" id="nav-despacho" onclick="switchAdminTab('despacho')">
+        <span class="icon">📋</span>
+        <span>Despacho de Turnos</span>
+      </a>
+      <a class="nav-item" id="nav-encomiendas" onclick="switchAdminTab('encomiendas')">
+        <span class="icon">📦</span>
+        <span>Encomiendas & Carga</span>
+        <span class="badge badge-amber" id="badgeNavEncomiendas" style="margin-left: auto; font-size: 10px; padding: 1px 6px;">0</span>
+      </a>
+      <a class="nav-item" id="nav-ciudades" onclick="switchAdminTab('ciudades')">
+        <span class="icon">📍</span>
+        <span>Ciudades & Destinos</span>
+      </a>
+      <a class="nav-item" id="nav-manifiesto" onclick="switchAdminTab('manifiesto')">
+        <span class="icon">📜</span>
+        <span>Manifiesto Oficial ANT</span>
+      </a>
+      <a class="nav-item" id="nav-radar" onclick="switchAdminTab('radar')">
+        <span class="icon">🛰️</span>
+        <span>Radar GPS & Telemetría</span>
+      </a>
+
+      <div class="nav-section-title" style="margin-top: 14px;">FINANZAS & ARQUEOS</div>
+      <a class="nav-item" id="nav-liquidaciones" onclick="switchAdminTab('liquidaciones')">
+        <span class="icon">💵</span>
+        <span>Liquidaciones ($6/Turno)</span>
+      </a>
+
+      <div class="nav-section-title" style="margin-top: 14px;">RECURSOS & FLOTA</div>
+      <a class="nav-item" id="nav-flota" onclick="switchAdminTab('flota')">
+        <span class="icon">🚘</span>
+        <span>Flota & Choferes</span>
+      </a>
+      <a class="nav-item" id="nav-usuarios" onclick="switchAdminTab('usuarios')">
+        <span class="icon">👥</span>
+        <span>Usuarios & Roles</span>
+      </a>
+
+      <div class="nav-section-title" style="margin-top: 14px;">ENLACES RÁPIDOS</div>
+      <a class="nav-item" href="http://localhost:8092" target="_blank" style="color: var(--amber);">
+        <span class="icon">📱</span>
+        <span>Simulador Móvil Dual ↗</span>
+      </a>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="system-status-indicator">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; box-shadow: 0 0 8px var(--accent);"></span>
+        <span>Servidor Activo · En Línea</span>
+      </div>
+      <div>Reg. ANT N° 0482-2025</div>
+      <div style="font-family: monospace; font-size: 10px;">Macondo Express v1.1.0</div>
+    </div>
+  </aside>
+
+  <!-- ======================================================== -->
+  <!-- CONTENIDO PRINCIPAL                                      -->
+  <!-- ======================================================== -->
+  <main class="admin-main">
+
+    <!-- TOPBAR -->
+    <header class="admin-topbar">
+      <div class="topbar-title-group">
+        <div style="font-size: 11px; color: var(--amber); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+          COOPERATIVA DE TRANSPORTE MACONDO EXPRESS
+        </div>
+        <h1 style="font-size: 20px; font-weight: 800; color: #fff; margin-top: 2px;">
+          Panel Central de Despacho, Tránsito y Auditoría
+        </h1>
+      </div>
+
+      <div class="topbar-actions">
+        <div id="userProfileArea"></div>
+
+        <div class="kpi-pill">
+          <span style="color: var(--text-dim);">Red Vial:</span>
+          <strong style="color: var(--accent);">Guayas ⇄ El Oro</strong>
+        </div>
+        <button class="btn btn-primary" onclick="irAPagina('crear-turno', 'despacho')">
+          <span>+</span> Crear & Despachar Turno
+        </button>
+      </div>
+    </header>
+
+    <div class="admin-content-area">
+
+      <!-- ======================================================== -->
+      <!-- PESTAÑA 1: DESPACHO DE TURNOS (LISTA PRINCIPAL)         -->
+      <!-- ======================================================== -->
+      <section id="section-despacho" class="admin-section" style="display: flex; flex-direction: column; gap: 20px;">
+        
+        <!-- KPI METRICS GRID -->
+        <div class="kpis-grid">
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">Pasajeros Trasladados Hoy</span>
+              <span class="kpi-icon">👥</span>
+            </div>
+            <div class="kpi-value" id="kpiPasajeros">0</div>
+            <div class="kpi-subtext" style="color: var(--accent-light);">Puerta a Puerta</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">Unidades en Ruta Activas</span>
+              <span class="kpi-icon">🚗</span>
+            </div>
+            <div class="kpi-value" id="kpiUnidades" style="color: var(--blue);">0</div>
+            <div class="kpi-subtext">Capacidad 4 pax máx / auto</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">Efectivo Recaudado (Total)</span>
+              <span class="kpi-icon">💵</span>
+            </div>
+            <div class="kpi-value" id="kpiRecaudacion" style="color: var(--amber);">$0.00</div>
+            <div class="kpi-subtext">Cobro 100% Cash al abordaje</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">Fondo Cooperativa ($6/Turno)</span>
+              <span class="kpi-icon">🏛️</span>
+            </div>
+            <div class="kpi-value" id="kpiCooperativa" style="color: var(--accent);">$0.00</div>
+            <div class="kpi-subtext">Cuota por turno despachado</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">Promedio Ocupación</span>
+              <span class="kpi-icon">📊</span>
+            </div>
+            <div class="kpi-value" id="kpiOcupacion">0.0 / 4</div>
+            <div class="kpi-subtext" style="color: var(--accent-light);">Factor de carga real</div>
+          </div>
+        </div>
+
+        <!-- TABLA DE TURNOS -->
+        <div class="panel-card">
+          <div class="panel-header">
+            <div>
+              <h2 style="font-size: 16px; font-weight: 800; color: #fff;">Turnos Operativos Programados y en Ruta</h2>
+              <p style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">
+                Despacho en tiempo real, asignación de chofer y control estricto de 4 pasajeros por automóvil.
+              </p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-outline" onclick="renderDespachoTable()">
+                🔄 Actualizar
+              </button>
+              <button class="btn btn-primary" onclick="irAPagina('crear-turno', 'despacho')">
+                + Nuevo Turno
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Código Turno</th>
+                  <th>Ruta & Horario</th>
+                  <th>Chofer Asignado</th>
+                  <th>Vehículo (Placa)</th>
+                  <th>Ocupación (Máx 4)</th>
+                  <th>Total Efectivo</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyDespacho">
+                <!-- Inyectado dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- PESTAÑA: ENCOMIENDAS & PAQUETERÍA PUERTA A PUERTA        -->
+      <!-- ======================================================== -->
+      <section id="section-encomiendas" class="admin-section" style="display: none; flex-direction: column; gap: 20px;">
+        
+        <!-- KPI METRICS GRID ENCOMIENDAS -->
+        <div class="kpis-grid">
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">Total Encomiendas</span>
+              <span class="kpi-icon">📦</span>
+            </div>
+            <div class="kpi-value" id="kpiEncTotal">0</div>
+            <div class="kpi-subtext" style="color: var(--accent-light);">Registradas en sistema</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">En Bodega / Por Despachar</span>
+              <span class="kpi-icon">🏢</span>
+            </div>
+            <div class="kpi-value" id="kpiEncBodega" style="color: var(--amber);">0</div>
+            <div class="kpi-subtext">Listas para asignar a unidad</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">En Tránsito (Carretera)</span>
+              <span class="kpi-icon">🚗</span>
+            </div>
+            <div class="kpi-value" id="kpiEncTransito" style="color: var(--blue);">0</div>
+            <div class="kpi-subtext">A bordo de unidades en ruta</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">Entregadas con Éxito</span>
+              <span class="kpi-icon">✅</span>
+            </div>
+            <div class="kpi-value" id="kpiEncEntregadas" style="color: var(--accent);">0</div>
+            <div class="kpi-subtext">Confirmadas con QR / Firma</div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-label">Recaudación Encomiendas</span>
+              <span class="kpi-icon">💵</span>
+            </div>
+            <div class="kpi-value" id="kpiEncRecaudacion" style="color: var(--amber);">$0.00</div>
+            <div class="kpi-subtext">100% Efectivo en ventanilla</div>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-header" style="flex-wrap: wrap; gap: 14px;">
+            <div>
+              <span class="badge badge-amber" style="margin-bottom: 6px;">LOGÍSTICA & VALIJA PUERTA A PUERTA</span>
+              <h2 style="font-size: 18px; font-weight: 800; color: #fff;">Control de Encomiendas, Sobres y Paquetes</h2>
+              <p style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">
+                Recepción en agencia, emisión de guía con código QR antifraude, asignación a unidades vehiculares y verificación de entrega.
+              </p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <button class="btn btn-primary" onclick="irAPagina('crear-encomienda', 'encomiendas')">
+                <span>+</span> Registrar Nueva Encomienda
+              </button>
+            </div>
+          </div>
+
+          <!-- Filtros y búsqueda en vivo -->
+          <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;">
+            <input type="text" id="filtroEncBusqueda" class="admin-input" placeholder="🔍 Buscar por N° Guía, Remitente, Destinatario o Celular..." style="flex: 2; min-width: 260px;" oninput="filtrarEncomiendas()">
+            <select id="filtroEncEstado" class="admin-input" style="flex: 1; min-width: 170px;" onchange="filtrarEncomiendas()">
+              <option value="TODOS">Todos los Estados</option>
+              <option value="En Bodega">En Bodega</option>
+              <option value="Asignada a Unidad">Asignada a Unidad</option>
+              <option value="En Tránsito">En Tránsito</option>
+              <option value="Entregada">Entregadas</option>
+            </select>
+            <select id="filtroEncDestino" class="admin-input" style="flex: 1; min-width: 170px;" onchange="filtrarEncomiendas()">
+              <option value="TODOS">Todos los Destinos</option>
+            </select>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>N° Guía / QR</th>
+                  <th>Fecha / Registro</th>
+                  <th>Remitente (Origen)</th>
+                  <th>Destinatario & Entrega</th>
+                  <th>Tipo / Contenido</th>
+                  <th>Unidad / Chofer</th>
+                  <th>Monto ($)</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyEncomiendas">
+                <!-- Inyectado dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- PESTAÑA 2: CIUDADES & DESTINOS DE RUTA (NUEVO MÓDULO)    -->
+      <!-- ======================================================== -->
+      <section id="section-ciudades" class="admin-section" style="display: none; flex-direction: column; gap: 20px;">
+        
+        <div class="panel-card">
+          <div class="panel-header">
+            <div>
+              <span class="badge badge-purple" style="margin-bottom: 6px;">COBERTURA Y RED DE RUTAS</span>
+              <h2 style="font-size: 18px; font-weight: 800; color: #fff;">Catálogo de Ciudades de Salida y Llegada</h2>
+              <p style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">
+                Administración de orígenes y destinos autorizados. Todas las ciudades activas se listan automáticamente al momento de crear y despachar turnos.
+              </p>
+            </div>
+            <button class="btn btn-primary" onclick="irAPagina('crear-ciudad', 'ciudades')">
+              + Registrar Nueva Ciudad
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>N°</th>
+                  <th>Ciudad / Destino</th>
+                  <th>Terminal / Punto de Encuentro</th>
+                  <th>Distancia & Tiempo Promedio</th>
+                  <th>Estado Operativo</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyCiudades">
+                <!-- Inyectado dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- PESTAÑA 3: MANIFIESTO OFICIAL DE TRÁNSITO ANT            -->
+      <!-- ======================================================== -->
+      <section id="section-manifiesto" class="admin-section" style="display: none; flex-direction: column; gap: 20px;">
+        
+        <div class="panel-card">
+          <div class="panel-header" style="flex-wrap: wrap; gap: 14px;">
+            <div>
+              <span class="badge badge-blue" style="margin-bottom: 6px;">CUMPLIMIENTO LEGAL ANT</span>
+              <h2 style="font-size: 18px; font-weight: 800; color: #fff;">Manifiesto de Pasajeros & Hoja de Ruta Oficial</h2>
+              <p style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">
+                Documento legal con Cédulas verificadas (Módulo 10), teléfonos, direcciones puerta a puerta y PINs de seguridad para controles de la CTE / ANT.
+              </p>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="display: flex; flex-direction: column;">
+                <label style="font-size: 11px; color: var(--text-dim); margin-bottom: 4px;">Seleccionar Turno:</label>
+                <select id="selectTurnoManifiesto" class="admin-select" onchange="cambiarTurnoManifiesto(this.value)">
+                  <!-- Inyectado dinámicamente -->
+                </select>
+              </div>
+
+              <button class="btn btn-primary" style="margin-top: 18px;" onclick="imprimirManifiestoANT()">
+                🖨️ Imprimir Manifiesto ANT
+              </button>
+            </div>
+          </div>
+
+          <div class="manifest-meta-box" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; background: var(--bg-elevated); padding: 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px;">
+            <div>
+              <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Ruta Homologada:</span>
+              <div id="mftRuta" style="font-size: 15px; font-weight: 800; color: var(--accent);">--</div>
+            </div>
+            <div>
+              <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Fecha y Hora:</span>
+              <div id="mftFechaHora" style="font-size: 14px; font-weight: 700; color: #fff;">--</div>
+            </div>
+            <div>
+              <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Conductor Profesional:</span>
+              <div id="mftChofer" style="font-size: 13px; font-weight: 600; color: var(--amber);">--</div>
+            </div>
+            <div>
+              <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Vehículo Homologado:</span>
+              <div id="mftVehiculo" style="font-size: 13px; font-weight: 600; color: #fff;">--</div>
+            </div>
+            <div>
+              <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Ocupación Real:</span>
+              <div id="mftOcupacion" style="font-size: 14px; font-weight: 800; color: var(--accent-light);">--</div>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>N°</th>
+                  <th>Pasajero (Cédula)</th>
+                  <th>Teléfono</th>
+                  <th>Dirección Puerta a Puerta</th>
+                  <th>Puestos</th>
+                  <th>PIN Seguridad</th>
+                  <th>Tarifa Efectivo</th>
+                  <th>Estado Abordaje</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyManifiestoPasajeros">
+                <!-- Inyectado dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- PESTAÑA 4: RADAR GPS & TELEMETRÍA                        -->
+      <!-- ======================================================== -->
+      <section id="section-radar" class="admin-section" style="display: none; flex-direction: column; gap: 20px;">
+        
+        <div class="panel-card">
+          <div class="panel-header">
+            <div>
+              <span class="badge badge-green" style="margin-bottom: 6px;">SEGUIMIENTO SATELITAL EN VIVO</span>
+              <h2 style="font-size: 18px; font-weight: 800; color: #fff;">Radar de Posicionamiento Satelital en Carretera</h2>
+              <p style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">
+                Monitoreo en tiempo real de velocidad y ubicación sobre el corredor Guayas - El Oro (Troncal E25).
+              </p>
+            </div>
+            <button class="btn btn-outline" onclick="renderRadarTelemetria()">
+              📡 Sincronizar GPS
+            </button>
+          </div>
+
+          <div style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+              <div>
+                <strong style="color: #fff; font-size: 14px;">Corredor Vial E25: Guayaquil ➔ Naranjal ➔ Ponce Enríquez ➔ Machala</strong>
+                <div style="font-size: 11px; color: var(--text-muted);">Distancia total: 184 Km · Tiempo promedio de viaje: 3h 15m</div>
+              </div>
+              <span class="badge badge-green">3 Satélites Enlazados</span>
+            </div>
+
+            <div id="telemetriaFeed" style="display: flex; flex-direction: column; gap: 12px;">
+              <!-- Inyectado dinámicamente -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- PESTAÑA 5: AUDITORÍA DE LIQUIDACIONES                    -->
+      <!-- ======================================================== -->
+      <section id="section-liquidaciones" class="admin-section" style="display: none; flex-direction: column; gap: 20px;">
+        
+        <div class="panel-card">
+          <div class="panel-header">
+            <div>
+              <span class="badge badge-green" style="margin-bottom: 6px;">MODELO ECONÓMICO COOPERATIVO</span>
+              <h2 style="font-size: 18px; font-weight: 800; color: #fff;">Auditoría de Liquidaciones y Caja de Turnos</h2>
+              <p style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">
+                Cierre de caja por turno finalizado. Cada conductor retiene el efectivo de pasajes y cancela $6.00 fijos de cuota de administración cooperativa.
+              </p>
+            </div>
+            <button class="btn btn-outline" onclick="renderLiquidacionesTable()">
+              🔄 Actualizar Arqueos
+            </button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 20px;">
+            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid var(--accent); border-radius: 10px; padding: 14px;">
+              <div style="font-size: 11px; color: var(--accent-light); font-weight: 700;">CUOTA FIJA COOPERATIVA</div>
+              <div style="font-size: 24px; font-weight: 900; color: #fff; margin-top: 4px;">$6.00 <span style="font-size: 13px; color: var(--text-muted);">/ turno</span></div>
+              <div style="font-size: 11px; color: var(--text-dim); margin-top: 2px;">Aporte de sostenimiento gremial</div>
+            </div>
+
+            <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid var(--amber); border-radius: 10px; padding: 14px;">
+              <div style="font-size: 11px; color: var(--amber-light); font-weight: 700;">FONDO COOPERATIVA ACUMULADO</div>
+              <div style="font-size: 24px; font-weight: 900; color: var(--amber); margin-top: 4px;">$36.00</div>
+              <div style="font-size: 11px; color: var(--text-dim); margin-top: 2px;">Recaudado en ventanilla hoy</div>
+            </div>
+
+            <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid var(--blue); border-radius: 10px; padding: 14px;">
+              <div style="font-size: 11px; color: #60a5fa; font-weight: 700;">PAGO CONDUCTORES</div>
+              <div style="font-size: 24px; font-weight: 900; color: #fff; margin-top: 4px;">Inmediato</div>
+              <div style="font-size: 11px; color: var(--text-dim); margin-top: 2px;">100% Cash en mano del chofer</div>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Código Turno</th>
+                  <th>Fecha & Hora Cierre</th>
+                  <th>Conductor & Unidad</th>
+                  <th>Total Recaudado</th>
+                  <th>Cuota Coop.</th>
+                  <th>Peajes</th>
+                  <th>Combustible</th>
+                  <th>Neto Conductor</th>
+                  <th>Estado Auditoría</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyLiquidaciones">
+                <!-- Inyectado dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- PESTAÑA 6: FLOTA & CHOFERES                              -->
+      <!-- ======================================================== -->
+      <section id="section-flota" class="admin-section" style="display: none; flex-direction: column; gap: 20px;">
+        
+        <!-- PANEL CONDUCTORES -->
+        <div class="panel-card">
+          <div class="panel-header">
+            <div>
+              <span class="badge badge-blue" style="margin-bottom: 6px;">TALENTO HUMANO REGISTRADO</span>
+              <h2 style="font-size: 18px; font-weight: 800; color: #fff;">Conductores Profesionales Afiliados</h2>
+              <p style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">
+                Choferes con licencia Tipo C / D habilitados por la Agencia Nacional de Tránsito.
+              </p>
+            </div>
+            <button class="btn btn-primary" onclick="irAPagina('crear-chofer', 'flota')">
+              + Registrar Chofer
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>N°</th>
+                  <th>Nombre Completo</th>
+                  <th>Cédula Identidad</th>
+                  <th>Licencia de Conducir</th>
+                  <th>Teléfono Móvil</th>
+                  <th>Unidad Asignada</th>
+                  <th>Estado Actual</th>
+                  <th>Viajes Hoy</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyChoferes">
+                <!-- Inyectado dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- PANEL VEHÍCULOS -->
+        <div class="panel-card">
+          <div class="panel-header">
+            <div>
+              <span class="badge badge-green" style="margin-bottom: 6px;">PARQUE AUTOMOTOR HOMOLOGADO</span>
+              <h2 style="font-size: 18px; font-weight: 800; color: #fff;">Vehículos Homologados (Sedanes y Camionetas Doble Cabina)</h2>
+              <p style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">
+                Unidades limitadas estrictamente a 4 pasajeros por regulación ANT para servicio interprovincial ejecutivo.
+              </p>
+            </div>
+            <button class="btn btn-primary" onclick="irAPagina('crear-unidad', 'flota')">
+              + Registrar Unidad
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Placa Oficial</th>
+                  <th>Marca & Modelo</th>
+                  <th>Límite Normativo</th>
+                  <th>Chofer Asignado</th>
+                  <th>Seguro Obligatorio</th>
+                  <th>Estado Operativo</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyVehiculos">
+                <!-- Inyectado dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- PESTAÑA 7: USUARIOS DEL SISTEMA & ROLES DE INGRESO       -->
+      <!-- ======================================================== -->
+      <section id="section-usuarios" class="admin-section" style="display: none; flex-direction: column; gap: 20px;">
+        
+        <div class="panel-card">
+          <div class="panel-header">
+            <div>
+              <span class="badge badge-purple" style="margin-bottom: 6px;">CONTROL DE ACCESOS Y PERMISOS</span>
+              <h2 style="font-size: 18px; font-weight: 800; color: #fff;">Usuarios del Sistema & Roles Operativos</h2>
+              <p style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">
+                Administración de cuentas con permisos segmentados para Despacho, Auditoría de Caja, Telemetría GPS y Superusuario.
+              </p>
+            </div>
+            <button class="btn btn-primary" onclick="irAPagina('crear-usuario', 'usuarios')">
+              + Registrar Nuevo Usuario
+            </button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 16px;">
+            <div style="background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 10px; padding: 12px;">
+              <span class="badge badge-purple">👑 Superusuario</span>
+              <div style="font-size: 11px; color: var(--text-dim); margin-top: 6px;">
+                Acceso total irrestricto: Despacho, Ciudades, Manifiestos ANT, Liquidaciones, Flota y Usuarios.
+              </div>
+            </div>
+
+            <div style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 10px; padding: 12px;">
+              <span class="badge badge-blue">📋 Despachador</span>
+              <div style="font-size: 11px; color: var(--text-dim); margin-top: 6px;">
+                Creación y programación de turnos, venta de pasajes y emisión de Manifiestos ANT.
+              </div>
+            </div>
+
+            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 12px;">
+              <span class="badge badge-green">💵 Auditor Caja</span>
+              <div style="font-size: 11px; color: var(--text-dim); margin-top: 6px;">
+                Cierres y arqueos de turno, cobro de cuota cooperativa ($6/turno) y reportes de recaudación.
+              </div>
+            </div>
+
+            <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 10px; padding: 12px;">
+              <span class="badge badge-amber">🛰️ Operador GPS</span>
+              <div style="font-size: 11px; color: var(--text-dim); margin-top: 6px;">
+                Visualización satelital en vivo, telemetría y monitoreo de velocidad en Troncal E25.
+              </div>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>N°</th>
+                  <th>Usuario (Cédula)</th>
+                  <th>Rol de Ingreso</th>
+                  <th>Contacto</th>
+                  <th>Sede / Terminal</th>
+                  <th>Estado</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyUsuarios">
+                <!-- Inyectado dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- PÁGINA COMPLETA 1: CREAR & DESPACHAR TURNO              -->
+      <!-- ======================================================== -->
+      <section id="section-crear-turno" class="admin-section full-page-view" style="display: none;">
+        <div class="page-header-nav">
+          <button class="btn-back" onclick="navegarAtras()">
+            <span class="back-arrow">←</span> Volver al Despacho de Turnos
+          </button>
+          <div style="text-align: right;">
+            <span class="badge badge-blue">RESOLUCIÓN ANT N° 0482-2025</span>
+            <h2 style="color: #fff; font-size: 16px; font-weight: 800; margin-top: 2px;">
+              Programar y Despachar Nuevo Turno
+            </h2>
+          </div>
+        </div>
+
+        <div class="page-form-container">
+          <div class="form-sheet-card">
+            <div>
+              <div class="form-section-title">
+                <span>📍</span> 1. Ruta y Ciudades de Conexión (Origen & Destino)
+              </div>
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label">Ciudad de Origen (Salida) *</label>
+                  <select id="pageTurnoOrigen" class="admin-select">
+                    <!-- Alimentado dinámicamente desde el catálogo de ciudades -->
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Ciudad de Destino (Llegada) *</label>
+                  <select id="pageTurnoDestino" class="admin-select">
+                    <!-- Alimentado dinámicamente desde el catálogo de ciudades -->
+                  </select>
+                </div>
+              </div>
+
+              <div style="margin-top: 14px;">
+                <label class="form-label">Paradas Intermedias Homologadas en Carretera E25:</label>
+                <div id="contenedorParadasIntermedias" style="display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap;">
+                  <!-- Inyectado dinámicamente según ciudades -->
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section-divider">
+              <div class="form-section-title">
+                <span>⏱️</span> 2. Horario Programado de Salida
+              </div>
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label">Fecha de Salida *</label>
+                  <input type="date" id="pageTurnoFecha" class="admin-input" value="">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Hora Programada *</label>
+                  <input type="time" id="pageTurnoHora" class="admin-input" value="">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section-divider">
+              <div class="form-section-title">
+                <span>🚘</span> 3. Asignación de Conductor y Vehículo Homologado
+              </div>
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label">Conductor Profesional Titular *</label>
+                  <select id="pageTurnoChofer" class="admin-select">
+                    <!-- Inyectado dinámicamente -->
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Unidad Homologada (Máximo 4 Pasajeros) *</label>
+                  <select id="pageTurnoPlaca" class="admin-select">
+                    <!-- Inyectado dinámicamente -->
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section-divider">
+              <div class="form-section-title">
+                <span>💵</span> 4. Parámetros Económicos y Cuota Cooperativa
+              </div>
+              <div class="form-grid-3">
+                <div class="form-group">
+                  <label class="form-label">Capacidad Máxima Normativa</label>
+                  <input type="text" class="admin-input" value="4 Pasajeros (Estricto ANT)" disabled style="background: var(--bg-space); color: var(--accent); font-weight: 800;">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Tarifa Base por Pasajero ($)</label>
+                  <input type="number" id="pageTurnoTarifa" class="admin-input" value="" step="0.50">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Cuota Fija Cooperativa</label>
+                  <input type="text" class="admin-input" value="$6.00 / turno" disabled style="background: var(--bg-space); color: var(--amber); font-weight: 800;">
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-top: 14px;">
+                <label class="form-label">Observaciones de la Ruta / Instrucciones Puerta a Puerta:</label>
+                <input type="text" id="pageTurnoObservaciones" class="admin-input" value="">
+              </div>
+            </div>
+
+            <div class="form-actions-bar">
+              <button class="btn btn-outline" onclick="navegarAtras()">Cancelar y Volver</button>
+              <button class="btn btn-primary" onclick="guardarNuevoTurnoPagina()">✓ Despachar y Publicar Turno Ahora</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- PÁGINA COMPLETA 2: CREAR NUEVA CIUDAD                   -->
+      <!-- ======================================================== -->
+      <section id="section-crear-ciudad" class="admin-section full-page-view" style="display: none;">
+        <div class="page-header-nav">
+          <button class="btn-back" onclick="navegarAtras()">
+            <span class="back-arrow">←</span> Volver a Ciudades & Destinos
+          </button>
+          <div style="text-align: right;">
+            <span class="badge badge-purple">RED INTERPROVINCIAL</span>
+            <h2 style="color: #fff; font-size: 16px; font-weight: 800; margin-top: 2px;">
+              Registrar Nueva Ciudad de Salida / Llegada
+            </h2>
+          </div>
+        </div>
+
+        <div class="page-form-container">
+          <div class="form-sheet-card">
+            <div class="form-section-title">
+              <span>📍</span> Datos Geográficos de la Ciudad
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Nombre de la Ciudad *</label>
+                <input type="text" id="ciudadNombre" class="admin-input" value="">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Provincia del Ecuador *</label>
+                <select id="ciudadProvincia" class="admin-select">
+                  <option value="El Oro" selected>El Oro</option>
+                  <option value="Guayas">Guayas</option>
+                  <option value="Azuay">Azuay</option>
+                  <option value="Los Ríos">Los Ríos</option>
+                  <option value="Manabí">Manabí</option>
+                  <option value="Pichincha">Pichincha</option>
+                  <option value="Loja">Loja</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Terminal Terrestre o Punto de Encuentro Referencial *</label>
+              <input type="text" id="ciudadTerminal" class="admin-input" value="">
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Distancia Referencial (Km desde Guayaquil)</label>
+                <input type="number" id="ciudadDistancia" class="admin-input" value="">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Tiempo Promedio Estimado de Viaje</label>
+                <input type="text" id="ciudadTiempo" class="admin-input" value="">
+              </div>
+            </div>
+
+            <div style="background: var(--bg-elevated); padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border);">
+              <label style="font-size: 13px; color: #fff; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                <input type="checkbox" id="ciudadEsHub">
+                <strong>Marcar como Hub o Cabecera Principal de Ruta</strong> (aparecerá destacada en los selectores)
+              </label>
+            </div>
+
+            <div class="form-actions-bar">
+              <button class="btn btn-outline" onclick="navegarAtras()">Cancelar y Volver</button>
+              <button class="btn btn-primary" onclick="guardarNuevaCiudad()">✓ Guardar Ciudad y Habilitar en Turnos</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- PÁGINA COMPLETA 3: REGISTRAR CONDUCTOR                   -->
+      <!-- ======================================================== -->
+      <section id="section-crear-chofer" class="admin-section full-page-view" style="display: none;">
+        <div class="page-header-nav">
+          <button class="btn-back" onclick="navegarAtras()">
+            <span class="back-arrow">←</span> Volver a Flota y Choferes
+          </button>
+          <div style="text-align: right;">
+            <span class="badge badge-blue">TALENTO HUMANO PROFESIONAL</span>
+            <h2 style="color: #fff; font-size: 16px; font-weight: 800; margin-top: 2px;">
+              Registrar Conductor Profesional
+            </h2>
+          </div>
+        </div>
+
+        <div class="page-form-container">
+          <div class="form-sheet-card">
+            <div class="form-section-title">
+              <span>👤</span> Datos Personales y Documentación Oficial
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Nombres y Apellidos Completos *</label>
+                <input type="text" id="pageChoferNombre" class="admin-input" value="">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Cédula de Identidad Ecuatoriana (M10) *</label>
+                <input type="text" id="pageChoferCedula" class="admin-input" maxlength="10" value="">
+              </div>
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Tipo de Licencia de Conducir *</label>
+                <select id="pageChoferLicencia" class="admin-select">
+                  <option value="Tipo C (Profesional)" selected>Tipo C (Profesional Automóvil)</option>
+                  <option value="Tipo D (Pasajeros)">Tipo D (Transporte de Pasajeros)</option>
+                  <option value="Tipo E (Pesado)">Tipo E (Pesado / Interprovincial)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Fecha de Vigencia de Licencia *</label>
+                <input type="date" id="pageChoferVigencia" class="admin-input" value="">
+              </div>
+            </div>
+
+            <div class="form-section-divider">
+              <div class="form-section-title">
+                <span>📞</span> Canales de Contacto y Operación
+              </div>
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label">Teléfono Móvil (WhatsApp Activo) *</label>
+                  <input type="tel" id="pageChoferTelefono" class="admin-input" value="">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Correo Electrónico</label>
+                  <input type="email" id="pageChoferCorreo" class="admin-input" value="">
+                </div>
+              </div>
+
+              <div class="form-grid-2" style="margin-top: 14px;">
+                <div class="form-group">
+                  <label class="form-label">Unidad de Transporte Asignada</label>
+                  <select id="pageChoferUnidadPlaca" class="admin-select">
+                    <!-- Inyectado dinámicamente -->
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Estado Inicial</label>
+                  <select id="pageChoferEstado" class="admin-select">
+                    <option value="Disponible" selected>Disponible</option>
+                    <option value="Descanso">Descanso</option>
+                    <option value="Inactivo">Inactivo</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions-bar">
+              <button class="btn btn-outline" onclick="navegarAtras()">Cancelar y Volver</button>
+              <button class="btn btn-primary" onclick="guardarNuevoChoferPagina()">✓ Guardar Conductor Profesional</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- PÁGINA COMPLETA 4: REGISTRAR UNIDAD DE TRANSPORTE        -->
+      <!-- ======================================================== -->
+      <section id="section-crear-unidad" class="admin-section full-page-view" style="display: none;">
+        <div class="page-header-nav">
+          <button class="btn-back" onclick="navegarAtras()">
+            <span class="back-arrow">←</span> Volver al Parque Automotor
+          </button>
+          <div style="text-align: right;">
+            <span class="badge badge-green">PARQUE AUTOMOTOR HOMOLOGADO</span>
+            <h2 style="color: #fff; font-size: 16px; font-weight: 800; margin-top: 2px;">
+              Registrar Unidad de Transporte (Máx 4 Asientos)
+            </h2>
+          </div>
+        </div>
+
+        <div class="page-form-container">
+          <div class="form-sheet-card">
+            <div class="form-section-title">
+              <span>🚘</span> Identificación y Características del Vehículo
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Placa Oficial ANT (Formato: GBA-4123) *</label>
+                <input type="text" id="pageUnidadPlaca" class="admin-input" value="" style="font-family: monospace; text-transform: uppercase;">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Tipo de Carrocería Homologada *</label>
+                <select id="pageUnidadTipo" class="admin-select">
+                  <option value="Sedán" selected>Sedán Homologado (4 Puertas)</option>
+                  <option value="Camioneta Doble Cabina">Camioneta Doble Cabina (Pickup)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label class="form-label">Marca y Modelo *</label>
+                <input type="text" id="pageUnidadModelo" class="admin-input" value="">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Año de Fabricación *</label>
+                <input type="number" id="pageUnidadAnio" class="admin-input" value="" min="2018" max="2027">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Disco Cooperativo</label>
+                <input type="text" id="pageUnidadDisco" class="admin-input" value="">
+              </div>
+            </div>
+
+            <div class="form-section-divider">
+              <div class="form-section-title">
+                <span>🛡️</span> Límite Normativo ANT y Seguros
+              </div>
+
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label">Capacidad de Pasajeros</label>
+                  <input type="text" class="admin-input" value="4 Asientos (Fijo por Resolución ANT)" disabled style="background: var(--bg-space); color: var(--accent); font-weight: 800;">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Vencimiento del SOAT *</label>
+                  <input type="date" id="pageUnidadSoatVence" class="admin-input" value="">
+                </div>
+              </div>
+
+              <div class="form-grid-2" style="margin-top: 14px;">
+                <div class="form-group">
+                  <label class="form-label">Conductor Asignado</label>
+                  <select id="pageUnidadChoferAsignado" class="admin-select">
+                    <!-- Inyectado dinámicamente -->
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Estado Operativo</label>
+                  <select id="pageUnidadEstado" class="admin-select">
+                    <option value="En Espera" selected>En Espera</option>
+                    <option value="En Terminal">En Terminal</option>
+                    <option value="Mantenimiento">Mantenimiento</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions-bar">
+              <button class="btn btn-outline" onclick="navegarAtras()">Cancelar y Volver</button>
+              <button class="btn btn-primary" onclick="guardarNuevaUnidadPagina()">✓ Guardar Unidad Homologada</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- PÁGINA COMPLETA 5: CREAR USUARIO DEL SISTEMA             -->
+      <!-- ======================================================== -->
+      <section id="section-crear-usuario" class="admin-section full-page-view" style="display: none;">
+        <div class="page-header-nav">
+          <button class="btn-back" onclick="navegarAtras()">
+            <span class="back-arrow">←</span> Volver a Usuarios & Roles
+          </button>
+          <div style="text-align: right;">
+            <span class="badge badge-purple">SEGURIDAD Y ROLES</span>
+            <h2 style="color: #fff; font-size: 16px; font-weight: 800; margin-top: 2px;">
+              Crear Usuario del Sistema con Rol Operativo
+            </h2>
+          </div>
+        </div>
+
+        <div class="page-form-container">
+          <div class="form-sheet-card">
+            <div class="form-section-title">
+              <span>👤</span> Datos de la Cuenta y Funcionario
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Nombres y Apellidos *</label>
+                <input type="text" id="pageUsrNombre" class="admin-input" value="">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Cédula de Identidad Ecuatoriana (M10) *</label>
+                <input type="text" id="pageUsrCedula" class="admin-input" maxlength="10" value="">
+              </div>
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Correo Electrónico *</label>
+                <input type="email" id="pageUsrCorreo" class="admin-input" value="">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Teléfono Móvil *</label>
+                <input type="tel" id="pageUsrTelefono" class="admin-input" value="">
+              </div>
+            </div>
+
+            <div class="form-section-divider">
+              <div class="form-section-title">
+                <span>🔐</span> Asignación de Rol y Credenciales
+              </div>
+
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label">Rol Operativo Asignado *</label>
+                  <select id="pageUsrRol" class="admin-select">
+                    <option value="despachador" selected>Despachador de Terminal</option>
+                    <option value="auditor_caja">Auditor de Caja & Liquidaciones</option>
+                    <option value="operador_gps">Operador de Telemetría GPS</option>
+                    <option value="superadmin">Superusuario / Gerencia General</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Terminal o Sede Asignada *</label>
+                  <select id="pageUsrSede" class="admin-select">
+                    <option value="Terminal Guayaquil" selected>Terminal Guayaquil</option>
+                    <option value="Terminal Machala">Terminal Machala</option>
+                    <option value="Caja Central">Caja Central</option>
+                    <option value="Centro de Monitoreo">Centro de Monitoreo</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-top: 14px;">
+                <label class="form-label">Contraseña de Ingreso *</label>
+                <input type="password" id="pageUsrPassword" class="admin-input" value="">
+              </div>
+            </div>
+
+            <div class="form-actions-bar">
+              <button class="btn btn-outline" onclick="navegarAtras()">Cancelar y Volver</button>
+              <button class="btn btn-primary" onclick="guardarNuevoUsuarioPagina()">✓ Crear Usuario del Sistema</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- PÁGINA COMPLETA 6: VENTA DE BOLETO EN VENTANILLA (+ PAX) -->
+      <!-- ======================================================== -->
+      <section id="section-crear-pasajero" class="admin-section full-page-view" style="display: none;">
+        <div class="page-header-nav">
+          <button class="btn-back" onclick="navegarAtras()">
+            <span class="back-arrow">←</span> Volver a Despacho de Turnos
+          </button>
+          <div style="text-align: right;">
+            <span class="badge badge-green">VENTANILLA DIRECTA</span>
+            <h2 style="color: #fff; font-size: 16px; font-weight: 800; margin-top: 2px;">
+              Emitir Boleto y Asignar Asiento con PIN
+            </h2>
+          </div>
+        </div>
+
+        <div class="page-form-container">
+          <div class="form-sheet-card">
+            <div style="background: var(--bg-elevated); padding: 14px 18px; border-radius: 12px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Turno Seleccionado:</span>
+                <div id="pageVentanillaTurnoCodigo" style="font-size: 14px; font-weight: 800; color: var(--amber); font-family: monospace;">--</div>
+              </div>
+              <div style="text-align: right;">
+                <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Disponibilidad:</span>
+                <div id="pageVentanillaCuposLibres" style="font-size: 14px; font-weight: 800; color: var(--accent);">--</div>
+              </div>
+            </div>
+
+            <div class="form-section-title" style="margin-top: 6px;">
+              <span>👤</span> Datos del Pasajero
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Nombres y Apellidos *</label>
+                <input type="text" id="pageVentanillaNombre" class="admin-input" value="">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Cédula de Identidad Ecuatoriana (M10) *</label>
+                <input type="text" id="pageVentanillaCedula" class="admin-input" maxlength="10" value="">
+              </div>
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Teléfono Móvil (WhatsApp) *</label>
+                <input type="tel" id="pageVentanillaTelefono" class="admin-input" value="">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Número de Puestos a Reservar *</label>
+                <select id="pageVentanillaPuestos" class="admin-select">
+                  <!-- Inyectado dinámicamente -->
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Dirección Exacta de Recogida Puerta a Puerta *</label>
+              <input type="text" id="pageVentanillaDireccion" class="admin-input" value="">
+            </div>
+
+            <div class="form-section-divider">
+              <div class="form-section-title">
+                <span>🔑</span> PIN de Seguridad de Abordaje
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">PIN Autogenerado (4 Dígitos para el Abordaje Seguro)</label>
+                <input type="text" id="pageVentanillaPin" class="admin-input" readonly style="font-family: monospace; font-weight: 900; font-size: 22px; color: var(--accent); text-align: center; letter-spacing: 6px; background: var(--bg-space);">
+                <span style="font-size: 11px; color: var(--text-dim); margin-top: 4px;">Este PIN se entrega al pasajero para ser verificado por el chofer al momento de subir al vehículo.</span>
+              </div>
+            </div>
+
+            <div class="form-actions-bar">
+              <button class="btn btn-outline" onclick="navegarAtras()">Cancelar y Volver</button>
+              <button class="btn btn-primary" onclick="guardarPasajeroPagina()">✓ Confirmar y Emitir Pasaje Ahora</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- PÁGINA COMPLETA 7: REGISTRO DE NUEVA ENCOMIENDA          -->
+      <!-- ======================================================== -->
+      <section id="section-crear-encomienda" class="admin-section full-page-view" style="display: none;">
+        <div class="page-header-nav">
+          <button class="btn-back" onclick="navegarAtras()">
+            <span class="back-arrow">←</span> Volver a Encomiendas
+          </button>
+          <div style="text-align: right;">
+            <span class="badge badge-amber">LOGÍSTICA & PAQUETERÍA</span>
+            <h2 style="color: #fff; font-size: 16px; font-weight: 800; margin-top: 2px;">
+              Registrar Nueva Encomienda y Generar Guía con QR
+            </h2>
+          </div>
+        </div>
+
+        <div class="page-form-container">
+          <div class="form-sheet-card">
+            
+            <!-- SECCIÓN 1: DATOS DEL REMITENTE -->
+            <div class="form-section-title">
+              <span>📤</span> 1. Datos de Quien Envía (Remitente)
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Nombres y Apellidos Completos *</label>
+                <input type="text" id="pageEncRemitenteNombre" class="admin-input" value="">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Cédula o RUC *</label>
+                <input type="text" id="pageEncRemitenteCedula" class="admin-input" maxlength="13" value="">
+              </div>
+            </div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Teléfono Móvil (WhatsApp) *</label>
+                <input type="tel" id="pageEncRemitenteTelefono" class="admin-input" value="">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Ciudad de Origen *</label>
+                <select id="pageEncOrigen" class="admin-select" onchange="actualizarTurnosDisponiblesEncomienda()">
+                  <!-- Inyectado dinámicamente -->
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Punto de Entrega / Recepción en Origen</label>
+              <input type="text" id="pageEncRemitenteDireccion" class="admin-input" value="">
+            </div>
+
+            <!-- SECCIÓN 2: DATOS DEL DESTINATARIO -->
+            <div class="form-section-divider">
+              <div class="form-section-title">
+                <span>📥</span> 2. Datos de Quien Recibe (Destinatario)
+              </div>
+
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label">Nombres y Apellidos Completos *</label>
+                  <input type="text" id="pageEncDestinatarioNombre" class="admin-input" value="">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Cédula de Identidad / DNI *</label>
+                  <input type="text" id="pageEncDestinatarioCedula" class="admin-input" maxlength="10" value="">
+                </div>
+              </div>
+
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label">Teléfono Móvil / WhatsApp *</label>
+                  <input type="tel" id="pageEncDestinatarioTelefono" class="admin-input" value="">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Ciudad de Destino *</label>
+                  <select id="pageEncDestino" class="admin-select" onchange="actualizarTurnosDisponiblesEncomienda()">
+                    <!-- Inyectado dinámicamente -->
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Modalidad de Entrega *</label>
+                <select id="pageEncModalidad" class="admin-select" onchange="toggleModalidadEntrega()">
+                  <option value="Puerta a Puerta" selected>Puerta a Puerta (Entrega a Domicilio u Oficina)</option>
+                  <option value="Terminal">Retiro en Terminal / Agencia de la Cooperativa</option>
+                </select>
+              </div>
+
+              <div class="form-group" id="grpEncDireccionEntrega">
+                <label class="form-label">Dirección Exacta de Entrega en Destino *</label>
+                <input type="text" id="pageEncDestinatarioDireccion" class="admin-input" value="">
+              </div>
+
+              <div class="form-group" id="grpEncReferenciaEntrega">
+                <label class="form-label">Referencia de Ubicación</label>
+                <input type="text" id="pageEncDestinatarioReferencia" class="admin-input" value="">
+              </div>
+            </div>
+
+            <!-- SECCIÓN 3: DETALLE DEL PAQUETE Y TARIFA -->
+            <div class="form-section-divider">
+              <div class="form-section-title">
+                <span>📦</span> 3. Detalle del Paquete & Cobro en Efectivo
+              </div>
+
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label">Tipo / Categoría de Encomienda *</label>
+                  <select id="pageEncTipo" class="admin-select" onchange="sugerirTarifaEncomienda()">
+                    <option value="Sobre / Documentos" selected>Sobre / Documentos Notariales</option>
+                    <option value="Paquete Pequeño (< 2kg)">Paquete Pequeño (&lt; 2 Kg)</option>
+                    <option value="Paquete Mediano (2 - 5kg)">Paquete Mediano (2 a 5 Kg)</option>
+                    <option value="Caja / Bulto (5 - 10kg)">Caja / Bulto (5 a 10 Kg)</option>
+                    <option value="Valija Delicada / Carga">Valija Delicada / Carga Especial</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Valor Declarado ($)</label>
+                  <input type="number" id="pageEncValorDeclarado" class="admin-input" value="" step="1.00">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Descripción Específica del Contenido *</label>
+                <input type="text" id="pageEncDescripcion" class="admin-input" value="">
+              </div>
+
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label">Tarifa de Envío ($ Efectivo) *</label>
+                  <input type="number" id="pageEncTarifa" class="admin-input" value="" step="0.50" style="color: var(--accent); font-size: 16px; font-weight: 800;">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Modalidad de Pago</label>
+                  <input type="text" class="admin-input" value="100% Efectivo (Cobrado en Recepción)" disabled style="background: var(--bg-space); color: var(--amber); font-weight: 700;">
+                </div>
+              </div>
+            </div>
+
+            <!-- SECCIÓN 4: ASIGNACIÓN OPERATIVA -->
+            <div class="form-section-divider">
+              <div class="form-section-title">
+                <span>🚕</span> 4. Despacho y Asignación de Unidad
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Turno / Unidad Asignada</label>
+                <select id="pageEncTurnoAsignado" class="admin-select">
+                  <!-- Inyectado dinámicamente -->
+                </select>
+                <span style="font-size: 11px; color: var(--text-dim); margin-top: 4px; display: block;">
+                  Puede despachar inmediatamente en un turno activo o dejar la encomienda en Bodega para la siguiente salida.
+                </span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Instrucciones Especiales de Manejo</label>
+                <input type="text" id="pageEncObservaciones" class="admin-input" value="">
+              </div>
+            </div>
+
+            <div class="form-actions-bar">
+              <button class="btn btn-outline" onclick="navegarAtras()">Cancelar y Volver</button>
+              <button class="btn btn-primary" onclick="guardarNuevaEncomiendaPagina()">✓ Registrar Encomienda y Generar Guía con QR</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- MODAL: GUÍA OFICIAL DE ENCOMIENDA IMPRIMIBLE CON QR -->
+  <div id="modalGuiaEncomienda" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 480px; border-color: var(--accent); box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 30px rgba(16,185,129,0.2);">
+      <button class="modal-close" onclick="cerrarModalGuiaEncomienda()">✕</button>
+      
+      <div id="imprimibleGuiaContenido" style="background: #fff; color: #111; padding: 18px; border-radius: 8px; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 11px; line-height: 1.4;">
+        <!-- Renderizado dinámico de la guía térmica -->
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end;">
+        <button class="btn btn-outline" onclick="cerrarModalGuiaEncomienda()">Cerrar</button>
+        <button class="btn btn-primary" onclick="imprimirGuiaTermica()">
+          <span>🖨️</span> Imprimir Guía Térmica
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ASIGNAR ENCOMIENDA EN BODEGA A UN TURNO -->
+  <div id="modalAsignarTurnoEncomienda" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 440px;">
+      <button class="modal-close" onclick="cerrarModalAsignarTurnoEncomienda()">✕</button>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="font-size: 26px;">🚕</div>
+        <div>
+          <h3 style="font-size: 16px; font-weight: 800; color: #fff;">Asignar Encomienda a Unidad</h3>
+          <p style="font-size: 11px; color: var(--amber);" id="lblAsignarGuia">Guía: ENC-000</p>
+        </div>
+      </div>
+      <div style="margin-top: 16px;">
+        <label class="form-label">Seleccionar Turno de Transporte *</label>
+        <select id="selectTurnoAsignarModal" class="admin-select"></select>
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end;">
+        <button class="btn btn-outline" onclick="cerrarModalAsignarTurnoEncomienda()">Cancelar</button>
+        <button class="btn btn-primary" onclick="ejecutarAsignacionTurnoEncomienda()">Confirmar Asignación</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ÁREA EXCLUSIVA PARA IMPRESIÓN DEL MANIFIESTO ANT -->
+  <div id="printableArea" class="print-only"></div>
+
+  <!-- ÁREA EXCLUSIVA PARA IMPRESIÓN DE GUÍA DE ENCOMIENDA -->
+  <div id="printableGuiaArea" class="print-only printable-guia"></div>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>

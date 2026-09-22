@@ -11,11 +11,13 @@
       --bg-card: #0d1527;
       --bg-elevated: #131f38;
       --border: #1a273f;
+      --border-focus: #10b981;
       --accent: #10b981;
       --accent-light: #34d399;
       --accent-glow: rgba(16, 185, 129, 0.25);
       --amber: #f59e0b;
       --amber-light: #fbbf24;
+      --danger: #ef4444;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --text-dim: #64748b;
@@ -36,20 +38,26 @@
       flex-direction: column;
       overflow: hidden;
     }
+
     /* Top Bar */
     .app-header {
       background: rgba(13, 21, 39, 0.95);
+      backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
-      padding: 14px 18px;
+      padding: 12px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-top: max(14px, env(safe-area-inset-top));
+      padding-top: max(12px, env(safe-area-inset-top));
+      z-index: 50;
     }
     .app-title-box h3 {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 800;
       color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
     .app-title-box p {
       font-size: 11px;
@@ -66,6 +74,20 @@
       font-weight: 800;
       text-transform: uppercase;
     }
+    .user-btn {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+    }
+
     /* Main Content */
     .app-content {
       flex: 1;
@@ -74,7 +96,8 @@
       display: flex;
       flex-direction: column;
       gap: 14px;
-      padding-bottom: 80px;
+      padding-bottom: 85px;
+      -webkit-overflow-scrolling: touch;
     }
     .card {
       background: var(--bg-card);
@@ -86,7 +109,7 @@
       gap: 10px;
     }
     .card-title {
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -95,7 +118,35 @@
       align-items: center;
       gap: 6px;
     }
-    /* Seats Grid */
+
+    /* Form Fields */
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .field-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .field-input {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 14px;
+      color: #fff;
+      font-size: 13.5px;
+      outline: none;
+      transition: all 0.2s ease;
+      width: 100%;
+    }
+    .field-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    /* Seats Grid (Auto 4 Pax) */
     .seats-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -116,42 +167,12 @@
       border-color: var(--accent);
       color: var(--accent-light);
     }
-    .seat-slot.occupied {
-      background: rgba(239, 68, 68, 0.1);
-      border-color: rgba(239, 68, 68, 0.3);
-      color: #ef4444;
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-    .seat-icon { font-size: 18px; margin-bottom: 2px; }
-    .seat-name { font-size: 11px; font-weight: 700; }
-    /* Form Inputs */
-    .field-group {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .field-label {
-      font-size: 11px;
-      color: var(--text-muted);
-      font-weight: 600;
-    }
-    .field-input {
-      background: #080d19;
-      border: 1px solid var(--border);
-      color: #fff;
-      padding: 9px 12px;
-      border-radius: 8px;
-      font-size: 13px;
-      outline: none;
-      width: 100%;
-    }
-    .field-input:focus {
-      border-color: var(--accent);
-    }
+    .seat-slot .seat-icon { font-size: 20px; }
+    .seat-slot .seat-name { font-size: 10px; font-weight: 800; margin-top: 4px; }
+
     /* Buttons */
     .btn {
-      padding: 11px 16px;
+      padding: 12px 16px;
       border-radius: 10px;
       font-size: 13px;
       font-weight: 800;
@@ -174,6 +195,12 @@
       border: 1px solid var(--border);
       color: var(--text-main);
     }
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--danger);
+      color: #fca5a5;
+    }
+
     /* Bottom Navigation */
     .nav-tabs {
       position: fixed;
@@ -181,9 +208,10 @@
       left: 0;
       right: 0;
       background: rgba(13, 21, 39, 0.98);
+      backdrop-filter: blur(12px);
       border-top: 1px solid var(--border);
       display: flex;
-      padding-bottom: max(6px, env(safe-area-inset-bottom));
+      padding-bottom: max(8px, env(safe-area-inset-bottom));
       z-index: 100;
     }
     .tab-btn {
@@ -197,21 +225,22 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 3px;
+      gap: 4px;
       cursor: pointer;
     }
     .tab-btn.active {
       color: var(--accent);
     }
     .tab-icon { font-size: 18px; }
-    /* QR and Pin Cards */
+
+    /* PIN and QR Display */
     .pin-display {
       background: #080d19;
       border: 2px dashed var(--accent);
       border-radius: 12px;
       padding: 14px;
       text-align: center;
-      margin: 10px 0;
+      margin: 8px 0;
     }
     .pin-code {
       font-size: 32px;
@@ -222,35 +251,261 @@
     }
     .qr-container {
       background: #fff;
-      padding: 14px;
+      padding: 12px;
       border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 10px auto;
-      width: 170px;
-      height: 170px;
+      margin: 8px auto;
+      width: 160px;
+      height: 160px;
+    }
+
+    /* Auth Screens */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-space);
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 20px;
+      padding-top: max(32px, env(safe-area-inset-top));
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
+      overflow-y: auto;
+    }
+    .auth-brand {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .auth-logo {
+      width: 64px;
+      height: 64px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      margin: 0 auto 12px auto;
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.25);
+    }
+    .auth-title {
+      font-size: 20px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: 1.5px;
+    }
+    .auth-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .steps-nav {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .step-pill {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-dim);
+    }
+    .step-pill.active {
+      color: var(--accent);
+    }
+    .step-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+    }
+    .step-pill.active .step-dot {
+      background: var(--accent);
+      color: #041e14;
+      font-weight: 900;
+      border-color: var(--accent);
+    }
+    .otp-input {
+      font-size: 28px;
+      text-align: center;
+      letter-spacing: 12px;
+      font-family: monospace;
+      font-weight: 900;
+      color: var(--accent);
+      background: #080d19;
+      border: 1px solid var(--border);
+      padding: 12px;
+      border-radius: 12px;
+      width: 100%;
+    }
+
+    /* Modal Perfil */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 8, 15, 0.85);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 1000;
+    }
+    .modal-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      width: 100%;
+      max-width: 360px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
     }
   </style>
 </head>
 <body>
 
-  <!-- Top Bar -->
-  <div class="app-header">
-    <div class="app-title-box">
-      <h3>Macondo Pasajero</h3>
-      <p id="txtUsuario">Servicio Puerta a Puerta</p>
+  <!-- ==================== PANTALLA DE AUTENTICACIÓN / REGISTRO ==================== -->
+  <div class="auth-overlay" id="authOverlay" style="display: flex;">
+    <div class="auth-brand">
+      <div class="auth-logo">🚗</div>
+      <div class="auth-title">MACONDO EXPRESS</div>
+      <div class="auth-subtitle">Transporte Puerta a Puerta & Encomiendas con QR</div>
     </div>
-    <div style="display: flex; gap: 6px; align-items: center;">
-      <span class="badge-cash">💵 Cobro Cash</span>
+
+    <!-- Indicador de pasos -->
+    <div class="steps-nav">
+      <div class="step-pill active" id="pillStep0">
+        <div class="step-dot">1</div>
+        <span>Celular</span>
+      </div>
+      <span style="color: var(--border);">―</span>
+      <div class="step-pill" id="pillStep1">
+        <div class="step-dot">2</div>
+        <span>Código OTP</span>
+      </div>
+      <span style="color: var(--border);">―</span>
+      <div class="step-pill" id="pillStep2">
+        <div class="step-dot">3</div>
+        <span>Perfil</span>
+      </div>
+    </div>
+
+    <!-- PASO 0: Ingreso de Teléfono -->
+    <div class="card" id="step0Box" style="display: flex;">
+      <div class="card-title" style="color: var(--accent);"><span>📱</span> Registro / Ingreso por Celular</div>
+      <div style="font-size: 12px; color: var(--text-muted);">
+        Ingrese su número telefónico para viajar o enviar encomiendas. Le enviaremos un código de seguridad.
+      </div>
+
+      <div class="field-group" style="margin-top: 6px;">
+        <label class="field-label">País y Celular *</label>
+        <div style="display: flex; gap: 8px;">
+          <select id="authPais" class="field-input" style="width: 105px; padding: 10px;">
+            <option value="+593">🇪🇨 +593</option>
+            <option value="+51">🇵🇪 +51</option>
+            <option value="+57">🇨🇴 +57</option>
+            <option value="+1">🇺🇸 +1</option>
+          </select>
+          <input type="tel" id="authTelefono" class="field-input" placeholder="0987654321" maxlength="10">
+        </div>
+      </div>
+
+      <button class="btn btn-primary" style="margin-top: 10px;" onclick="solicitarOtp()">
+        <span>📲</span> Continuar con WhatsApp / SMS
+      </button>
+
+      <div style="font-size: 11px; color: var(--text-dim); text-align: center; margin-top: 4px;">
+        ✓ Pagos 100% en Efectivo al Chofer · Sin Tarjetas
+      </div>
+    </div>
+
+    <!-- PASO 1: Verificación de Código OTP -->
+    <div class="card" id="step1Box" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="card-title" style="color: var(--accent);"><span>🔐</span> Código de Seguridad</div>
+        <span style="font-size: 11px; color: var(--accent); cursor: pointer;" onclick="irPaso(0)">Cambiar número</span>
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted);" id="lblDestinoOtp">
+        Enviamos un código de 6 dígitos a su número.
+      </div>
+
+      <div class="field-group" style="margin-top: 8px;">
+        <label class="field-label" style="text-align: center;">Ingrese el código de 6 dígitos *</label>
+        <input type="number" id="authOtp" class="otp-input" placeholder="••••••" maxlength="6">
+      </div>
+
+      <button class="btn btn-primary" style="margin-top: 10px;" onclick="verificarOtp()">
+        <span>✓</span> Verificar e Ingresar
+      </button>
+
+      <button class="btn btn-outline" style="padding: 9px; font-size: 11px;" onclick="reenviarOtp()">
+        Reenviar código por WhatsApp (Demo: 123456)
+      </button>
+    </div>
+
+    <!-- PASO 2: Registro de Perfil (Cédula Obligatoria Ley Tránsito) -->
+    <div class="card" id="step2Box" style="display: none;">
+      <div class="card-title" style="color: var(--amber);"><span>👤</span> Registro Obligatorio de Pasajero</div>
+      <div style="font-size: 11.5px; color: var(--text-muted);">
+        Por normativa de la Ley de Tránsito y el seguro SPPAT de transporte interprovincial, requerimos sus datos oficiales para el manifiesto de viaje:
+      </div>
+
+      <div class="field-group" style="margin-top: 4px;">
+        <label class="field-label">Nombres y Apellidos Completos *</label>
+        <input type="text" id="regNombre" class="field-input">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Cédula de Identidad / DNI (10 dígitos) *</label>
+        <input type="tel" id="regCedula" class="field-input" maxlength="10">
+      </div>
+
+      <label style="display: flex; gap: 8px; align-items: flex-start; margin-top: 6px; font-size: 11px; color: var(--text-muted); cursor: pointer;">
+        <input type="checkbox" id="regTerminos" checked style="margin-top: 2px; accent-color: var(--accent);">
+        <span>Acepto viajar bajo modalidad puerta a puerta y pagar el valor en <strong>efectivo</strong> directamente al conductor al abordar.</span>
+      </label>
+
+      <button class="btn btn-primary" style="margin-top: 10px;" onclick="completarRegistro()">
+        <span>🏁</span> Finalizar Registro y Entrar
+      </button>
     </div>
   </div>
 
-  <!-- Tab 1: Reserva de Viajes -->
+  <!-- ==================== PANTALLA PRINCIPAL (LOGUEADO) ==================== -->
+  
+  <!-- Barra Superior -->
+  <div class="app-header">
+    <div class="app-title-box">
+      <h3>🚗 Macondo Pasajero</h3>
+      <p id="txtUsuarioHeader">Cargando perfil...</p>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <span class="badge-cash">💵 Efectivo</span>
+      <button class="user-btn" onclick="abrirModalPerfil()">
+        <span>👤</span> <span id="btnPerfilLabel">Mi Perfil</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Tab 1: Reserva de Viajes Puerta a Puerta -->
   <div class="app-content" id="viewViajes">
     <div class="card">
-      <div class="card-title"><span>🛣️</span> Ruta Operativa</div>
-      <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div class="card-title"><span>🛣️</span> Ruta Operativa Activa</div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">
         <div>
           <div style="font-size: 16px; font-weight: 800;">Guayaquil</div>
           <div style="font-size: 11px; color: var(--text-dim);">Recogida a Domicilio</div>
@@ -258,117 +513,134 @@
         <div style="color: var(--accent); font-weight: 900; font-size: 18px;">➔</div>
         <div>
           <div style="font-size: 16px; font-weight: 800;">Machala</div>
-          <div style="font-size: 11px; color: var(--text-dim);">Destino Directo</div>
+          <div style="font-size: 11px; color: var(--text-dim);">Destino Puerta a Puerta</div>
         </div>
       </div>
-      <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; color: var(--text-muted);">
-        <span>Salida Programada: <strong style="color: #fff;">Inmediata</strong></span>
-        <span>Tarifa: <strong style="color: var(--accent);">$12.00 / puesto</strong></span>
+      <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 8px;">
+        <span>Frecuencia: <strong style="color: #fff;">Salidas Cada Hora</strong></span>
+        <span>Tarifa: <strong style="color: var(--accent);">$12.00 / cupo</strong></span>
       </div>
     </div>
 
-    <!-- Cupos (Máximo 4 pasajeros por auto) -->
+    <!-- Cupos (Máximo 4 pasajeros por vehículo) -->
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div class="card-title"><span>💺</span> Capacidad Unidad (Auto 4 Pax)</div>
-        <span id="labelCupos" style="font-size: 11px; color: var(--accent); font-weight: 700;">Seleccione cupos</span>
+        <span id="labelCupos" style="font-size: 11px; color: var(--accent); font-weight: 800;">1 de 4 cupos</span>
       </div>
       <div class="seats-grid" id="gridAsientos"></div>
       <div style="font-size: 11px; color: var(--text-dim);">
-        Seleccione el número de asientos a reservar para este turno.
+        Seleccione el número de cupos que necesita (máximo 4 pasajeros por camioneta/auto).
       </div>
     </div>
 
-    <!-- Datos del Pasajero -->
+    <!-- Datos de Recogida Puerta a Puerta -->
     <div class="card">
-      <div class="card-title" style="color: var(--amber);"><span>📍</span> Datos y Recogida Puerta a Puerta</div>
+      <div class="card-title" style="color: var(--amber);"><span>📍</span> Dirección de Recogida Puerta a Puerta</div>
+      
       <div class="field-group">
-        <label class="field-label">Nombres y Apellidos *</label>
-        <input type="text" id="paxNombre" class="field-input" value="">
+        <label class="field-label">Pasajero Titular</label>
+        <input type="text" id="paxNombre" class="field-input" readonly style="opacity: 0.85; background: #080d19;">
       </div>
+
       <div class="field-group">
-        <label class="field-label">Teléfono Móvil (WhatsApp) *</label>
-        <input type="tel" id="paxTelefono" class="field-input" value="">
+        <label class="field-label">Teléfono de Contacto para el Chofer *</label>
+        <input type="tel" id="paxTelefono" class="field-input">
       </div>
+
       <div class="field-group">
-        <label class="field-label">Dirección Exacta de Recogida *</label>
-        <input type="text" id="paxDireccion" class="field-input" value="">
+        <label class="field-label">Dirección Exacta de Recogida en Guayaquil *</label>
+        <input type="text" id="paxDireccion" class="field-input">
       </div>
-      <button class="btn btn-outline" style="padding: 8px; font-size: 11px;" onclick="fijarGps()">
-        <span>🛰️</span> Usar Mi Ubicación GPS Actual
+
+      <button class="btn btn-outline" style="padding: 9px; font-size: 11.5px;" onclick="fijarGps()">
+        <span>🛰️</span> Detectar Mi Ubicación GPS Actual
       </button>
     </div>
 
-    <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
-      <span>Monto a pagar en EFECTIVO:</span>
-      <strong style="color: var(--amber); font-size: 17px;" id="lblTotal">$12.00</strong>
+    <!-- Resumen de Pago -->
+    <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <div style="font-size: 11px; color: var(--text-muted);">Total a pagar en EFECTIVO:</div>
+        <div style="font-size: 10px; color: var(--amber);">Se paga en mano al chofer al subir</div>
+      </div>
+      <strong style="color: var(--amber); font-size: 20px;" id="lblTotal">$12.00</strong>
     </div>
 
-    <button class="btn btn-primary" onclick="confirmarReserva()">
-      <span>✅</span> Confirmar Reserva y Obtener PIN
+    <button class="btn btn-primary" style="padding: 14px;" onclick="confirmarReserva()">
+      <span>✅</span> Confirmar Reserva y Generar PIN de Abordaje
     </button>
 
-    <!-- Tarjeta PIN generado -->
-    <div class="card" id="cardPinConfirmado" style="display: none; border-color: var(--accent);">
-      <div class="card-title" style="color: var(--accent);"><span>🔑</span> Su PIN Seguro de Abordaje</div>
-      <div style="font-size: 11px; color: var(--text-muted); text-align: center;">
-        Entregue este PIN de 4 dígitos al conductor al momento de subir al automóvil:
+    <!-- Tarjeta PIN de Abordaje Generado -->
+    <div class="card" id="cardPinConfirmado" style="display: none; border-color: var(--accent); background: rgba(16, 185, 129, 0.05);">
+      <div class="card-title" style="color: var(--accent);"><span>🔑</span> Su PIN de Abordaje Seguro</div>
+      <div style="font-size: 11.5px; color: var(--text-muted); text-align: center;">
+        Dicte este PIN de 4 dígitos al conductor al momento de abordar el vehículo:
       </div>
       <div class="pin-display">
-        <div class="pin-code" id="pinDisplay">--</div>
+        <div class="pin-code" id="pinDisplay">----</div>
       </div>
-      <div style="font-size: 11px; color: var(--accent-light); text-align: center;">
-        ✓ Reserva Confirmada en Turno Activo · Unidad en camino
+      <div style="font-size: 11px; color: var(--accent-light); text-align: center; line-height: 1.4;">
+        ✓ Reserva Registrada en Turno Activo · Unidad en camino a su dirección.
       </div>
     </div>
   </div>
 
-  <!-- Tab 2: Encomiendas -->
+  <!-- Tab 2: Encomiendas Puerta a Puerta con QR -->
   <div class="app-content" id="viewEncomiendas" style="display: none;">
     <div class="card">
-      <div class="card-title"><span>📦</span> Enviar Encomienda o Valija</div>
+      <div class="card-title"><span>📦</span> Envío de Encomienda / Paquete</div>
+      <div style="font-size: 11.5px; color: var(--text-muted);">
+        El chofer recoge su paquete en su domicilio y lo entrega en la dirección del destinatario con confirmación por código QR.
+      </div>
+
+      <div class="field-group" style="margin-top: 6px;">
+        <label class="field-label">Nombre del Destinatario *</label>
+        <input type="text" id="encDestNombre" class="field-input">
+      </div>
+
       <div class="field-group">
-        <label class="field-label">Nombre Destinatario *</label>
-        <input type="text" id="encDestNombre" class="field-input" value="">
+        <label class="field-label">Celular del Destinatario (para contactarlo) *</label>
+        <input type="tel" id="encDestTel" class="field-input">
       </div>
+
       <div class="field-group">
-        <label class="field-label">Teléfono Destinatario *</label>
-        <input type="tel" id="encDestTel" class="field-input" value="">
+        <label class="field-label">Dirección Exacta de Entrega en Machala *</label>
+        <input type="text" id="encEntrega" class="field-input">
       </div>
+
       <div class="field-group">
-        <label class="field-label">Dirección de Entrega en Destino *</label>
-        <input type="text" id="encEntrega" class="field-input" value="">
+        <label class="field-label">Descripción del Paquete / Contenido *</label>
+        <input type="text" id="encDesc" class="field-input">
       </div>
-      <div class="field-group">
-        <label class="field-label">Descripción del Paquete *</label>
-        <input type="text" id="encDesc" class="field-input" value="">
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; padding: 10px; background: var(--bg-elevated); border-radius: 8px;">
+        <span style="font-size: 12px; color: var(--text-muted);">Tarifa de Encomienda:</span>
+        <strong style="color: var(--accent); font-size: 16px;">$5.00 Efectivo</strong>
       </div>
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
-        <span style="font-size: 12px; color: var(--text-muted);">Tarifa de Envío:</span>
-        <strong style="color: var(--accent); font-size: 15px;">$5.00 Efectivo</strong>
-      </div>
-      <button class="btn btn-primary" onclick="crearEncomienda()">
+
+      <button class="btn btn-primary" style="margin-top: 6px;" onclick="crearEncomienda()">
         <span>📲</span> Generar Guía & Código QR de Entrega
       </button>
     </div>
 
-    <!-- QR Generado -->
+    <!-- Tarjeta de Código QR Generado -->
     <div class="card" id="cardQrGenerado" style="display: none; border-color: var(--accent);">
-      <div class="card-title" style="color: var(--accent);"><span>🔐</span> Código QR de Entrega</div>
+      <div class="card-title" style="color: var(--accent);"><span>🔐</span> Comprobante QR de Entrega</div>
       <div style="font-size: 11px; color: var(--text-muted); text-align: center;">
-        Muestre este código al conductor al recibir su paquete:
+        Muestre este código QR al conductor al entregar o recibir el paquete:
       </div>
       <div class="qr-container" id="qrTarget"></div>
-      <div style="text-align: center; font-family: monospace; font-size: 13px; font-weight: 800; color: var(--amber);" id="qrTokenLabel">
-        MCND-000
+      <div style="text-align: center; font-family: monospace; font-size: 14px; font-weight: 800; color: var(--amber);" id="qrTokenLabel">
+        MCND-000000
       </div>
     </div>
   </div>
 
-  <!-- Bottom Tabs -->
+  <!-- Barra de Pestañas Inferior -->
   <div class="nav-tabs">
     <button class="tab-btn active" id="btnTabViajes" onclick="mostrarTab('viajes')">
-      <span class="tab-icon">💺</span>
+      <span class="tab-icon">🚗</span>
       <span>Viajes</span>
     </button>
     <button class="tab-btn" id="btnTabEncomiendas" onclick="mostrarTab('encomiendas')">
@@ -377,9 +649,181 @@
     </button>
   </div>
 
+  <!-- Modal Mi Perfil y Cerrar Sesión -->
+  <div class="modal-overlay" id="modalPerfil">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 15px; font-weight: 800; color: #fff;">👤 Mi Perfil de Pasajero</h3>
+        <span style="cursor: pointer; font-size: 16px; color: var(--text-dim);" onclick="cerrarModalPerfil()">✕</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px;">
+        <div style="background: var(--bg-elevated); padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+          <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Nombre Completo</div>
+          <strong id="perfilNombre">--</strong>
+        </div>
+        <div style="background: var(--bg-elevated); padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+          <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Cédula de Identidad</div>
+          <strong id="perfilCedula">--</strong>
+        </div>
+        <div style="background: var(--bg-elevated); padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+          <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Número Telefónico</div>
+          <strong id="perfilTelefono">--</strong>
+        </div>
+      </div>
+      <button class="btn btn-danger" onclick="cerrarSesionPax()">
+        <span>🚪</span> Cerrar Sesión
+      </button>
+    </div>
+  </div>
+
   <script>
+    // ESTADO DE SESIÓN Y USUARIO
+    const SESSION_KEY = 'macondo_pax_session';
+    let currentUser = null;
     let asientosSeleccionados = 1;
 
+    // Inicialización al cargar la página
+    window.addEventListener('DOMContentLoaded', () => {
+      verificarSesionGuardada();
+      renderAsientos();
+    });
+
+    function verificarSesionGuardada() {
+      try {
+        const raw = localStorage.getItem(SESSION_KEY);
+        if (raw) {
+          currentUser = JSON.parse(raw);
+          cargarDatosEnApp();
+          document.getElementById('authOverlay').style.display = 'none';
+        } else {
+          document.getElementById('authOverlay').style.display = 'flex';
+          irPaso(0);
+        }
+      } catch (e) {
+        document.getElementById('authOverlay').style.display = 'flex';
+        irPaso(0);
+      }
+    }
+
+    function irPaso(paso) {
+      document.getElementById('step0Box').style.display = (paso === 0) ? 'flex' : 'none';
+      document.getElementById('step1Box').style.display = (paso === 1) ? 'flex' : 'none';
+      document.getElementById('step2Box').style.display = (paso === 2) ? 'flex' : 'none';
+
+      document.getElementById('pillStep0').className = 'step-pill ' + (paso >= 0 ? 'active' : '');
+      document.getElementById('pillStep1').className = 'step-pill ' + (paso >= 1 ? 'active' : '');
+      document.getElementById('pillStep2').className = 'step-pill ' + (paso >= 2 ? 'active' : '');
+    }
+
+    function solicitarOtp() {
+      const tel = document.getElementById('authTelefono').value.trim();
+      if (tel.length < 9) {
+        alert('Por favor ingrese un número de celular válido (ej: 0987654321).');
+        return;
+      }
+      const pais = document.getElementById('authPais').value;
+      document.getElementById('lblDestinoOtp').innerText = `Enviamos un código de seguridad a ${pais} ${tel}`;
+      // Pre-cargar código demo para facilidad de prueba
+      document.getElementById('authOtp').value = '123456';
+      irPaso(1);
+    }
+
+    function reenviarOtp() {
+      alert('Código reenviado por WhatsApp / SMS (Demo: 123456)');
+      document.getElementById('authOtp').value = '123456';
+    }
+
+    function verificarOtp() {
+      const otp = document.getElementById('authOtp').value.trim();
+      if (otp.length !== 6) {
+        alert('El código de verificación debe contener 6 dígitos.');
+        return;
+      }
+      // Verificar si el teléfono ya tenía un usuario guardado previamente
+      const tel = document.getElementById('authTelefono').value.trim();
+      const pais = document.getElementById('authPais').value;
+      const usuariosRegistrados = JSON.parse(localStorage.getItem('macondo_pax_directory') || '{}');
+      const key = `${pais}${tel}`;
+
+      if (usuariosRegistrados[key] && usuariosRegistrados[key].nombre) {
+        // Usuario existente -> Iniciar sesión directa
+        currentUser = usuariosRegistrados[key];
+        localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
+        cargarDatosEnApp();
+        document.getElementById('authOverlay').style.display = 'none';
+      } else {
+        // Usuario nuevo -> Completar perfil con Cédula
+        irPaso(2);
+      }
+    }
+
+    function completarRegistro() {
+      const nom = document.getElementById('regNombre').value.trim();
+      const ced = document.getElementById('regCedula').value.trim();
+      const term = document.getElementById('regTerminos').checked;
+
+      if (!nom) {
+        alert('Por favor ingrese sus nombres y apellidos.');
+        return;
+      }
+      if (ced.length < 10) {
+        alert('La Cédula de Identidad debe tener 10 dígitos para el manifiesto de la Ley de Tránsito.');
+        return;
+      }
+      if (!term) {
+        alert('Debe aceptar las políticas de viaje y el pago en efectivo.');
+        return;
+      }
+
+      const tel = document.getElementById('authTelefono').value.trim();
+      const pais = document.getElementById('authPais').value;
+
+      currentUser = {
+        nombre: nom,
+        cedula: ced,
+        telefono: `${pais} ${tel}`,
+        fechaRegistro: new Date().toISOString()
+      };
+
+      // Guardar sesión y directorio
+      localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
+      const directory = JSON.parse(localStorage.getItem('macondo_pax_directory') || '{}');
+      directory[`${pais}${tel}`] = currentUser;
+      localStorage.setItem('macondo_pax_directory', JSON.stringify(directory));
+
+      cargarDatosEnApp();
+      document.getElementById('authOverlay').style.display = 'none';
+    }
+
+    function cargarDatosEnApp() {
+      if (!currentUser) return;
+      document.getElementById('txtUsuarioHeader').innerText = `Hola, ${currentUser.nombre.split(' ')[0]}`;
+      document.getElementById('paxNombre').value = currentUser.nombre;
+      document.getElementById('paxTelefono').value = currentUser.telefono;
+      document.getElementById('perfilNombre').innerText = currentUser.nombre;
+      document.getElementById('perfilCedula').innerText = currentUser.cedula;
+      document.getElementById('perfilTelefono').innerText = currentUser.telefono;
+    }
+
+    function abrirModalPerfil() {
+      document.getElementById('modalPerfil').style.display = 'flex';
+    }
+
+    function cerrarModalPerfil() {
+      document.getElementById('modalPerfil').style.display = 'none';
+    }
+
+    function cerrarSesionPax() {
+      if (confirm('¿Desea cerrar sesión en este dispositivo?')) {
+        localStorage.removeItem(SESSION_KEY);
+        currentUser = null;
+        cerrarModalPerfil();
+        document.getElementById('authOverlay').style.display = 'flex';
+        irPaso(0);
+      }
+    }
+
+    // GESTIÓN DE ASIENTOS Y RESERVA
     function renderAsientos() {
       const grid = document.getElementById('gridAsientos');
       grid.innerHTML = '';
@@ -389,9 +833,9 @@
         slot.className = 'seat-slot ' + (sel ? 'selected' : '');
         slot.innerHTML = `
           <div class="seat-icon">${sel ? '👤' : '💺'}</div>
-          <div class="seat-name">Puesto ${i}</div>
-          <div style="font-size: 8px; font-weight: 800; margin-top: 2px;">
-            ${sel ? 'RESERVA' : 'LIBRE'}
+          <div class="seat-name">Cupo ${i}</div>
+          <div style="font-size: 8px; font-weight: 800; margin-top: 3px;">
+            ${sel ? 'RESERVA' : 'DISPONIBLE'}
           </div>
         `;
         slot.onclick = () => {
@@ -401,7 +845,7 @@
         };
         grid.appendChild(slot);
       }
-      document.getElementById('labelCupos').innerText = `${asientosSeleccionados} de 4 puestos`;
+      document.getElementById('labelCupos').innerText = `${asientosSeleccionados} de 4 cupos`;
     }
 
     function fijarGps() {
@@ -409,15 +853,15 @@
         navigator.geolocation.getCurrentPosition(
           pos => {
             document.getElementById('paxDireccion').value = `GPS: Lat ${pos.coords.latitude.toFixed(4)}, Lng ${pos.coords.longitude.toFixed(4)}`;
-            alert('✓ Ubicación GPS detectada con éxito.');
+            alert('✓ Ubicación GPS detectada exitosamente.');
           },
           err => {
-            document.getElementById('paxDireccion').value = 'Av. 9 de Octubre y Malecón (Guayaquil)';
-            alert('Ubicación predeterminada asignada.');
+            document.getElementById('paxDireccion').value = 'Av. 9 de Octubre y Malecón Simón Bolívar';
+            alert('Ubicación fijada en punto central de referencia.');
           }
         );
       } else {
-        document.getElementById('paxDireccion').value = 'Terminal Guayaquil';
+        document.getElementById('paxDireccion').value = 'Terminal Terrestre de Guayaquil';
       }
     }
 
@@ -427,14 +871,28 @@
       const dir = document.getElementById('paxDireccion').value.trim();
 
       if (!nom || !tel || !dir) {
-        alert('Por favor complete todos los datos de contacto y recogida.');
+        alert('Por favor ingrese la dirección exacta de recogida.');
         return;
       }
 
+      // Generar PIN de abordaje seguro de 4 dígitos
       const pin = Math.floor(1000 + Math.random() * 9000);
       document.getElementById('pinDisplay').innerText = pin;
       document.getElementById('cardPinConfirmado').style.display = 'flex';
       document.getElementById('cardPinConfirmado').scrollIntoView({ behavior: 'smooth' });
+
+      // Guardar reserva activa en localStorage para que pueda ser leída por la app del Chofer / Suite
+      const reserva = {
+        id: 'RES-' + Date.now().toString().slice(-4),
+        pasajero: nom,
+        telefono: tel,
+        direccion: dir,
+        cupos: asientosSeleccionados,
+        monto: (asientosSeleccionados * 12).toFixed(2),
+        pin: pin.toString(),
+        estado: 'pendiente'
+      };
+      localStorage.setItem('macondo_reserva_activa', JSON.stringify(reserva));
     }
 
     function crearEncomienda() {
@@ -444,7 +902,7 @@
       const desc = document.getElementById('encDesc').value.trim();
 
       if (!dest || !tel || !dir || !desc) {
-        alert('Por favor complete los datos de la encomienda.');
+        alert('Por favor complete todos los datos del destinatario y del paquete.');
         return;
       }
 
@@ -453,8 +911,8 @@
       target.innerHTML = '';
       new QRCode(target, {
         text: `MACONDO|${token}|${dest}|${tel}|MACHALA|5.00`,
-        width: 140,
-        height: 140,
+        width: 135,
+        height: 135,
         colorDark: '#000000',
         colorLight: '#ffffff',
         correctLevel: QRCode.CorrectLevel.H
@@ -471,8 +929,6 @@
       document.getElementById('btnTabViajes').className = 'tab-btn ' + (tab === 'viajes' ? 'active' : '');
       document.getElementById('btnTabEncomiendas').className = 'tab-btn ' + (tab === 'encomiendas' ? 'active' : '');
     }
-
-    renderAsientos();
   </script>
 </body>
 </html>

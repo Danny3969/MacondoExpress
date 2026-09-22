@@ -1,0 +1,51 @@
+{
+  "version": "v1.6.0_Autenticacion_y_Registro_Completo",
+  "fechaCompilacion": "2026-09-22T15:16:53.635Z",
+  "gitCommit": "f68bafd",
+  "flutterStatus": "No instalado en PATH (usando distribución Standalone Web/PWA + Códigos Fuente listos para build)",
+  "apksAndroid": [
+    {
+      "nombre": "MacondoPasajero_v1.6.0_Autenticacion_y_Registro_Completo.apk",
+      "tamanoMB": "4.76 MB",
+      "sha256": "8f9940e8f495da81b40124d7a4180921db055f20b5f8d359cc7ef3271d97fc5f"
+    },
+    {
+      "nombre": "MacondoConductor_v1.6.0_Autenticacion_y_Registro_Completo.apk",
+      "tamanoMB": "4.76 MB",
+      "sha256": "86acb7af635d26a625c54556eaead15fcb76a72599b7c39b8900bc6538529926"
+    },
+    {
+      "nombre": "MacondoExpress_Suite_v1.6.0_Autenticacion_y_Registro_Completo.apk",
+      "tamanoMB": "4.76 MB",
+      "sha256": "dc31a3112189929017477d71d0677c201c1b9f7a75a7594a4531b72eea68f664"
+    }
+  ],
+  "artefactos": {
+    "pasajero": {
+      "carpeta": "MacondoPasajero_v1.6.0_Autenticacion_y_Registro_Completo",
+      "hashIndexHtml": "dd381302eecb29acf4c04dc7a7baa416633831e58c5757cb62331e0acc03adae",
+      "lanzador": "Lanzar_AppPasajero.command"
+    },
+    "conductor": {
+      "carpeta": "MacondoConductor_v1.6.0_Autenticacion_y_Registro_Completo",
+      "hashIndexHtml": "059f3e9655817c230c96f9e54c2162c65577af2f73a46e62b0edbad18da53a69",
+      "lanzador": "Lanzar_AppConductor.command"
+    },
+    "consolaAdmin": {
+      "carpeta": "MacondoConsolaAdmin_v1.6.0_Autenticacion_y_Registro_Completo",
+      "hashIndexHtml": "8bc3f523aa37127243f595f80e5a0976a0397037673425b22462297cb1127b9b",
+      "lanzador": "Lanzar_ConsolaAdmin.command"
+    },
+    "suiteCompleta": {
+      "carpeta": "MacondoSuiteCompleta_v1.6.0_Autenticacion_y_Registro_Completo",
+      "lanzador": "Lanzar_Suite_Macondo.command"
+    }
+  },
+  "especificaciones": {
+    "rutas": "Guayaquil ⇄ Machala",
+    "limiteCapacidad": "4 Pasajeros Estricto por Auto",
+    "seguridad": "PIN 4 dígitos + Validación Cédula M10",
+    "liquidacion": "$6.00 cuota cooperativa por turno finalizado",
+    "transitoANT": "Resolución N° 0482-2025"
+  }
+}

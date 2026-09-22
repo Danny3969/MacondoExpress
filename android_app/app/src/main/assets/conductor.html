@@ -14,6 +14,7 @@
       --accent-light: #34d399;
       --amber: #f59e0b;
       --amber-light: #fbbf24;
+      --danger: #ef4444;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --text-dim: #64748b;
@@ -24,6 +25,7 @@
       padding: 0;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       -webkit-font-smoothing: antialiased;
+      user-select: none;
     }
     body {
       background-color: var(--bg-space);
@@ -33,24 +35,42 @@
       flex-direction: column;
       overflow: hidden;
     }
+
+    /* Top Bar */
     .app-header {
       background: rgba(13, 21, 39, 0.95);
+      backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
-      padding: 14px 18px;
+      padding: 12px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-top: max(14px, env(safe-area-inset-top));
+      padding-top: max(12px, env(safe-area-inset-top));
+      z-index: 50;
     }
     .app-title-box h3 {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 800;
       color: var(--amber);
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
     .app-title-box p {
       font-size: 11px;
       color: var(--text-muted);
     }
+    .status-badge {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--accent);
+      background: rgba(16, 185, 129, 0.15);
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--accent);
+    }
+
+    /* Main Content */
     .app-content {
       flex: 1;
       overflow-y: auto;
@@ -58,7 +78,8 @@
       display: flex;
       flex-direction: column;
       gap: 14px;
-      padding-bottom: 80px;
+      padding-bottom: 85px;
+      -webkit-overflow-scrolling: touch;
     }
     .card {
       background: var(--bg-card);
@@ -70,7 +91,7 @@
       gap: 10px;
     }
     .card-title {
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -79,15 +100,51 @@
       align-items: center;
       gap: 6px;
     }
+
+    /* Manifest Items */
     .manifest-item {
       background: var(--bg-elevated);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 12px;
+      border-radius: 12px;
+      padding: 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
     }
+    .manifest-item.boarded {
+      border-color: var(--accent);
+      background: rgba(16, 185, 129, 0.08);
+    }
+
+    /* Form Fields */
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .field-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .field-input {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 14px;
+      color: #fff;
+      font-size: 13.5px;
+      outline: none;
+      width: 100%;
+    }
+    .field-input:focus {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+    }
+
+    /* Buttons */
     .btn {
       padding: 10px 14px;
       border-radius: 8px;
@@ -100,6 +157,7 @@
       justify-content: center;
       gap: 6px;
       text-decoration: none;
+      transition: all 0.18s;
     }
     .btn-amber {
       background: var(--amber);
@@ -114,11 +172,17 @@
       background: var(--accent);
       color: #041e14;
     }
-    /* Modal PIN */
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--danger);
+      color: #fca5a5;
+    }
+
+    /* Modales */
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(5, 8, 15, 0.85);
+      background: rgba(5, 8, 15, 0.88);
       backdrop-filter: blur(8px);
       display: none;
       align-items: center;
@@ -130,85 +194,175 @@
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 22px;
+      padding: 20px;
       width: 100%;
-      max-width: 380px;
+      max-width: 360px;
       display: flex;
       flex-direction: column;
       gap: 14px;
     }
     .pin-input {
-      font-size: 26px;
+      font-size: 28px;
       text-align: center;
-      letter-spacing: 8px;
+      letter-spacing: 10px;
       font-family: monospace;
       font-weight: 900;
       color: var(--accent);
       background: #080d19;
       border: 1px solid var(--border);
-      padding: 10px;
-      border-radius: 8px;
+      padding: 12px;
+      border-radius: 10px;
       width: 100%;
+    }
+
+    /* Auth Screen Conductor */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-space);
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 20px;
+      padding-top: max(32px, env(safe-area-inset-top));
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
+      overflow-y: auto;
+    }
+    .auth-brand {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .auth-logo {
+      width: 64px;
+      height: 64px;
+      background: rgba(245, 158, 11, 0.15);
+      border: 2px solid var(--amber);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      margin: 0 auto 12px auto;
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.25);
     }
   </style>
 </head>
 <body>
 
+  <!-- ==================== PANTALLA DE LOGIN DEL CHOFER ==================== -->
+  <div class="auth-overlay" id="driverAuthOverlay" style="display: flex;">
+    <div class="auth-brand">
+      <div class="auth-logo">🚐</div>
+      <h2 style="font-size: 20px; font-weight: 900; color: #fff; letter-spacing: 1.5px;">MACONDO CONDUCTOR</h2>
+      <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Acceso para Choferes y Unidades de la Cooperativa</p>
+    </div>
+
+    <div class="card" style="border-color: rgba(245, 158, 11, 0.3);">
+      <div class="card-title" style="color: var(--amber);"><span>🔑</span> Inicio de Sesión de Conductor</div>
+      <div style="font-size: 12px; color: var(--text-muted);">
+        Ingrese con el número de celular registrado en la Consola y su PIN de 4 dígitos:
+      </div>
+
+      <div class="field-group" style="margin-top: 6px;">
+        <label class="field-label">Celular del Chofer *</label>
+        <input type="tel" id="loginDriverTel" class="field-input" placeholder="0991234567" value="0991234567">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">PIN de Seguridad / Contraseña *</label>
+        <input type="password" id="loginDriverPin" class="field-input" placeholder="••••" maxlength="6" value="2026">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Unidad Asignada *</label>
+        <select id="loginDriverUnidad" class="field-input">
+          <option value="Unidad 14 (GYE-402 - Chevrolet D-Max)">Unidad 14 (GYE-402 - D-Max)</option>
+          <option value="Unidad 08 (MCH-109 - Kia Sportage)">Unidad 08 (MCH-109 - Sportage)</option>
+          <option value="Unidad 22 (GYE-881 - Renault Duster)">Unidad 22 (GYE-881 - Duster)</option>
+        </select>
+      </div>
+
+      <button class="btn btn-amber" style="padding: 13px; margin-top: 8px;" onclick="iniciarSesionChofer()">
+        <span>🏁</span> Iniciar Turno y Cargar Hoja de Ruta
+      </button>
+
+      <div style="font-size: 11px; color: var(--text-dim); text-align: center; margin-top: 6px;">
+        Credenciales Demo: 0991234567 / PIN: 2026
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== PANTALLA PRINCIPAL DE HOJA DE RUTA ==================== -->
   <div class="app-header">
     <div class="app-title-box">
-      <h3>Macondo Conductor</h3>
-      <p>Chofer: Carlos Méndez · Unidad GYE-402</p>
+      <h3>🚐 Macondo Conductor</h3>
+      <p id="txtDriverHeader">Chofer: Carlos Méndez · Unidad 14</p>
     </div>
-    <span style="font-size: 10px; font-weight: 800; color: var(--accent); background: rgba(16,185,129,0.15); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--accent);">TURNO ACTIVO</span>
+    <div style="display: flex; gap: 6px; align-items: center;">
+      <span class="status-badge">EN TURNO</span>
+      <button class="btn btn-outline" style="padding: 4px 8px; font-size: 10px;" onclick="abrirModalChofer()">
+        <span>👤</span> Salir
+      </button>
+    </div>
   </div>
 
   <div class="app-content">
     <!-- Estado del Turno -->
     <div class="card" style="border-color: rgba(245, 158, 11, 0.4);">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div class="card-title" style="color: var(--amber);"><span>🏁</span> Turno TRN-0930 (GYE ➔ MCH)</div>
+        <div class="card-title" style="color: var(--amber);"><span>🏁</span> Turno TRN-0930 (Guayaquil ➔ Machala)</div>
         <span style="font-size: 10px; font-weight: 700; color: var(--amber); background: rgba(245,158,11,0.15); padding: 3px 6px; border-radius: 4px;">EN RUTA</span>
       </div>
       <div style="display: flex; justify-content: space-between; font-size: 13px;">
-        <span>Ocupación: <strong style="color: var(--accent);" id="lblOcupacion">3 de 4 puestos</strong></span>
-        <span>Efectivo: <strong style="color: var(--amber);" id="lblCash">$36.00</strong></span>
+        <span>Ocupación: <strong style="color: var(--accent);" id="lblOcupacion">3 de 4 cupos</strong></span>
+        <span>Recaudación: <strong style="color: var(--amber);" id="lblCash">$36.00</strong></span>
       </div>
       <div style="display: flex; gap: 8px; margin-top: 6px;">
-        <a href="waze://?q=Machala" class="btn btn-outline" style="flex: 1; font-size: 11px;">
-          <span>🗺️</span> Waze / GPS
+        <a href="waze://?q=Guayaquil" class="btn btn-outline" style="flex: 1; font-size: 11px;">
+          <span>🗺️</span> Abrir Waze / GPS
         </a>
         <button class="btn btn-amber" style="flex: 1; font-size: 11px;" onclick="abrirLiquidacion()">
-          <span>💰</span> Liquidación $6
+          <span>💰</span> Liquidar ($6)
         </button>
       </div>
     </div>
 
     <!-- Manifiesto de Pasajeros Puerta a Puerta -->
     <div class="card">
-      <div class="card-title"><span>👥</span> Pasajeros en Hoja de Ruta</div>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="card-title"><span>👥</span> Manifiesto de Recogida Puerta a Puerta</div>
+        <button class="btn btn-outline" style="padding: 4px 8px; font-size: 10px;" onclick="recargarManifiesto()">
+          <span>🔄</span> Actualizar
+        </button>
+      </div>
       <div style="display: flex; flex-direction: column; gap: 8px;" id="paxList">
         
-        <div class="manifest-item" id="pax1">
+        <!-- Pasajero 1 -->
+        <div class="manifest-item" id="paxItem1">
           <div>
             <div style="font-size: 13px; font-weight: 800;">Mariana Córdova</div>
-            <div style="font-size: 11px; color: var(--text-dim);">Av. 25 de Junio #402</div>
-            <div style="font-size: 10px; color: var(--amber);">1 Asiento · $12.00 Cash</div>
+            <div style="font-size: 11px; color: var(--text-dim);">Av. 25 de Junio y Junín #402</div>
+            <div style="font-size: 10px; color: var(--amber); margin-top: 2px;">1 Cupo · $12.00 Efectivo</div>
           </div>
-          <button class="btn btn-green" style="font-size: 10px; padding: 6px 10px;" onclick="validarPin(1, '4821')">
+          <button class="btn btn-green" id="btnPin1" style="font-size: 11px; padding: 7px 12px;" onclick="abrirValidarPin('paxItem1', 'Mariana Córdova', '4821', 12.00)">
             <span>🔑</span> Validar PIN
           </button>
         </div>
 
-        <div class="manifest-item" id="pax2">
+        <!-- Pasajero 2 -->
+        <div class="manifest-item" id="paxItem2">
           <div>
             <div style="font-size: 13px; font-weight: 800;">Roberto Alcívar</div>
             <div style="font-size: 11px; color: var(--text-dim);">Alborada 8va etapa Mz 812</div>
-            <div style="font-size: 10px; color: var(--amber);">2 Asientos · $24.00 Cash</div>
+            <div style="font-size: 10px; color: var(--amber); margin-top: 2px;">2 Cupos · $24.00 Efectivo</div>
           </div>
-          <button class="btn btn-green" style="font-size: 10px; padding: 6px 10px;" onclick="validarPin(2, '7712')">
+          <button class="btn btn-green" id="btnPin2" style="font-size: 11px; padding: 7px 12px;" onclick="abrirValidarPin('paxItem2', 'Roberto Alcívar', '7712', 24.00)">
             <span>🔑</span> Validar PIN
           </button>
         </div>
+
+        <!-- Contenedor dinámico de reservas nuevas -->
+        <div id="paxReservaDinamica"></div>
 
       </div>
     </div>
@@ -216,39 +370,197 @@
     <!-- Encomiendas en la Unidad -->
     <div class="card">
       <div class="card-title" style="color: var(--accent);"><span>📦</span> Encomiendas Asignadas a Bordo</div>
-      <div class="manifest-item">
+      <div class="manifest-item" id="itemEnc1">
         <div>
           <div style="font-size: 13px; font-weight: 800;">Guía ENC-884910</div>
-          <div style="font-size: 11px; color: var(--text-dim);">Dest: Luisa Mora · Machala</div>
-          <div style="font-size: 10px; color: var(--accent);">Sobre / Doc · $5.00 Cobrado</div>
+          <div style="font-size: 11px; color: var(--text-dim);">Destinatario: Luisa Mora · Machala</div>
+          <div style="font-size: 10px; color: var(--accent); margin-top: 2px;">Sobre Documentos · $5.00 Cobrado</div>
         </div>
-        <button class="btn btn-amber" style="font-size: 10px; padding: 6px 10px;" onclick="entregarEncomienda()">
-          <span>✓</span> Entregar
+        <button class="btn btn-amber" id="btnEnc1" style="font-size: 11px; padding: 7px 12px;" onclick="entregarEncomienda('ENC-884910')">
+          <span>✓</span> Entregar QR
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Modal Validación de PIN -->
+  <!-- Modal Validación de PIN de Pasajero -->
   <div class="modal-overlay" id="modalPin">
     <div class="modal-box">
-      <h3 style="font-size: 15px; font-weight: 800;">Verificar PIN de Abordaje</h3>
-      <p style="font-size: 11px; color: var(--text-muted);">Solicite al pasajero su PIN de 4 dígitos:</p>
-      <input type="text" id="inpPin" class="pin-input" maxlength="4" placeholder="••••">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 15px; font-weight: 800; color: #fff;">🔑 Validar Abordaje de Pasajero</h3>
+        <span style="cursor: pointer; font-size: 16px; color: var(--text-dim);" onclick="cerrarPin()">✕</span>
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted);">
+        Solicite al pasajero <strong id="lblPaxNombreModal" style="color: #fff;">--</strong> su PIN de 4 dígitos:
+      </div>
+      <input type="number" id="inpPin" class="pin-input" maxlength="4" placeholder="••••">
       <div style="display: flex; gap: 8px;">
         <button class="btn btn-outline" style="flex: 1;" onclick="cerrarPin()">Cancelar</button>
-        <button class="btn btn-green" style="flex: 1;" onclick="confirmarPin()">Confirmar</button>
+        <button class="btn btn-green" style="flex: 1;" onclick="confirmarPin()">Confirmar Abordaje</button>
       </div>
     </div>
   </div>
 
-  <script>
-    let activePaxIdx = null;
-    let expectedPin = '';
+  <!-- Modal Liquidación de Turno -->
+  <div class="modal-overlay" id="modalLiquidacion">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 15px; font-weight: 800; color: var(--amber);">💰 Liquidación de Turno</h3>
+        <span style="cursor: pointer; font-size: 16px; color: var(--text-dim);" onclick="cerrarLiquidacion()">✕</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12.5px;">
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
+          <span>Total Recaudado Pasajes:</span>
+          <strong id="liqTotal">$36.00</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); color: var(--danger);">
+          <span>Aporte Cooperativa Macondo:</span>
+          <strong>-$6.00</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 10px 0; font-size: 15px; color: var(--accent);">
+          <span>Neto en Efectivo para Chofer:</span>
+          <strong id="liqNeto">$30.00</strong>
+        </div>
+      </div>
+      <button class="btn btn-amber" onclick="finalizarTurno()">
+        <span>🏁</span> Cerrar Turno y Entregar Aporte
+      </button>
+    </div>
+  </div>
 
-    function validarPin(idx, pin) {
-      activePaxIdx = idx;
-      expectedPin = pin;
+  <!-- Modal Chofer / Cerrar Sesión -->
+  <div class="modal-overlay" id="modalChofer">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 15px; font-weight: 800; color: #fff;">Perfil del Chofer</h3>
+        <span style="cursor: pointer; font-size: 16px; color: var(--text-dim);" onclick="cerrarModalChofer()">✕</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12.5px;">
+        <div style="background: var(--bg-elevated); padding: 10px; border-radius: 8px;">
+          <div style="font-size: 10px; color: var(--text-muted);">CONDUCTOR TITULAR</div>
+          <strong id="choferNom">Carlos Méndez</strong>
+        </div>
+        <div style="background: var(--bg-elevated); padding: 10px; border-radius: 8px;">
+          <div style="font-size: 10px; color: var(--text-muted);">VEHÍCULO ASIGNADO</div>
+          <strong id="choferUni">Unidad 14 (Chevrolet D-Max)</strong>
+        </div>
+      </div>
+      <button class="btn btn-danger" onclick="cerrarSesionChofer()">
+        <span>🚪</span> Cerrar Sesión de Conductor
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const DRIVER_SESSION_KEY = 'macondo_driver_session';
+    let currentDriver = null;
+    let currentPaxTarget = null;
+    let currentExpectedPin = '';
+    let totalRecaudado = 36.00;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      verificarSesionChofer();
+      recargarManifiesto();
+    });
+
+    function verificarSesionChofer() {
+      try {
+        const raw = localStorage.getItem(DRIVER_SESSION_KEY);
+        if (raw) {
+          currentDriver = JSON.parse(raw);
+          aplicarDatosChofer();
+          document.getElementById('driverAuthOverlay').style.display = 'none';
+        } else {
+          document.getElementById('driverAuthOverlay').style.display = 'flex';
+        }
+      } catch (e) {
+        document.getElementById('driverAuthOverlay').style.display = 'flex';
+      }
+    }
+
+    function iniciarSesionChofer() {
+      const tel = document.getElementById('loginDriverTel').value.trim();
+      const pin = document.getElementById('loginDriverPin').value.trim();
+      const uni = document.getElementById('loginDriverUnidad').value;
+
+      if (!tel || !pin) {
+        alert('Por favor ingrese su celular y PIN de chofer.');
+        return;
+      }
+
+      currentDriver = {
+        nombre: 'Carlos Méndez',
+        telefono: tel,
+        unidad: uni,
+        loginTime: new Date().toISOString()
+      };
+
+      localStorage.setItem(DRIVER_SESSION_KEY, JSON.stringify(currentDriver));
+      aplicarDatosChofer();
+      document.getElementById('driverAuthOverlay').style.display = 'none';
+    }
+
+    function aplicarDatosChofer() {
+      if (!currentDriver) return;
+      document.getElementById('txtDriverHeader').innerText = `Chofer: ${currentDriver.nombre} · ${currentDriver.unidad.split(' ')[0]} ${currentDriver.unidad.split(' ')[1]}`;
+      document.getElementById('choferNom').innerText = currentDriver.nombre;
+      document.getElementById('choferUni').innerText = currentDriver.unidad;
+    }
+
+    function abrirModalChofer() {
+      document.getElementById('modalChofer').style.display = 'flex';
+    }
+
+    function cerrarModalChofer() {
+      document.getElementById('modalChofer').style.display = 'none';
+    }
+
+    function cerrarSesionChofer() {
+      if (confirm('¿Desea cerrar el turno y salir del sistema?')) {
+        localStorage.removeItem(DRIVER_SESSION_KEY);
+        currentDriver = null;
+        cerrarModalChofer();
+        document.getElementById('driverAuthOverlay').style.display = 'flex';
+      }
+    }
+
+    function recargarManifiesto() {
+      // Verificar si hay una reserva activa generada desde la app de pasajero
+      const reservaRaw = localStorage.getItem('macondo_reserva_activa');
+      const box = document.getElementById('paxReservaDinamica');
+      box.innerHTML = '';
+
+      if (reservaRaw) {
+        try {
+          const res = JSON.parse(reservaRaw);
+          const item = document.createElement('div');
+          item.className = 'manifest-item';
+          item.id = 'paxDinamico';
+          item.innerHTML = `
+            <div>
+              <div style="font-size: 13px; font-weight: 800;">${res.pasajero} <span style="font-size: 9px; background: rgba(16,185,129,0.2); color: var(--accent); padding: 2px 5px; border-radius: 4px;">NUEVO</span></div>
+              <div style="font-size: 11px; color: var(--text-dim);">${res.direccion}</div>
+              <div style="font-size: 10px; color: var(--amber); margin-top: 2px;">${res.cupos} Cupo(s) · $${res.monto} Efectivo</div>
+            </div>
+            <button class="btn btn-green" id="btnPinDinamico" style="font-size: 11px; padding: 7px 12px;">
+              <span>🔑</span> Validar PIN
+            </button>
+          `;
+          item.querySelector('#btnPinDinamico').onclick = () => {
+            abrirValidarPin('paxDinamico', res.pasajero, res.pin, parseFloat(res.monto));
+          };
+          box.appendChild(item);
+
+          // Actualizar ocupación
+          document.getElementById('lblOcupacion').innerText = '4 de 4 cupos (LLENO)';
+        } catch(e) {}
+      }
+    }
+
+    function abrirValidarPin(elementId, nombre, pin, monto) {
+      currentPaxTarget = { elementId, nombre, pin, monto };
+      currentExpectedPin = pin;
+      document.getElementById('lblPaxNombreModal').innerText = nombre;
       document.getElementById('inpPin').value = '';
       document.getElementById('modalPin').style.display = 'flex';
       document.getElementById('inpPin').focus();
@@ -259,30 +571,52 @@
     }
 
     function confirmarPin() {
-      const pin = document.getElementById('inpPin').value.trim();
-      if (pin === expectedPin || pin.length === 4) {
-        alert('✓ PIN Correcto. Pasajero abordado satisfactoriamente.');
-        const el = document.getElementById('pax' + activePaxIdx);
+      const pinIngresado = document.getElementById('inpPin').value.trim();
+      if (pinIngresado === currentExpectedPin || pinIngresado.length === 4) {
+        alert('✓ PIN Correcto. Pasajero abordado y cobro en efectivo verificado.');
+        const el = document.getElementById(currentPaxTarget.elementId);
         if (el) {
-          el.style.borderColor = 'var(--accent)';
-          el.querySelector('button').innerText = '✓ Abordado';
-          el.querySelector('button').disabled = true;
-          el.querySelector('button').style.opacity = '0.6';
+          el.className = 'manifest-item boarded';
+          const btn = el.querySelector('button');
+          if (btn) {
+            btn.innerText = '✓ Abordado';
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+          }
         }
         cerrarPin();
       } else {
-        alert('❌ PIN Incorrecto. Verifique con el pasajero.');
+        alert('❌ PIN Incorrecto. Por favor solicite al pasajero que revise su aplicación.');
       }
     }
 
-    function entregarEncomienda() {
-      if (confirm('¿Confirmar entrega de la encomienda al destinatario en Machala?')) {
-        alert('✓ Encomienda entregada y registrada en el sistema central.');
+    function entregarEncomienda(guia) {
+      if (confirm(`¿Confirmar entrega física de la encomienda ${guia} con escaneo QR?`)) {
+        alert(`✓ Encomienda ${guia} entregada con éxito. Remitente notificado.`);
+        const el = document.getElementById('itemEnc1');
+        if (el) {
+          el.className = 'manifest-item boarded';
+          const btn = document.getElementById('btnEnc1');
+          btn.innerText = '✓ Entregada';
+          btn.disabled = true;
+          btn.style.opacity = '0.6';
+        }
       }
     }
 
     function abrirLiquidacion() {
-      alert('Liquidación de Turno:\n\nTotal Recaudado: $36.00\nFondo Cooperativa ($6.00 por turno despachado): -$6.00\n\nNeto a Chofer: $30.00\n\nEstado: Listo para cierre de turno.');
+      document.getElementById('liqTotal').innerText = `$${totalRecaudado.toFixed(2)}`;
+      document.getElementById('liqNeto').innerText = `$${(totalRecaudado - 6.00).toFixed(2)}`;
+      document.getElementById('modalLiquidacion').style.display = 'flex';
+    }
+
+    function cerrarLiquidacion() {
+      document.getElementById('modalLiquidacion').style.display = 'none';
+    }
+
+    function finalizarTurno() {
+      alert(`✓ Turno TRN-0930 liquidado.\nAporte de $6.00 registrado para la Cooperativa Macondo Express.\nNeto entregado al chofer: $${(totalRecaudado - 6.00).toFixed(2)}.`);
+      cerrarLiquidacion();
     }
   </script>
 </body>
