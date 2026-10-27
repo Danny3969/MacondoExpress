@@ -491,6 +491,33 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    @keyframes pulseDot {
+      0% { transform: scale(0.92); opacity: 0.7; }
+      50% { transform: scale(1.25); opacity: 1; }
+      100% { transform: scale(0.92); opacity: 0.7; }
+    }
+
+    .btn-whatsapp {
+      background: #25D366;
+      color: #fff;
+      font-weight: 700;
+      border: none;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+      box-shadow: 0 4px 14px rgba(37, 211, 102, 0.25);
+    }
+    .btn-whatsapp:hover {
+      background: #20bd5a;
+      transform: translateY(-1px);
+    }
+
     /* Responsive */
     @media (max-width: 950px) {
       .studio-stage {
@@ -710,6 +737,9 @@
               <div id="encomiendaNotifStatus" style="font-size: 11px; color: var(--amber); text-align: center;">
                 ⏳ Estado: En tránsito en la unidad del chofer
               </div>
+              <button class="btn-whatsapp" style="margin-top: 10px; width: 100%;" onclick="compartirEncomiendaWhatsApp()">
+                <span>📱</span> Enviar Guía y Token QR por WhatsApp
+              </button>
             </div>
           </div>
 
@@ -769,7 +799,30 @@
 
             <!-- Passenger Pickup Manifest (Door to Door) -->
             <div class="card">
-              <div class="card-title"><span>👥</span> Manifiesto de Recogida Puerta a Puerta</div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <div class="card-title" style="margin: 0;"><span>👥</span> Recogida Puerta a Puerta</div>
+                <span id="badgeOptimizacion" style="font-size: 9px; color: var(--accent); background: rgba(16,185,129,0.15); border: 1px solid var(--accent); padding: 2px 6px; border-radius: 4px; font-weight: 700;">TSP ACTIVO</span>
+              </div>
+
+              <!-- Radar Satelital & Telemetría en Vivo -->
+              <div id="radarChoferBar" style="background: rgba(6, 9, 14, 0.85); border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 7px; font-size: 11px;">
+                  <span style="display: inline-block; width: 7px; height: 7px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 8px var(--accent); animation: pulseDot 1.4s infinite;"></span>
+                  <span id="radarChoferTexto" style="color: var(--text-main); font-weight: 600;">GPS Satelital Enlazado</span>
+                </div>
+                <span id="radarChoferKm" style="font-size: 10px; color: var(--amber); font-weight: 700; font-family: monospace;">-- Km</span>
+              </div>
+
+              <!-- Botones de Optimización y Google Maps Waypoints -->
+              <div style="display: flex; gap: 6px; margin-bottom: 10px;">
+                <button class="btn btn-outline" onclick="optimizarRutaChofer()" style="flex: 1; padding: 6px 8px; font-size: 10px; border-color: var(--accent); color: var(--accent); display: flex; align-items: center; justify-content: center; gap: 4px;">
+                  <span>🧭</span> Optimizar Orden (TSP)
+                </button>
+                <button class="btn btn-primary" onclick="abrirRutaCompletaMaps()" style="flex: 1; padding: 6px 8px; font-size: 10px; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center; gap: 4px;">
+                  <span>🗺️</span> Ruta Multi-Parada
+                </button>
+              </div>
+
               <div id="listaPasajerosCond" style="display: flex; flex-direction: column; gap: 8px;">
                 <!-- Dinámico -->
               </div>
@@ -818,11 +871,48 @@
     // ── ESTADO REACTIVO COMPARTIDO (Simula la Base de Datos Supabase) ──────────
     const state = {
       cuposTotales: 4,
-      cuposOcupados: 0,
+      cuposOcupados: 2,
       selectedPasajeroSeats: 1,
-      pasajeros: [],
+      origen: 'Guayaquil',
+      destino: 'Machala',
+      pasajeros: [
+        {
+          id: 101,
+          nombre: 'Carlos Mendoza',
+          telefono: '0994123890',
+          puestos: 1,
+          direccion: 'Cdla. Alborada 4ta Etapa Mz 412 V 15 (Norte Guayaquil)',
+          monto: 12.00,
+          pin: '4821',
+          aBordo: false,
+          ordenRecogida: 1,
+          etaMinutos: 7
+        },
+        {
+          id: 102,
+          nombre: 'Elena Viteri',
+          telefono: '0981923450',
+          puestos: 1,
+          direccion: 'Av. 9 de Octubre y Boyacá (Centro Guayaquil)',
+          monto: 12.00,
+          pin: '7394',
+          aBordo: false,
+          ordenRecogida: 2,
+          etaMinutos: 18
+        }
+      ],
       idxPasajeroValidando: null,
-      encomienda: null
+      encomienda: {
+        id: 'ENC-782',
+        destinatario: 'Dra. María Belén Torres',
+        telefono: '0984512390',
+        direccion: 'Calle Bolívar y Junín (Machala Centro)',
+        descripcion: 'Sobre manila con resultados médicos y llaves',
+        precio: 5.00,
+        tokenQR: 'MCND-QR-A491F082',
+        entregada: false
+      },
+      rutaOptimizada: true
     };
 
     // ── RENDER DE ASIENTOS (MÁXIMO 4 POR UNIDAD) ──────────────────────────────
@@ -860,6 +950,56 @@
       }
     }
 
+    // ── OPTIMIZADOR DE RECORRIDO MULTI-PARADA (TSP DOOR TO DOOR) ───────────────
+    function optimizarRutaChofer() {
+      if (state.pasajeros.length === 0) {
+        alert('No hay pasajeros pendientes para optimizar.');
+        return;
+      }
+
+      // Ordenar recogidas: las no abordadas primero, priorizando secuencia lógica por corredor
+      const pendientes = state.pasajeros.filter(p => !p.aBordo);
+      const abordados = state.pasajeros.filter(p => p.aBordo);
+
+      // Simular cálculo de distancias y TSP inteligente
+      let baseEta = 6;
+      pendientes.forEach((p, i) => {
+        p.ordenRecogida = i + 1;
+        p.etaMinutos = baseEta;
+        baseEta += 11;
+      });
+
+      state.pasajeros = [...pendientes, ...abordados];
+      state.rutaOptimizada = true;
+
+      const badge = document.getElementById('badgeOptimizacion');
+      if (badge) {
+        badge.innerText = '✓ TSP OPTIMIZADO';
+        badge.style.color = '#fff';
+        badge.style.background = 'var(--accent)';
+      }
+
+      renderConductorManifest();
+      alert(`🧭 ¡Ruta de Recogida Optimizada!\nSe calculó la secuencia óptima para ${pendientes.length} parada(s) puerta a puerta antes de ingresar a la Vía Panamericana E25.`);
+    }
+
+    // ── LANZADOR DE GOOGLE MAPS MULTI-WAYPOINT ────────────────────────────────
+    function abrirRutaCompletaMaps() {
+      const paradasPendientes = state.pasajeros.filter(p => !p.aBordo);
+      if (paradasPendientes.length === 0) {
+        // Si todos están a bordo, dirigir directo a destino
+        window.open(`https://www.google.com/maps/dir/?api=1&origin=Guayaquil&destination=Machala&travelmode=driving`, '_blank');
+        return;
+      }
+
+      const origen = encodeURIComponent('Guayaquil, Ecuador');
+      const destino = encodeURIComponent(state.destino || 'Machala, Ecuador');
+      const waypoints = paradasPendientes.map(p => encodeURIComponent(p.direccion)).join('|');
+
+      const url = `https://www.google.com/maps/dir/?api=1&origin=${origen}&destination=${destino}&waypoints=${waypoints}&travelmode=driving`;
+      window.open(url, '_blank');
+    }
+
     // ── RENDER DEL MANIFIESTO DEL CHOFER ─────────────────────────────────────
     function renderConductorManifest() {
       const listPasajeros = document.getElementById('listaPasajerosCond');
@@ -885,25 +1025,50 @@
                 <span>🔢</span> Validar PIN (${p.pin})
               </button>`;
 
+          const ordenBadge = !p.aBordo && p.ordenRecogida 
+            ? `<span style="background: rgba(16,185,129,0.2); color: var(--accent); border: 1px solid var(--accent); font-size: 9px; font-weight: 800; padding: 1px 6px; border-radius: 10px;">PARADA #${p.ordenRecogida} · ETA: ${p.etaMinutos || 10} min</span>`
+            : '';
+
           row.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <strong style="font-size: 13px; color: ${p.aBordo ? 'var(--accent)' : '#fff'};">
-                ${p.aBordo ? '✅' : '⏳'} ${p.nombre} (${p.puestos} ${p.puestos === 1 ? 'puesto' : 'puestos'})
-              </strong>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <strong style="font-size: 13px; color: ${p.aBordo ? 'var(--accent)' : '#fff'};">
+                  ${p.aBordo ? '✅' : '⏳'} ${p.nombre} (${p.puestos} ${p.puestos === 1 ? 'puesto' : 'puestos'})
+                </strong>
+                ${ordenBadge}
+              </div>
               ${btnHtml}
             </div>
             <div style="font-size: 11px; color: var(--amber); margin-top: 4px;">
               📍 Recogida: ${p.direccion}
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
-              <span style="font-size: 11px; color: var(--text-dim);">Cobrar: <strong style="color: var(--amber);">$${p.monto.toFixed(2)}</strong></span>
+              <span style="font-size: 11px; color: var(--text-dim);">Cobro: <strong style="color: var(--amber);">$${p.monto.toFixed(2)} EFECTIVO</strong></span>
               <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.direccion)}" target="_blank" style="font-size: 10px; color: var(--accent); text-decoration: none; font-weight: 700;">
-                🗺️ Abrir Maps/Waze ➔
+                🗺️ Navegar Aquí ➔
               </a>
             </div>
           `;
           listPasajeros.appendChild(row);
         });
+      }
+
+      // Actualizar Telemetría Radar
+      const pendientes = state.pasajeros.filter(p => !p.aBordo);
+      const radarTexto = document.getElementById('radarChoferTexto');
+      const radarKm = document.getElementById('radarChoferKm');
+      if (radarTexto && radarKm) {
+        if (pendientes.length > 0) {
+          const prox = pendientes[0];
+          radarTexto.innerText = `Próx. Recogida: ${prox.nombre} (${prox.etaMinutos || 8}m)`;
+          radarKm.innerText = `A 3.4 Km`;
+        } else if (state.pasajeros.length > 0) {
+          radarTexto.innerText = `Todos a bordo · Rumbo a Machala (E25)`;
+          radarKm.innerText = `174 Km`;
+        } else {
+          radarTexto.innerText = `GPS Satelital Activo · En Base`;
+          radarKm.innerText = `-- Km`;
+        }
       }
 
       // Actualizar métricas del conductor
@@ -925,7 +1090,7 @@
             <div style="display: flex; justify-content: space-between;">
               <strong style="font-size: 12px;">Guía: ${state.encomienda.id}</strong>
               <span style="font-size: 10px; font-weight: 700; color: ${state.encomienda.entregada ? 'var(--accent)' : 'var(--amber)'};">
-                ${state.encomienda.entregada ? 'ENTREGADA' : 'EN TRÁNSITO'}
+                ${state.encomienda.entregada ? '✓ ENTREGADA' : '⏳ EN TRÁNSITO'}
               </span>
             </div>
             <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">
@@ -979,7 +1144,7 @@
     function confirmarReservaPasajero() {
       const libres = state.cuposTotales - state.cuposOcupados;
       if (state.selectedPasajeroSeats > libres) {
-        alert('Cupos insuficientes en la unidad.');
+        alert('Cupos insuficientes en la unidad (Capacidad estricta 4 asientos).');
         return;
       }
 
@@ -993,14 +1158,14 @@
       const nombreHdr = document.getElementById('pasajeroNombreHeader') ? document.getElementById('pasajeroNombreHeader').innerText : '';
       const nombre = (state.pasajeroActual && state.pasajeroActual.nombre) 
         ? state.pasajeroActual.nombre 
-        : (nombreHdr.includes('(') ? nombreHdr.split('(')[0].trim() : 'Pasajero');
+        : (nombreHdr.includes('(') ? nombreHdr.split('(')[0].trim() : 'Pasajero Macondo');
       const telefono = (state.pasajeroActual && state.pasajeroActual.telefono) ? state.pasajeroActual.telefono : '0990000000';
       const monto = state.selectedPasajeroSeats * 12.00;
       const pin = Math.floor(1000 + Math.random() * 9000).toString();
 
       // Actualizar estado reactivo
       state.cuposOcupados += state.selectedPasajeroSeats;
-      state.pasajeros.push({
+      const nuevoPax = {
         id: Date.now(),
         nombre: nombre,
         telefono: telefono,
@@ -1008,13 +1173,16 @@
         direccion: ref ? `${dir} (${ref})` : dir,
         monto: monto,
         pin: pin,
-        aBordo: false
-      });
+        aBordo: false,
+        ordenRecogida: state.pasajeros.length + 1,
+        etaMinutos: 25
+      };
+      state.pasajeros.push(nuevoPax);
 
       // Chofer info
-      const choferHdr = document.getElementById('conductorNombreHeader') ? document.getElementById('conductorNombreHeader').innerText.split('·')[0].trim() : 'El conductor';
+      const choferHdr = document.getElementById('conductorNombreHeader') ? document.getElementById('conductorNombreHeader').innerText.split('·')[0].trim() : 'Carlos Zambrano';
 
-      // Mostrar banner de éxito con el PIN de Abordaje destacado
+      // Mostrar banner de éxito con el PIN de Abordaje y botón WhatsApp Familiar
       const alertBox = document.getElementById('reservaAlert');
       alertBox.style.display = 'block';
       alertBox.className = 'notif-banner';
@@ -1028,7 +1196,17 @@
           <div style="background: var(--bg-card); border: 1.5px solid var(--accent); border-radius: 10px; padding: 10px; margin-top: 8px; text-align: center;">
             <div style="font-size: 9px; font-weight: 800; color: var(--accent); letter-spacing: 1px;">TU PIN DE ABORDAJE ANTIFRAUDE</div>
             <div style="font-size: 26px; font-weight: 900; letter-spacing: 6px; color: #fff; margin: 4px 0;">${pin}</div>
-            <div style="font-size: 9px; color: var(--amber);">Dicta este PIN a tu chofer al subir y paga $${monto.toFixed(2)} en efectivo.</div>
+            <div style="font-size: 9px; color: var(--amber);">Dicta este PIN al chofer al subir y cancela $${monto.toFixed(2)} en efectivo.</div>
+          </div>
+
+          <!-- BOTONES DE SEGURIDAD FAMILIAR WHATSAPP -->
+          <div style="display: flex; gap: 6px; margin-top: 10px;">
+            <button class="btn-whatsapp" style="flex: 1;" onclick="compartirViajeWhatsApp()">
+              <span>🛡️</span> Compartir Viaje por WhatsApp
+            </button>
+            <button onclick="copiarDetallesViaje()" style="background: var(--bg-elevated); color: var(--text-main); border: 1px solid var(--border); padding: 7px 10px; border-radius: 8px; font-size: 11px; cursor: pointer;">
+              📋 Copiar
+            </button>
           </div>
         </div>
       `;
@@ -1036,6 +1214,59 @@
       state.selectedPasajeroSeats = 1;
       renderSeats();
       renderConductorManifest();
+    }
+
+    // ── SEGURIDAD FAMILIAR: COMPARTIR ENLACE POR WHATSAPP ─────────────────────
+    function compartirViajeWhatsApp() {
+      if (state.pasajeros.length === 0) return;
+      const p = state.pasajeros[state.pasajeros.length - 1];
+      const choferHdr = document.getElementById('conductorNombreHeader') ? document.getElementById('conductorNombreHeader').innerText : 'Carlos Zambrano · GBA-4123';
+      
+      const msg = `🛡️ *MACONDO EXPRESS · VIAJE SEGURO EN RUTA*\n` +
+        `Hola, te comparto los datos de mi viaje interurbano puerta a puerta:\n\n` +
+        `📍 *Ruta:* ${state.origen} ➔ ${state.destino} (Corredor E25)\n` +
+        `🚗 *Unidad Homologada:* Chevrolet Sail Blanco · Placa GBA-4123 (4 Puestos)\n` +
+        `👨‍✈️ *Conductor:* ${choferHdr}\n` +
+        `🏠 *Dirección de Recogida:* ${p.direccion}\n` +
+        `🔢 *Mi PIN Secreto de Abordaje:* ${p.pin}\n` +
+        `💵 *Pago en Efectivo:* $${p.monto.toFixed(2)}\n\n` +
+        `📞 *Central de Despacho 24/7:* +593 99 238 4729\n` +
+        `🛰️ *Monitoreo Satelital:* Enlace activo por CTE en todo el corredor vial.`;
+
+      const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+      window.open(url, '_blank');
+    }
+
+    function copiarDetallesViaje() {
+      if (state.pasajeros.length === 0) return;
+      const p = state.pasajeros[state.pasajeros.length - 1];
+      const choferHdr = document.getElementById('conductorNombreHeader') ? document.getElementById('conductorNombreHeader').innerText : 'Carlos Zambrano · GBA-4123';
+      
+      const text = `MACONDO EXPRESS - Viaje Seguro: ${state.origen} a ${state.destino} | Unidad: GBA-4123 | Conductor: ${choferHdr} | Recogida: ${p.direccion} | PIN Abordaje: ${p.pin} | Despacho: +593 99 238 4729`;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('📋 Datos del viaje copiados al portapapeles para compartir con familiares.');
+      }).catch(() => {
+        alert(text);
+      });
+    }
+
+    function compartirEncomiendaWhatsApp() {
+      if (!state.encomienda) {
+        alert('No hay encomienda activa.');
+        return;
+      }
+      const e = state.encomienda;
+      const msg = `📦 *MACONDO EXPRESS · GUÍA DE ENCOMIENDA RÁPIDA*\n` +
+        `Hola *${e.destinatario}*, te enviaron una encomienda puerta a puerta:\n\n` +
+        `📋 *Número de Guía:* ${e.id}\n` +
+        `📍 *Dirección de Entrega:* ${e.direccion}\n` +
+        `🔐 *Token QR de Retiro:* ${e.tokenQR}\n` +
+        `📦 *Contenido:* ${e.descripcion}\n` +
+        `💵 *Estado de Pago:* $5.00 Efectivo Pagado en Ventanilla\n\n` +
+        `Muestra tu Token QR o el código en pantalla al conductor de Macondo Express para retirar tu paquete con seguridad antifraude.`;
+
+      const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+      window.open(url, '_blank');
     }
 
     function fijarGpsPasajero() {

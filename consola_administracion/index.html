@@ -548,32 +548,49 @@
               <span class="badge badge-green" style="margin-bottom: 6px;">MODELO ECONÓMICO COOPERATIVO</span>
               <h2 style="font-size: 18px; font-weight: 800; color: #fff;">Auditoría de Liquidaciones y Caja de Turnos</h2>
               <p style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">
-                Cierre de caja por turno finalizado. Cada conductor retiene el efectivo de pasajes y cancela $6.00 fijos de cuota de administración cooperativa.
+                Cierre de caja por turno finalizado. Cada conductor retiene el efectivo de pasajes y cancela $6.00 fijos de cuota de administración cooperativa en ventanilla.
               </p>
             </div>
-            <button class="btn btn-outline" onclick="renderLiquidacionesTable()">
-              🔄 Actualizar Arqueos
-            </button>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-outline" onclick="renderLiquidacionesTable()">
+                🔄 Actualizar Arqueos
+              </button>
+            </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 20px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 20px;">
             <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid var(--accent); border-radius: 10px; padding: 14px;">
               <div style="font-size: 11px; color: var(--accent-light); font-weight: 700;">CUOTA FIJA COOPERATIVA</div>
               <div style="font-size: 24px; font-weight: 900; color: #fff; margin-top: 4px;">$6.00 <span style="font-size: 13px; color: var(--text-muted);">/ turno</span></div>
-              <div style="font-size: 11px; color: var(--text-dim); margin-top: 2px;">Aporte de sostenimiento gremial</div>
+              <div style="font-size: 11px; color: var(--text-dim); margin-top: 2px;">Sostenimiento gremial por salida</div>
             </div>
 
             <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid var(--amber); border-radius: 10px; padding: 14px;">
-              <div style="font-size: 11px; color: var(--amber-light); font-weight: 700;">FONDO COOPERATIVA ACUMULADO</div>
-              <div style="font-size: 24px; font-weight: 900; color: var(--amber); margin-top: 4px;">$36.00</div>
-              <div style="font-size: 11px; color: var(--text-dim); margin-top: 2px;">Recaudado en ventanilla hoy</div>
+              <div style="font-size: 11px; color: var(--amber-light); font-weight: 700;">FONDO COOPERATIVA RECAUDADO</div>
+              <div style="font-size: 24px; font-weight: 900; color: var(--amber); margin-top: 4px;" id="kpiFondoCoop">$0.00</div>
+              <div style="font-size: 11px; color: var(--text-dim); margin-top: 2px;" id="kpiTurnosPagados">Cobrado en ventanilla</div>
+            </div>
+
+            <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--red); border-radius: 10px; padding: 14px;">
+              <div style="font-size: 11px; color: #f87171; font-weight: 700;">POR COBRAR EN VENTANILLA</div>
+              <div style="font-size: 24px; font-weight: 900; color: #ef4444; margin-top: 4px;" id="kpiPendienteCoop">$0.00</div>
+              <div style="font-size: 11px; color: var(--text-dim); margin-top: 2px;" id="kpiTurnosPendientes">0 turnos sin cobrar</div>
             </div>
 
             <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid var(--blue); border-radius: 10px; padding: 14px;">
-              <div style="font-size: 11px; color: #60a5fa; font-weight: 700;">PAGO CONDUCTORES</div>
-              <div style="font-size: 24px; font-weight: 900; color: #fff; margin-top: 4px;">Inmediato</div>
+              <div style="font-size: 11px; color: #60a5fa; font-weight: 700;">PAGO TOTAL CONDUCTORES</div>
+              <div style="font-size: 24px; font-weight: 900; color: #fff; margin-top: 4px;" id="kpiNetoChoferes">$0.00</div>
               <div style="font-size: 11px; color: var(--text-dim); margin-top: 2px;">100% Cash en mano del chofer</div>
             </div>
+          </div>
+
+          <!-- Filtros de Liquidaciones -->
+          <div style="display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center;">
+            <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Filtrar Auditoría:</span>
+            <button class="btn btn-primary" id="btnFiltroLiqTodos" style="padding: 5px 12px; font-size: 11px;" onclick="filtrarLiquidaciones('todos')">Todos (<span id="countLiqTodos">0</span>)</button>
+            <button class="btn btn-outline" id="btnFiltroLiqPendientes" style="padding: 5px 12px; font-size: 11px; border-color: var(--amber); color: var(--amber);" onclick="filtrarLiquidaciones('pendientes')">⚠️ Pendientes ($6) (<span id="countLiqPendientes">0</span>)</button>
+            <button class="btn btn-outline" id="btnFiltroLiqPagados" style="padding: 5px 12px; font-size: 11px; border-color: var(--accent); color: var(--accent);" onclick="filtrarLiquidaciones('pagados')">✅ Auditados & Al Día (<span id="countLiqPagados">0</span>)</button>
+            <button class="btn btn-outline" id="btnFiltroLiqMora" style="padding: 5px 12px; font-size: 11px; border-color: var(--red); color: #f87171;" onclick="filtrarLiquidaciones('mora')">🚨 Conductores con Mora (<span id="countLiqMora">0</span>)</button>
           </div>
 
           <div class="table-responsive">
@@ -588,7 +605,8 @@
                   <th>Peajes</th>
                   <th>Combustible</th>
                   <th>Neto Conductor</th>
-                  <th>Estado Auditoría</th>
+                  <th>Estado Caja</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody id="tbodyLiquidaciones">
@@ -1493,6 +1511,27 @@
       </div>
     </div>
   </div>
+
+  <!-- MODAL: RECIBO OFICIAL DE LIQUIDACIÓN DE CUOTA DE TURNO ($6) -->
+  <div id="modalReciboLiquidacion" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 440px; border-color: var(--amber); box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 30px rgba(245,158,11,0.2);">
+      <button class="modal-close" onclick="cerrarModalReciboLiquidacion()">✕</button>
+      
+      <div id="imprimibleReciboContenido" style="background: #fff; color: #111; padding: 18px; border-radius: 8px; font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 11px; line-height: 1.4;">
+        <!-- Inyectado dinámicamente -->
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end;">
+        <button class="btn btn-outline" onclick="cerrarModalReciboLiquidacion()">Cerrar</button>
+        <button class="btn btn-primary" onclick="imprimirReciboLiquidacion()" style="background: var(--amber); color: #000; font-weight: 800;">
+          <span>🖨️</span> Imprimir Recibo Térmico
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ÁREA EXCLUSIVA PARA IMPRESIÓN DEL RECIBO DE LIQUIDACIÓN -->
+  <div id="printableReciboArea" class="print-only printable-guia"></div>
 
   <!-- ÁREA EXCLUSIVA PARA IMPRESIÓN DEL MANIFIESTO ANT -->
   <div id="printableArea" class="print-only"></div>

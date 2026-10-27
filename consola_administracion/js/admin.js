@@ -186,12 +186,15 @@ function recalcularKPIs() {
     } else {
       recaudado += (t.totalEfectivo || 0);
     }
-    cuotas += (t.cuotaCooperativa || 6.00);
   });
 
-  adminState.liquidaciones.forEach(l => {
-    // Si hay liquidaciones registradas
-  });
+  if (adminState.liquidaciones && Array.isArray(adminState.liquidaciones)) {
+    adminState.liquidaciones.forEach(l => {
+      if (l.estadoPago === 'pagado') {
+        cuotas += (l.cuotaCooperativa || 6.00);
+      }
+    });
+  }
 
   // Métricas de Encomiendas & Carga
   let totalEnc = adminState.encomiendas ? adminState.encomiendas.length : 0;
@@ -1212,8 +1215,10 @@ function cambiarEstadoTurno(turnoId, nuevoEstado) {
 
     const liq = {
       id: `liq-${Date.now()}`,
+      turnoId: t.id,
       turnoCodigo: t.codigo,
       fecha: new Date().toISOString().replace('T', ' ').substring(0, 16),
+      fechaPago: null,
       chofer: t.choferNombre,
       placa: t.vehiculoPlaca,
       totalPasajes: totalPasajes,
@@ -1223,7 +1228,8 @@ function cambiarEstadoTurno(turnoId, nuevoEstado) {
       gastosPeaje: peaje,
       gastosCombustible: combustible,
       gananciaNetaChofer: neto > 0 ? neto : 0,
-      estado: 'auditado'
+      estadoPago: 'pendiente',
+      reciboNumero: null
     };
     adminState.liquidaciones.unshift(liq);
     saveState('liquidaciones');
@@ -1412,48 +1418,295 @@ function imprimirManifiestoANT() {
   window.print();
 }
 
-// ── 10. RENDER DE AUDITORÍA DE LIQUIDACIONES ─────────────────────────────────
+// ── 10. RENDER DE AUDITORÍA DE LIQUIDACIONES Y CAJA DE TURNOS ────────────────
 function renderLiquidacionesTable() {
   const tbody = document.getElementById('tbodyLiquidaciones');
   if (!tbody) return;
   tbody.innerHTML = '';
 
-  if (adminState.liquidaciones.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-dim); padding: 36px;">No hay liquidaciones de caja registradas aún. Las liquidaciones se generan automáticamente al liquidar turnos completados en la pestaña de Despacho.</td></tr>`;
+  // Calcular métricas cooperativas dinámicas
+  const liqs = adminState.liquidaciones || [];
+  const fondoRecaudado = liqs.filter(l => l.estadoPago === 'pagado').reduce((sum, l) => sum + (l.cuotaCooperativa || 6.00), 0);
+  const pendienteRecaudar = liqs.filter(l => l.estadoPago === 'pendiente').reduce((sum, l) => sum + (l.cuotaCooperativa || 6.00), 0);
+  const pagadosCount = liqs.filter(l => l.estadoPago === 'pagado').length;
+  const pendientesCount = liqs.filter(l => l.estadoPago === 'pendiente').length;
+  const netoTotalChoferes = liqs.reduce((sum, l) => sum + (l.gananciaNetaChofer || 0), 0);
+
+  // Mapear morosidad por chofer
+  const moraMap = {};
+  liqs.forEach(l => {
+    if (l.estadoPago === 'pendiente') {
+      moraMap[l.chofer] = (moraMap[l.chofer] || 0) + 1;
+    }
+  });
+  const choferesConMora = Object.keys(moraMap).filter(ch => moraMap[ch] >= 2);
+
+  // Actualizar KPI Cards
+  const elFondo = document.getElementById('kpiFondoCoop');
+  if (elFondo) elFondo.innerText = `$${fondoRecaudado.toFixed(2)}`;
+  const elPend = document.getElementById('kpiPendienteCoop');
+  if (elPend) elPend.innerText = `$${pendienteRecaudar.toFixed(2)}`;
+  const elTurnosPag = document.getElementById('kpiTurnosPagados');
+  if (elTurnosPag) elTurnosPag.innerText = `${pagadosCount} turno(s) cobrado(s) hoy`;
+  const elTurnosPend = document.getElementById('kpiTurnosPendientes');
+  if (elTurnosPend) elTurnosPend.innerText = `${pendientesCount} turno(s) sin liquidar`;
+  const elNeto = document.getElementById('kpiNetoChoferes');
+  if (elNeto) elNeto.innerText = `$${netoTotalChoferes.toFixed(2)}`;
+
+  // Actualizar contadores de filtros
+  const cAll = document.getElementById('countLiqTodos');
+  if (cAll) cAll.innerText = liqs.length;
+  const cPend = document.getElementById('countLiqPendientes');
+  if (cPend) cPend.innerText = pendientesCount;
+  const cPag = document.getElementById('countLiqPagados');
+  if (cPag) cPag.innerText = pagadosCount;
+  const cMora = document.getElementById('countLiqMora');
+  if (cMora) cMora.innerText = choferesConMora.length;
+
+  if (liqs.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-dim); padding: 36px;">
+      No hay liquidaciones de caja registradas aún. Las liquidaciones se generan automáticamente al liquidar turnos completados en la pestaña de Despacho.<br>
+      <div style="margin-top: 12px;">
+        <button class="btn btn-outline" style="border-color: var(--amber); color: var(--amber); font-size: 11px; padding: 6px 14px;" onclick="generarLiquidacionDemo()">
+          ⚡ Generar Turno de Prueba para Auditoría ($6.00)
+        </button>
+      </div>
+    </td></tr>`;
     return;
   }
 
-  adminState.liquidaciones.forEach(l => {
+  // Filtrado
+  const filtro = adminState.filtroLiquidaciones || 'todos';
+  let filtradas = liqs;
+  if (filtro === 'pendientes') {
+    filtradas = liqs.filter(l => l.estadoPago === 'pendiente');
+  } else if (filtro === 'pagados') {
+    filtradas = liqs.filter(l => l.estadoPago === 'pagado');
+  } else if (filtro === 'mora') {
+    filtradas = liqs.filter(l => l.estadoPago === 'pendiente' && moraMap[l.chofer] >= 2);
+  }
+
+  if (filtradas.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-dim); padding: 28px;">No hay liquidaciones que coincidan con el filtro seleccionado ("${filtro}").</td></tr>`;
+    return;
+  }
+
+  filtradas.forEach(l => {
+    const esPagado = l.estadoPago === 'pagado';
+    const tieneMora = !esPagado && moraMap[l.chofer] >= 2;
+
+    let estadoBadge = '';
+    if (esPagado) {
+      estadoBadge = `<span class="badge badge-green">✓ PAGADO & AUDITADO</span><br><span style="font-size: 9px; color: var(--text-dim); font-family: monospace;">Recibo: ${l.reciboNumero || 'S/N'}</span>`;
+    } else if (tieneMora) {
+      estadoBadge = `<span class="badge badge-red" style="animation: pulse 1.5s infinite;">🚨 EN MORA (${moraMap[l.chofer]} turnos)</span><br><span style="font-size: 9px; color: #f87171;">Debe $${(moraMap[l.chofer] * 6).toFixed(2)}</span>`;
+    } else {
+      estadoBadge = `<span class="badge badge-amber">⚠️ PENDIENTE ($6)</span>`;
+    }
+
+    const accionHtml = esPagado
+      ? `<button class="btn btn-outline" style="padding: 4px 8px; font-size: 11px; border-color: var(--accent); color: var(--accent);" onclick="verReciboLiquidacion('${l.id}')">
+          🧾 Recibo Térmico
+        </button>`
+      : `<button class="btn btn-primary" style="padding: 4px 10px; font-size: 11px; background: var(--amber); color: #000; font-weight: 800;" onclick="cobrarCuotaLiquidacion('${l.id}')">
+          💵 Cobrar $6.00
+        </button>`;
+
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><strong style="color: #fff; font-family: monospace;">${l.turnoCodigo}</strong></td>
-      <td>${l.fecha}</td>
+      <td>
+        <span style="font-size: 11px; color: var(--text-main);">${l.fecha}</span>
+        ${l.fechaPago ? `<br><span style="font-size: 10px; color: var(--accent);">Cobro: ${l.fechaPago}</span>` : ''}
+      </td>
       <td>
         <strong style="color: #fff;">${l.chofer}</strong><br>
         <span style="font-size: 11px; color: var(--text-dim); font-family: monospace;">Placa: ${l.placa}</span>
       </td>
       <td>
         <strong style="color: var(--amber); font-size: 13px;">$${l.totalRecaudado.toFixed(2)}</strong><br>
-        <span style="font-size: 10px; color: var(--text-dim);">Pasajes: $${l.totalPasajes} | Enc: $${l.totalEncomiendas}</span>
+        <span style="font-size: 10px; color: var(--text-dim);">Pasajes: $${l.totalPasajes} | Enc: $${l.totalEncomiendas || 0}</span>
       </td>
       <td>
-        <strong style="color: var(--accent);">$${l.cuotaCooperativa.toFixed(2)}</strong>
+        <strong style="color: ${esPagado ? 'var(--accent)' : 'var(--amber)'}; font-size: 13px;">$${(l.cuotaCooperativa || 6.00).toFixed(2)}</strong>
       </td>
       <td>
-        <span style="color: var(--red);">-$${l.gastosPeaje.toFixed(2)}</span>
+        <span style="color: var(--red);">-$${(l.gastosPeaje || 2.00).toFixed(2)}</span>
       </td>
       <td>
-        <span style="color: var(--red);">-$${l.gastosCombustible.toFixed(2)}</span>
+        <span style="color: var(--red);">-$${(l.gastosCombustible || 12.00).toFixed(2)}</span>
       </td>
       <td>
-        <strong style="color: var(--accent-light); font-size: 15px;">$${l.gananciaNetaChofer.toFixed(2)}</strong>
+        <strong style="color: var(--accent-light); font-size: 14px;">$${l.gananciaNetaChofer.toFixed(2)}</strong>
       </td>
       <td>
-        <span class="badge badge-green">AUDITADO & RECIBIDO</span>
+        ${estadoBadge}
+      </td>
+      <td>
+        ${accionHtml}
       </td>
     `;
     tbody.appendChild(tr);
   });
+}
+
+function filtrarLiquidaciones(filtro) {
+  adminState.filtroLiquidaciones = filtro;
+  const btns = {
+    todos: 'btnFiltroLiqTodos',
+    pendientes: 'btnFiltroLiqPendientes',
+    pagados: 'btnFiltroLiqPagados',
+    mora: 'btnFiltroLiqMora'
+  };
+  Object.keys(btns).forEach(k => {
+    const el = document.getElementById(btns[k]);
+    if (el) {
+      if (k === filtro) {
+        el.className = 'btn btn-primary';
+      } else {
+        el.className = 'btn btn-outline';
+      }
+    }
+  });
+  renderLiquidacionesTable();
+}
+
+function cobrarCuotaLiquidacion(liqId) {
+  const l = adminState.liquidaciones.find(item => item.id === liqId);
+  if (!l) return;
+
+  const numRecibo = 'RC-' + Math.floor(10000 + Math.random() * 90000);
+  l.estadoPago = 'pagado';
+  l.reciboNumero = numRecibo;
+  l.fechaPago = new Date().toISOString().replace('T', ' ').substring(0, 16);
+
+  saveState('liquidaciones');
+  recalcularKPIs();
+  renderLiquidacionesTable();
+
+  if (confirm(`✓ ¡Cobro de $6.00 recibido en ventanilla!\nRecibo N°: ${numRecibo}\nConductor: ${l.chofer} (${l.placa})\n\n¿Desea imprimir el comprobante térmico de caja ahora?`)) {
+    verReciboLiquidacion(liqId);
+  }
+}
+
+function verReciboLiquidacion(liqId) {
+  const l = adminState.liquidaciones.find(item => item.id === liqId);
+  if (!l) return;
+
+  const numRecibo = l.reciboNumero || ('RC-' + Math.floor(10000 + Math.random() * 90000));
+  if (!l.reciboNumero) {
+    l.reciboNumero = numRecibo;
+    saveState('liquidaciones');
+  }
+
+  const container = document.getElementById('imprimibleReciboContenido');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div style="text-align: center; border-bottom: 1.5px dashed #333; padding-bottom: 10px; margin-bottom: 10px;">
+      <div style="font-weight: 900; font-size: 13px; text-transform: uppercase;">COOPERATIVA DE TRANSPORTE MACONDO EXPRESS</div>
+      <div style="font-size: 10px; color: #555;">RUC: 0992384729001 · RESOLUCIÓN ANT N° 0482-2025</div>
+      <div style="font-size: 10px; color: #555;">VENTANILLA CENTRAL DE RECAUDACIÓN Y CAJA</div>
+      <div style="font-size: 12px; font-weight: 800; margin-top: 6px; color: #000; background: #f0f0f0; padding: 4px; border-radius: 4px;">
+        COMPROBANTE DE RECAUDACIÓN DE CUOTA DE TURNO
+      </div>
+      <div style="font-size: 11px; font-weight: 700; margin-top: 4px;">RECIBO N°: ${numRecibo}</div>
+    </div>
+
+    <div style="font-size: 11px; display: flex; flex-direction: column; gap: 4px; border-bottom: 1px dashed #777; padding-bottom: 8px;">
+      <div><strong>Código Turno:</strong> ${l.turnoCodigo}</div>
+      <div><strong>Fecha de Turno:</strong> ${l.fecha}</div>
+      <div><strong>Fecha de Recaudación:</strong> ${l.fechaPago || new Date().toISOString().replace('T', ' ').substring(0, 16)}</div>
+      <div><strong>Conductor Profesional:</strong> ${l.chofer}</div>
+      <div><strong>Unidad Homologada:</strong> ${l.placa} (4 Puestos)</div>
+    </div>
+
+    <div style="margin: 10px 0; border-bottom: 1.5px dashed #333; padding-bottom: 8px;">
+      <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+        <span>(+) Recaudación Pasajes (Efectivo):</span>
+        <strong>$${l.totalPasajes.toFixed(2)}</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+        <span>(+) Recaudación Encomiendas:</span>
+        <strong>$${(l.totalEncomiendas || 0).toFixed(2)}</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px; color: #991b1b;">
+        <span>(-) Peajes Ruta E25:</span>
+        <span>-$${(l.gastosPeaje || 2.00).toFixed(2)}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px; color: #991b1b;">
+        <span>(-) Combustible Estimado:</span>
+        <span>-$${(l.gastosCombustible || 12.00).toFixed(2)}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; background: #f4f4f4; padding: 4px; margin-top: 4px;">
+        <span>(=) Ganancia Neta Efectivo Chofer:</span>
+        <span>$${l.gananciaNetaChofer.toFixed(2)}</span>
+      </div>
+    </div>
+
+    <div style="background: #e6fffa; border: 1.5px solid #059669; border-radius: 6px; padding: 8px; margin-bottom: 12px; text-align: center;">
+      <div style="font-size: 10px; font-weight: 800; color: #065f46;">CUOTA FIJA ADMINISTRACIÓN COOPERATIVA</div>
+      <div style="font-size: 22px; font-weight: 900; color: #047857; margin: 3px 0;">$${(l.cuotaCooperativa || 6.00).toFixed(2)} USD</div>
+      <div style="font-size: 10px; font-weight: 700; color: #065f46;">✓ PAGADO 100% EFECTIVO EN VENTANILLA</div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; margin-top: 25px; padding-top: 10px; text-align: center; font-size: 9px;">
+      <div style="width: 45%; border-top: 1px solid #000; padding-top: 3px;">
+        Recaudador de Caja<br>
+        <strong>Ventanilla Terminal Macondo</strong>
+      </div>
+      <div style="width: 45%; border-top: 1px solid #000; padding-top: 3px;">
+        Conductor Titular<br>
+        <strong>${l.chofer}</strong>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('modalReciboLiquidacion').style.display = 'flex';
+}
+
+function cerrarModalReciboLiquidacion() {
+  document.getElementById('modalReciboLiquidacion').style.display = 'none';
+}
+
+function imprimirReciboLiquidacion() {
+  const contenido = document.getElementById('imprimibleReciboContenido').innerHTML;
+  const printArea = document.getElementById('printableReciboArea');
+  if (printArea) {
+    printArea.innerHTML = contenido;
+  }
+  window.print();
+}
+
+function generarLiquidacionDemo() {
+  const turnoId = 'trn-demo-' + Date.now();
+  const codigo = 'TRN-' + Math.floor(8000 + Math.random() * 900);
+  const ahora = new Date().toISOString().replace('T', ' ').substring(0, 16);
+
+  const demoLiq = {
+    id: `liq-${Date.now()}`,
+    turnoId: turnoId,
+    turnoCodigo: codigo,
+    fecha: ahora,
+    fechaPago: null,
+    chofer: 'Carlos Zambrano Vera',
+    placa: 'GBA-4123',
+    totalPasajes: 48.00,
+    totalEncomiendas: 5.00,
+    totalRecaudado: 53.00,
+    cuotaCooperativa: 6.00,
+    gastosPeaje: 2.00,
+    gastosCombustible: 12.00,
+    gananciaNetaChofer: 33.00,
+    estadoPago: 'pendiente',
+    reciboNumero: null
+  };
+
+  adminState.liquidaciones.unshift(demoLiq);
+  saveState('liquidaciones');
+  recalcularKPIs();
+  renderLiquidacionesTable();
+  alert(`✓ ¡Turno de prueba ${codigo} generado y listo para auditoría en ventanilla!\nAhora puede probar el botón "Cobrar $6.00" e imprimir el comprobante térmico oficial.`);
 }
 
 // ── 11. RENDER DE FLOTA Y CONDUCTORES ────────────────────────────────────────
