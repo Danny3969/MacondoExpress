@@ -2753,7 +2753,7 @@ function abrirModalNuevoCliente() {
   document.getElementById('adminCliNombre').value = '';
   document.getElementById('adminCliTelefono').value = '';
   document.getElementById('adminCliDireccion').value = '';
-  document.getElementById('adminCliPin').value = '1234';
+  document.getElementById('adminCliPin').value = '';
   document.getElementById('adminCliEstado').value = 'Regular';
   document.getElementById('adminCliCedulaMsg').innerText = 'Validación algorítmica Módulo 10 ANT.';
   document.getElementById('adminCliCedulaMsg').style.color = 'var(--text-dim)';

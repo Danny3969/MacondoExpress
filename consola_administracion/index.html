@@ -1648,12 +1648,12 @@
       <div class="form-grid-2">
         <div class="form-group">
           <label class="form-label">Cédula de Identidad (10 dígitos) *</label>
-          <input type="text" id="adminCliCedula" class="admin-input" maxlength="10" placeholder="0928374651" oninput="validarCedulaAdminInput()">
+          <input type="text" id="adminCliCedula" class="admin-input" maxlength="10" placeholder="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" oninput="validarCedulaAdminInput()">
           <div id="adminCliCedulaMsg" style="font-size: 10px; margin-top: 4px; color: var(--text-dim);">Validación algorítmica Módulo 10 ANT.</div>
         </div>
         <div class="form-group">
           <label class="form-label">Nombres y Apellidos Completos *</label>
-          <input type="text" id="adminCliNombre" class="admin-input" placeholder="Ej: Martha Cecilia Zambrano">
+          <input type="text" id="adminCliNombre" class="admin-input" placeholder="" autocomplete="off" spellcheck="false">
         </div>
       </div>
 
@@ -1662,7 +1662,7 @@
           <label class="form-label">Celular WhatsApp *</label>
           <div style="display: flex; gap: 6px;">
             <span style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12px; color: #fff;">+593</span>
-            <input type="tel" id="adminCliTelefono" class="admin-input" placeholder="0987654321" style="flex: 1;">
+            <input type="tel" id="adminCliTelefono" class="admin-input" placeholder="" autocomplete="off" spellcheck="false" style="flex: 1;">
           </div>
         </div>
         <div class="form-group">
@@ -1683,14 +1683,14 @@
 
       <div class="form-group" style="margin-top: 10px;">
         <label class="form-label">Dirección Habitual de Recogida (Domicilio / Oficina)</label>
-        <input type="text" id="adminCliDireccion" class="admin-input" placeholder="Ej: Av. Las Lomas y Callejón 3ra, Urb. Miraflores">
+        <input type="text" id="adminCliDireccion" class="admin-input" placeholder="" autocomplete="off" spellcheck="false">
       </div>
 
       <div class="form-grid-2" style="margin-top: 10px;">
         <div class="form-group">
           <label class="form-label">PIN Numérico de Acceso para la App *</label>
-          <input type="password" id="adminCliPin" class="admin-input" maxlength="4" value="1234" style="text-align: center; letter-spacing: 4px; font-family: monospace;">
-          <div style="font-size: 10px; color: var(--text-dim); margin-top: 2px;">Por defecto se asigna '1234' para primer ingreso.</div>
+          <input type="password" id="adminCliPin" class="admin-input" maxlength="4" value="" placeholder="" autocomplete="new-password" style="text-align: center; letter-spacing: 4px; font-family: monospace;">
+          <div style="font-size: 10px; color: var(--text-dim); margin-top: 2px;">Por defecto se asigna '1234' para primer ingreso si se deja vacío.</div>
         </div>
         <div class="form-group">
           <label class="form-label">Categoría Inicial</label>
@@ -1735,7 +1735,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">Nombres y Apellidos Completos *</label>
-          <input type="text" id="adminEditCliNombre" class="admin-input" placeholder="Nombres del cliente">
+          <input type="text" id="adminEditCliNombre" class="admin-input" placeholder="" autocomplete="off" spellcheck="false">
         </div>
       </div>
 
@@ -1744,7 +1744,7 @@
           <label class="form-label">Celular WhatsApp *</label>
           <div style="display: flex; gap: 6px;">
             <span style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12px; color: #fff;">+593</span>
-            <input type="tel" id="adminEditCliTelefono" class="admin-input" placeholder="0987654321" style="flex: 1;">
+            <input type="tel" id="adminEditCliTelefono" class="admin-input" placeholder="" autocomplete="off" spellcheck="false" style="flex: 1;">
           </div>
         </div>
         <div class="form-group">
@@ -1765,13 +1765,13 @@
 
       <div class="form-group" style="margin-top: 10px;">
         <label class="form-label">Dirección Habitual de Recogida (Domicilio / Oficina)</label>
-        <input type="text" id="adminEditCliDireccion" class="admin-input" placeholder="Calle principal, secundaria y referencia">
+        <input type="text" id="adminEditCliDireccion" class="admin-input" placeholder="" autocomplete="off" spellcheck="false">
       </div>
 
       <div class="form-grid-3" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px;">
         <div class="form-group">
           <label class="form-label">PIN Móvil (4 dígitos) *</label>
-          <input type="password" id="adminEditCliPin" class="admin-input" maxlength="4" style="text-align: center; letter-spacing: 4px; font-family: monospace;">
+          <input type="password" id="adminEditCliPin" class="admin-input" maxlength="4" placeholder="" autocomplete="new-password" style="text-align: center; letter-spacing: 4px; font-family: monospace;">
         </div>
         <div class="form-group">
           <label class="form-label">Categoría / Estado</label>

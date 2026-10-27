@@ -1600,7 +1600,7 @@
         document.getElementById('lblTelClienteLogin').innerText = '+593 ' + clienteExistente.telefono;
         document.getElementById('lblViajesClienteLogin').innerText = `${clienteExistente.viajes} viajes realizados`;
         document.getElementById('authPasajeroPin').value = '';
-        document.getElementById('authPasajeroPin').placeholder = '••••';
+        document.getElementById('authPasajeroPin').placeholder = '';
         actualizarDotsPasajero(2);
       } else {
         // Modo Registro Nuevo
@@ -1815,7 +1815,7 @@
         <label class="field-label" style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px; display: block;">Número de Cédula de Identidad (10 dígitos) *</label>
         <div style="display: flex; gap: 8px;">
           <div style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: 13px; font-weight: bold; color: #fff;">🇪🇨 C.I.</div>
-          <input type="text" id="authCedulaInput" class="field-input" maxlength="10" placeholder="0928374651" style="flex: 1; font-family: monospace; font-size: 16px; font-weight: bold; letter-spacing: 2px;" oninput="actualizarFeedbackCedula()">
+          <input type="text" id="authCedulaInput" class="field-input" maxlength="10" placeholder="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" style="flex: 1; font-family: monospace; font-size: 16px; font-weight: bold; letter-spacing: 2px;" oninput="actualizarFeedbackCedula()">
         </div>
         
         <div id="cedulaValidationMsg" style="font-size: 11px; margin-top: 8px; line-height: 1.4; color: var(--text-dim);">
@@ -1849,7 +1849,7 @@
         </div>
 
         <label class="field-label" style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px; display: block;">Ingrese su PIN de Seguridad (4 dígitos) *</label>
-        <input type="password" id="authPasajeroPin" class="field-input" maxlength="4" placeholder="••••" style="text-align: center; font-size: 24px; letter-spacing: 12px; font-weight: bold; font-family: monospace;">
+        <input type="password" id="authPasajeroPin" class="field-input" maxlength="4" placeholder="" autocomplete="new-password" style="text-align: center; font-size: 24px; letter-spacing: 12px; font-weight: bold; font-family: monospace;">
         <div style="font-size: 10px; color: var(--text-dim); margin-top: 6px; text-align: center;">⚡ Demo: El PIN predeterminado es <strong>1234</strong></div>
 
         <button class="btn btn-primary" style="margin-top: 16px;" onclick="verificarPinPasajero()">
@@ -1873,13 +1873,13 @@
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <div>
             <label class="field-label" style="font-size: 10px; color: var(--text-muted); margin-bottom: 2px; display: block;">Nombres y Apellidos Completos *</label>
-            <input type="text" id="regNuevoNombre" class="field-input" placeholder="Ej: Diana Elizabeth Paredes">
+            <input type="text" id="regNuevoNombre" class="field-input" placeholder="" autocomplete="off" spellcheck="false">
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
             <div>
               <label class="field-label" style="font-size: 10px; color: var(--text-muted); margin-bottom: 2px; display: block;">Celular WhatsApp *</label>
-              <input type="tel" id="regNuevoTel" class="field-input" placeholder="0987654321">
+              <input type="tel" id="regNuevoTel" class="field-input" placeholder="" autocomplete="off">
             </div>
             <div>
               <label class="field-label" style="font-size: 10px; color: var(--text-muted); margin-bottom: 2px; display: block;">Ciudad Base *</label>
@@ -1895,12 +1895,12 @@
 
           <div>
             <label class="field-label" style="font-size: 10px; color: var(--text-muted); margin-bottom: 2px; display: block;">Dirección habitual de recogida (Domicilio/Oficina)</label>
-            <input type="text" id="regNuevoDireccion" class="field-input" placeholder="Ej: Cdla. Kennedy Norte Mz 10 Solar 5">
+            <input type="text" id="regNuevoDireccion" class="field-input" placeholder="" autocomplete="off" spellcheck="false">
           </div>
 
           <div>
             <label class="field-label" style="font-size: 10px; color: var(--text-muted); margin-bottom: 2px; display: block;">Crear PIN de Acceso (4 dígitos) *</label>
-            <input type="password" id="regNuevoPin" class="field-input" maxlength="4" placeholder="Ej: 1234" style="text-align: center; letter-spacing: 6px; font-family: monospace;">
+            <input type="password" id="regNuevoPin" class="field-input" maxlength="4" placeholder="" autocomplete="new-password" style="text-align: center; letter-spacing: 6px; font-family: monospace;">
           </div>
 
           <div style="display: flex; align-items: flex-start; gap: 8px; margin-top: 4px;">

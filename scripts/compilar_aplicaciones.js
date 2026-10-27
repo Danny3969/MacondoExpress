@@ -278,6 +278,14 @@ apkSources.forEach(item => {
     fs.copyFileSync(srcApk, destInApks);
     fs.copyFileSync(srcApk, destInApp);
     fs.copyFileSync(srcApk, destOficial);
+    fs.copyFileSync(srcApk, path.join(apkOficialesDir, item.oficialName));
+    if (item.flavor === 'pasajero') {
+      fs.copyFileSync(srcApk, path.join(apkOficialesDir, 'MacondoPasajero_UltimaVersion.apk'));
+    } else if (item.flavor === 'conductor') {
+      fs.copyFileSync(srcApk, path.join(apkOficialesDir, 'MacondoConductor_UltimaVersion.apk'));
+    } else if (item.flavor === 'suite') {
+      fs.copyFileSync(srcApk, path.join(apkOficialesDir, 'MacondoSuite_UltimaVersion.apk'));
+    }
 
     apksGeneradas.push({
       nombre: item.filename,

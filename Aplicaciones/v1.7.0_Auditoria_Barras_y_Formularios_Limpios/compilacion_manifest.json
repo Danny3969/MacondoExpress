@@ -1,0 +1,51 @@
+{
+  "version": "v1.7.0_Auditoria_Barras_y_Formularios_Limpios",
+  "fechaCompilacion": "2026-10-27T20:12:31.682Z",
+  "gitCommit": "07d2ead",
+  "flutterStatus": "No instalado en PATH (usando distribución Standalone Web/PWA + Códigos Fuente listos para build)",
+  "apksAndroid": [
+    {
+      "nombre": "MacondoPasajero_v1.7.0_Auditoria_Barras_y_Formularios_Limpios.apk",
+      "tamanoMB": "4.76 MB",
+      "sha256": "5061fe95dddae26f833e51dbc3e5ae28f728b1d7fe786a7cb8562093c681bb8d"
+    },
+    {
+      "nombre": "MacondoConductor_v1.7.0_Auditoria_Barras_y_Formularios_Limpios.apk",
+      "tamanoMB": "4.76 MB",
+      "sha256": "e83599ed161393771a3767a259351fcb30b0cc588b67aa3e4db41faf65c439dd"
+    },
+    {
+      "nombre": "MacondoExpress_Suite_v1.7.0_Auditoria_Barras_y_Formularios_Limpios.apk",
+      "tamanoMB": "4.76 MB",
+      "sha256": "c2ce014a4e560212c498cc313809642ae450c62383bb64e02207ccba6bbce7c3"
+    }
+  ],
+  "artefactos": {
+    "pasajero": {
+      "carpeta": "MacondoPasajero_v1.7.0_Auditoria_Barras_y_Formularios_Limpios",
+      "hashIndexHtml": "1c2ee893ca41a9768dcbd73b1719991189f8523302abf585030650696d749693",
+      "lanzador": "Lanzar_AppPasajero.command"
+    },
+    "conductor": {
+      "carpeta": "MacondoConductor_v1.7.0_Auditoria_Barras_y_Formularios_Limpios",
+      "hashIndexHtml": "3e40d0031a72ce1ea60dd94d3551b4243c2cf0c99896163683a8d21fb1dbb02f",
+      "lanzador": "Lanzar_AppConductor.command"
+    },
+    "consolaAdmin": {
+      "carpeta": "MacondoConsolaAdmin_v1.7.0_Auditoria_Barras_y_Formularios_Limpios",
+      "hashIndexHtml": "8c5bed6ca34a7570ecdf56d51713fe17431427dacd1dd04be37a4a0b6af947ce",
+      "lanzador": "Lanzar_ConsolaAdmin.command"
+    },
+    "suiteCompleta": {
+      "carpeta": "MacondoSuiteCompleta_v1.7.0_Auditoria_Barras_y_Formularios_Limpios",
+      "lanzador": "Lanzar_Suite_Macondo.command"
+    }
+  },
+  "especificaciones": {
+    "rutas": "Guayaquil ⇄ Machala",
+    "limiteCapacidad": "4 Pasajeros Estricto por Auto",
+    "seguridad": "PIN 4 dígitos + Validación Cédula M10",
+    "liquidacion": "$6.00 cuota cooperativa por turno finalizado",
+    "transitoANT": "Resolución N° 0482-2025"
+  }
+}

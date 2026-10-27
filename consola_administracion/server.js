@@ -19,8 +19,11 @@ const MIME_TYPES = {
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
   '.woff2': 'font/woff2',
-  '.woff': 'font/woff'
+  '.woff': 'font/woff',
+  '.apk': 'application/vnd.android.package-archive'
 };
+
+const APKS_DIR = path.resolve(BASE_DIR, '..', 'Aplicaciones', 'APKs_Oficiales');
 
 const server = http.createServer((req, res) => {
   // Manejo de CORS
@@ -40,13 +43,24 @@ const server = http.createServer((req, res) => {
     reqUrl = '/index.html';
   }
 
-  const filePath = path.normalize(path.join(BASE_DIR, reqUrl));
-
-  // Protección contra Path Traversal
-  if (!filePath.startsWith(BASE_DIR)) {
-    res.writeHead(403, { 'Content-Type': 'text/plain; charset=UTF-8' });
-    res.end('403 Prohibido: Acceso no permitido fuera del directorio raíz.');
-    return;
+  let filePath;
+  // Ruta especial para descargar APKs compiladas
+  if (reqUrl.startsWith('/apks/')) {
+    const apkFileName = reqUrl.replace('/apks/', '');
+    filePath = path.normalize(path.join(APKS_DIR, apkFileName));
+    if (!filePath.startsWith(APKS_DIR)) {
+      res.writeHead(403, { 'Content-Type': 'text/plain; charset=UTF-8' });
+      res.end('403 Prohibido: Acceso no permitido fuera del directorio de APKs.');
+      return;
+    }
+  } else {
+    filePath = path.normalize(path.join(BASE_DIR, reqUrl));
+    // Protección contra Path Traversal
+    if (!filePath.startsWith(BASE_DIR)) {
+      res.writeHead(403, { 'Content-Type': 'text/plain; charset=UTF-8' });
+      res.end('403 Prohibido: Acceso no permitido fuera del directorio raíz.');
+      return;
+    }
   }
 
   fs.stat(filePath, (err, stats) => {

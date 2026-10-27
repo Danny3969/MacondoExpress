@@ -265,12 +265,12 @@
 
       <div class="field-group" style="margin-top: 6px;">
         <label class="field-label">Celular del Chofer *</label>
-        <input type="tel" id="loginDriverTel" class="field-input" placeholder="0991234567" value="0991234567">
+        <input type="tel" id="loginDriverTel" class="field-input" placeholder="" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
       </div>
 
       <div class="field-group">
         <label class="field-label">PIN de Seguridad / Contraseña *</label>
-        <input type="password" id="loginDriverPin" class="field-input" placeholder="••••" maxlength="6" value="2026">
+        <input type="password" id="loginDriverPin" class="field-input" placeholder="" maxlength="6" value="" autocomplete="new-password">
       </div>
 
       <div class="field-group">
@@ -393,7 +393,7 @@
       <div style="font-size: 12px; color: var(--text-muted);">
         Solicite al pasajero <strong id="lblPaxNombreModal" style="color: #fff;">--</strong> su PIN de 4 dígitos:
       </div>
-      <input type="number" id="inpPin" class="pin-input" maxlength="4" placeholder="••••">
+      <input type="number" id="inpPin" class="pin-input" maxlength="4" placeholder="" autocomplete="off">
       <div style="display: flex; gap: 8px;">
         <button class="btn btn-outline" style="flex: 1;" onclick="cerrarPin()">Cancelar</button>
         <button class="btn btn-green" style="flex: 1;" onclick="confirmarPin()">Confirmar Abordaje</button>
