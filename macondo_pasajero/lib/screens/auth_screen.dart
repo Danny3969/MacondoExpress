@@ -113,8 +113,8 @@ class _AuthScreenState extends State<AuthScreen> {
       return;
     }
 
-    if (cedula.length < 10) {
-      _mostrarAlerta('La cédula/DNI es obligatoria para el manifiesto de transporte y debe tener al menos 10 dígitos.');
+    if (!_validarCedulaEcuador(cedula)) {
+      _mostrarAlerta('La cédula ingresada no es válida según el algoritmo oficial Módulo 10 de la ANT.');
       return;
     }
 
@@ -145,6 +145,28 @@ class _AuthScreenState extends State<AuthScreen> {
         builder: (_) => HomeScreen(usuarioActual: usuario),
       ),
     );
+  }
+
+  bool _validarCedulaEcuador(String cedula) {
+    final ced = cedula.trim();
+    if (ced.length != 10 || int.tryParse(ced) == null) return false;
+    final prov = int.tryParse(ced.substring(0, 2)) ?? 0;
+    if ((prov < 1 || prov > 24) && prov != 30) return false;
+    final tercerDigito = int.tryParse(ced[2]) ?? 9;
+    if (tercerDigito >= 6) return false;
+
+    const coeficientes = [2, 1, 2, 1, 2, 1, 2, 1, 2];
+    int suma = 0;
+    for (int i = 0; i < 9; i++) {
+      int val = int.parse(ced[i]) * coeficientes[i];
+      if (val >= 10) val -= 9;
+      suma += val;
+    }
+    final digitoVerificador = int.parse(ced[9]);
+    final decenaSuperior = (suma / 10).ceil() * 10;
+    int resultado = decenaSuperior - suma;
+    if (resultado == 10) resultado = 0;
+    return resultado == digitoVerificador;
   }
 
   void _mostrarAlerta(String mensaje) {

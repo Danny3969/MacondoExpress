@@ -38,7 +38,8 @@ const STORAGE_KEYS = {
   CIUDADES: 'macondo_ciudades',
   TURNOS: 'macondo_turnos',
   LIQUIDACIONES: 'macondo_liquidaciones',
-  ENCOMIENDAS: 'macondo_encomiendas'
+  ENCOMIENDAS: 'macondo_encomiendas',
+  CLIENTES: 'macondo_clientes'
 };
 
 const adminState = {
@@ -65,7 +66,8 @@ const adminState = {
   choferes: [],
   vehiculos: [],
   usuarios: [],
-  encomiendas: []
+  encomiendas: [],
+  clientes: []
 };
 
 // Pila de navegación para retornar fluidamente a la página anterior
@@ -162,6 +164,79 @@ const SEED_VEHICULOS = [];
 const SEED_USUARIOS = [];
 const SEED_TURNOS = [];
 const SEED_LIQUIDACIONES = [];
+
+const SEED_CLIENTES = [
+  {
+    cedula: '0928374651',
+    nombre: 'Carlos Mendoza Solórzano',
+    telefono: '0994123890',
+    ciudad: 'Guayaquil',
+    direccion: 'Cdla. Alborada 4ta Etapa Mz 412 V 15',
+    viajes: 14,
+    totalGastado: 168.00,
+    calificacion: 5.0,
+    asistencia: 100,
+    estado: 'VIP',
+    pin: '1234',
+    fechaRegistro: '2026-08-10'
+  },
+  {
+    cedula: '1718293041',
+    nombre: 'Elena Viteri Noboa',
+    telefono: '0981923450',
+    ciudad: 'Guayaquil',
+    direccion: 'Av. 9 de Octubre y Boyacá (Centro)',
+    viajes: 9,
+    totalGastado: 108.00,
+    calificacion: 4.9,
+    asistencia: 100,
+    estado: 'Frecuente',
+    pin: '1234',
+    fechaRegistro: '2026-08-22'
+  },
+  {
+    cedula: '0702938475',
+    nombre: 'Ing. Patricia Zambrano Loor',
+    telefono: '0987654321',
+    ciudad: 'Machala',
+    direccion: 'Av. 25 de Junio y Colón (Machala Centro)',
+    viajes: 6,
+    totalGastado: 72.00,
+    calificacion: 4.8,
+    asistencia: 100,
+    estado: 'Regular',
+    pin: '1234',
+    fechaRegistro: '2026-09-05'
+  },
+  {
+    cedula: '1203495821',
+    nombre: 'Roberto Andrade Morales',
+    telefono: '0982345678',
+    ciudad: 'Babahoyo',
+    direccion: 'Malecón 9 de Octubre y Sucre',
+    viajes: 4,
+    totalGastado: 36.00,
+    calificacion: 4.7,
+    asistencia: 100,
+    estado: 'Regular',
+    pin: '1234',
+    fechaRegistro: '2026-09-18'
+  },
+  {
+    cedula: '0918273645',
+    nombre: 'Lcda. Sofía Calderón Ruiz',
+    telefono: '0997865432',
+    ciudad: 'Guayaquil',
+    direccion: 'Urdesa Central, Calle Guayacanes 312',
+    viajes: 1,
+    totalGastado: 12.00,
+    calificacion: 5.0,
+    asistencia: 100,
+    estado: 'Nuevo',
+    pin: '1234',
+    fechaRegistro: '2026-10-15'
+  }
+];
 
 // ── MOTOR DINÁMICO DE MÉTRICAS OPERATIVAS (KPIS) ──────────────────────────────
 function recalcularKPIs() {
@@ -263,6 +338,24 @@ function renderKpis() {
   if (elEncEntregadas) elEncEntregadas.innerText = adminState.kpis.encomiendasEntregadas || 0;
   if (elEncRecaudacion) elEncRecaudacion.innerText = `$${(adminState.kpis.encomiendasRecaudacion || 0).toFixed(2)}`;
   if (elBadgeNavEnc) elBadgeNavEnc.innerText = (adminState.kpis.encomiendasBodega || 0) + (adminState.kpis.encomiendasTransito || 0);
+
+  // KPIs de la sección Clientes (CRM)
+  const elCliTotal = document.getElementById('kpiClientesTotal');
+  const elCliFrec = document.getElementById('kpiClientesFrecuentes');
+  const elCliViajes = document.getElementById('kpiClientesViajes');
+  const elBadgeNavCli = document.getElementById('badgeNavClientes');
+
+  const totalCli = adminState.clientes ? adminState.clientes.length : 0;
+  const frecCli = adminState.clientes ? adminState.clientes.filter(c => (c.viajes || 0) >= 3 || c.estado === 'VIP' || c.estado === 'Frecuente').length : 0;
+  let totalViajesCli = 0;
+  if (adminState.clientes) {
+    adminState.clientes.forEach(c => totalViajesCli += (c.viajes || 0));
+  }
+
+  if (elCliTotal) elCliTotal.innerText = totalCli;
+  if (elCliFrec) elCliFrec.innerText = frecCli;
+  if (elCliViajes) elCliViajes.innerText = totalViajesCli;
+  if (elBadgeNavCli) elBadgeNavCli.innerText = totalCli;
 }
 
 // ── INICIALIZACIÓN Y PERSISTENCIA EN LOCALSTORAGE ─────────────────────────────
@@ -312,6 +405,11 @@ function initLocalStorageData() {
   adminState.encomiendas = storedEnc ? JSON.parse(storedEnc) : [];
   if (!storedEnc) localStorage.setItem(STORAGE_KEYS.ENCOMIENDAS, JSON.stringify([]));
 
+  // Directorio Central de Clientes (CRM)
+  const storedCli = localStorage.getItem(STORAGE_KEYS.CLIENTES);
+  adminState.clientes = storedCli ? JSON.parse(storedCli) : SEED_CLIENTES;
+  if (!storedCli) localStorage.setItem(STORAGE_KEYS.CLIENTES, JSON.stringify(SEED_CLIENTES));
+
   // Superusuario
   const superuser = localStorage.getItem(STORAGE_KEYS.SUPERUSER);
   if (superuser) {
@@ -336,6 +434,7 @@ function saveState(key) {
   if (key === 'turnos') localStorage.setItem(STORAGE_KEYS.TURNOS, JSON.stringify(adminState.turnos));
   if (key === 'liquidaciones') localStorage.setItem(STORAGE_KEYS.LIQUIDACIONES, JSON.stringify(adminState.liquidaciones));
   if (key === 'encomiendas') localStorage.setItem(STORAGE_KEYS.ENCOMIENDAS, JSON.stringify(adminState.encomiendas));
+  if (key === 'clientes') localStorage.setItem(STORAGE_KEYS.CLIENTES, JSON.stringify(adminState.clientes));
 }
 
 // ── SISTEMA DE NAVEGACIÓN A PÁGINA COMPLETA (SIN MODALES LATERALES) ─────────
@@ -402,6 +501,7 @@ function switchAdminTab(tabName) {
   if (tabName === 'ciudades') renderCiudadesTable();
   if (tabName === 'encomiendas') renderEncomiendasTable();
   if (tabName === 'radar') renderRadarTelemetria();
+  if (tabName === 'clientes') renderClientesTable();
 }
 
 // ── 1. ONBOARDING DE SUPERUSUARIO (PRIMERA VEZ) ─────────────────────────────
@@ -2501,6 +2601,353 @@ function marcarEncomiendaEntregada(id) {
   renderEncomiendasTable();
 
   alert(`✓ ¡Encomienda ${enc.numeroGuia} marcada como ENTREGADA exitosamente!\nRegistrada entrega conforme a ${enc.destinatario.nombre}.`);
+}
+
+// ==============================================================================
+// ── PESTAÑA 8: GESTIÓN DEL DIRECTORIO CENTRAL DE CLIENTES (CRM) ───────────────
+// ==============================================================================
+
+function renderClientesTable(listaFiltrada) {
+  const tbody = document.getElementById('tbodyClientes');
+  if (!tbody) return;
+
+  const clientes = listaFiltrada || adminState.clientes || [];
+  tbody.innerHTML = '';
+
+  // Actualizar el selector de ciudades en los filtros si está vacío
+  const selectCiudadFiltro = document.getElementById('filtroClientesCiudad');
+  if (selectCiudadFiltro && selectCiudadFiltro.children.length <= 1) {
+    const ciudadesUnicas = [...new Set(adminState.clientes.map(c => c.ciudad).filter(Boolean))];
+    ciudadesUnicas.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      selectCiudadFiltro.appendChild(opt);
+    });
+  }
+
+  if (clientes.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="10" style="text-align: center; padding: 36px 20px; color: var(--text-dim);">
+          <div style="font-size: 28px; margin-bottom: 8px;">🪪</div>
+          <div style="font-weight: 700; color: #fff; font-size: 14px;">No se encontraron clientes registrados con los criterios seleccionados</div>
+          <div style="font-size: 11px; margin-top: 4px;">Utilice el botón '+ Registrar Cliente en Ventanilla' para incorporar nuevos usuarios.</div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  clientes.forEach((cli, idx) => {
+    const tr = document.createElement('tr');
+
+    let badgeEstado = '';
+    if (cli.estado === 'VIP') badgeEstado = '<span class="badge badge-purple">👑 VIP Élite</span>';
+    else if (cli.estado === 'Frecuente') badgeEstado = '<span class="badge badge-green">⭐ Frecuente</span>';
+    else if (cli.estado === 'Nuevo') badgeEstado = '<span class="badge badge-blue">✨ Nuevo</span>';
+    else badgeEstado = '<span class="badge badge-amber">👤 Regular</span>';
+
+    const stars = '⭐'.repeat(Math.round(cli.calificacion || 5));
+    const waLink = `https://wa.me/593${(cli.telefono || '').replace(/^0/, '')}?text=${encodeURIComponent(`Hola estimado/a ${cli.nombre}, le saludamos de Macondo Express.`)}`;
+
+    tr.innerHTML = `
+      <td style="font-family: monospace; color: var(--text-dim);">${idx + 1}</td>
+      <td>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <strong style="font-family: monospace; font-size: 13px; color: var(--accent);">${cli.cedula}</strong>
+          <span class="badge badge-green" style="font-size: 9px; padding: 1px 4px;" title="Cédula validada según algoritmo Módulo 10 ANT">ANT ✓</span>
+        </div>
+      </td>
+      <td>
+        <div style="font-weight: 700; color: #fff;">${cli.nombre}</div>
+        <div style="font-size: 10px; color: var(--text-dim);">Registrado: ${cli.fechaRegistro || '2026-08-15'}</div>
+      </td>
+      <td>
+        <a href="${waLink}" target="_blank" style="display: inline-flex; align-items: center; gap: 4px; color: #22c55e; font-weight: 600; text-decoration: none; font-size: 12px;" title="Chatear por WhatsApp">
+          <span>💬</span> +593 ${cli.telefono}
+        </a>
+      </td>
+      <td>
+        <div style="font-size: 12px; font-weight: 600; color: var(--blue);">${cli.ciudad || 'No especificada'}</div>
+        <div style="font-size: 10px; color: var(--text-dim); max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${cli.direccion || 'Recogida a domicilio'}">
+          📍 ${cli.direccion || 'Recogida a domicilio'}
+        </div>
+      </td>
+      <td style="text-align: center;">
+        <span style="font-weight: 800; font-size: 13px; color: #fff;">${cli.viajes || 0}</span>
+      </td>
+      <td style="font-family: monospace; font-weight: 700; color: var(--amber); text-align: right;">
+        $${(cli.totalGastado || 0).toFixed(2)}
+      </td>
+      <td>
+        <div style="display: flex; align-items: center; gap: 4px; font-size: 11px;">
+          <span>${stars}</span>
+          <span style="color: var(--text-muted); font-weight: 700;">${(cli.calificacion || 5.0).toFixed(1)}</span>
+        </div>
+        <div style="font-size: 9px; color: var(--accent);">Asistencia: ${cli.asistencia || 100}%</div>
+      </td>
+      <td>${badgeEstado}</td>
+      <td>
+        <div style="display: flex; gap: 6px;">
+          <button class="btn btn-outline" style="padding: 4px 8px; font-size: 11px;" onclick="verFichaCliente('${cli.cedula}')" title="Ver ficha completa e historial de viajes">
+            📋 Ficha
+          </button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function filtrarDirectorioClientes() {
+  const query = (document.getElementById('filtroClientesBusqueda')?.value || '').toLowerCase().trim();
+  const estado = document.getElementById('filtroClientesEstado')?.value || 'todos';
+  const ciudad = document.getElementById('filtroClientesCiudad')?.value || 'todas';
+
+  let resultados = adminState.clientes || [];
+
+  if (query) {
+    resultados = resultados.filter(c => 
+      (c.cedula && c.cedula.toLowerCase().includes(query)) ||
+      (c.nombre && c.nombre.toLowerCase().includes(query)) ||
+      (c.telefono && c.telefono.includes(query)) ||
+      (c.direccion && c.direccion.toLowerCase().includes(query))
+    );
+  }
+
+  if (estado !== 'todos') {
+    resultados = resultados.filter(c => c.estado === estado);
+  }
+
+  if (ciudad !== 'todas') {
+    resultados = resultados.filter(c => c.ciudad === ciudad);
+  }
+
+  renderClientesTable(resultados);
+}
+
+function limpiarFiltrosClientes() {
+  const searchInput = document.getElementById('filtroClientesBusqueda');
+  const estadoSelect = document.getElementById('filtroClientesEstado');
+  const ciudadSelect = document.getElementById('filtroClientesCiudad');
+
+  if (searchInput) searchInput.value = '';
+  if (estadoSelect) estadoSelect.value = 'todos';
+  if (ciudadSelect) ciudadSelect.value = 'todas';
+
+  renderClientesTable();
+}
+
+function abrirModalNuevoCliente() {
+  const modal = document.getElementById('modalNuevoCliente');
+  if (!modal) return;
+
+  document.getElementById('adminCliCedula').value = '';
+  document.getElementById('adminCliNombre').value = '';
+  document.getElementById('adminCliTelefono').value = '';
+  document.getElementById('adminCliDireccion').value = '';
+  document.getElementById('adminCliPin').value = '1234';
+  document.getElementById('adminCliEstado').value = 'Regular';
+  document.getElementById('adminCliCedulaMsg').innerText = 'Validación algorítmica Módulo 10 ANT.';
+  document.getElementById('adminCliCedulaMsg').style.color = 'var(--text-dim)';
+
+  modal.style.display = 'flex';
+}
+
+function cerrarModalNuevoCliente() {
+  const modal = document.getElementById('modalNuevoCliente');
+  if (modal) modal.style.display = 'none';
+}
+
+function validarCedulaAdminInput() {
+  const input = document.getElementById('adminCliCedula');
+  const msg = document.getElementById('adminCliCedulaMsg');
+  if (!input || !msg) return;
+
+  const ced = input.value.trim();
+  if (ced.length === 10) {
+    if (validarCedulaEcuatoriana(ced)) {
+      const existe = adminState.clientes.find(c => c.cedula === ced);
+      if (existe) {
+        msg.innerText = `⚠️ Cédula ya registrada a nombre de: ${existe.nombre}`;
+        msg.style.color = 'var(--amber)';
+      } else {
+        msg.innerText = '✓ Cédula ecuatoriana válida según Módulo 10 ANT.';
+        msg.style.color = 'var(--accent)';
+      }
+    } else {
+      msg.innerText = '✗ Cédula no válida según algoritmo oficial del Registro Civil.';
+      msg.style.color = '#ef4444';
+    }
+  } else {
+    msg.innerText = `Faltan ${10 - ced.length} dígitos (Total: 10 dígitos).`;
+    msg.style.color = 'var(--text-dim)';
+  }
+}
+
+function guardarClienteDesdeAdmin() {
+  const cedula = document.getElementById('adminCliCedula').value.trim();
+  const nombre = document.getElementById('adminCliNombre').value.trim();
+  const telefono = document.getElementById('adminCliTelefono').value.trim();
+  const ciudad = document.getElementById('adminCliCiudad').value;
+  const direccion = document.getElementById('adminCliDireccion').value.trim();
+  const pin = document.getElementById('adminCliPin').value.trim();
+  const estado = document.getElementById('adminCliEstado').value;
+
+  if (!cedula || !validarCedulaEcuatoriana(cedula)) {
+    alert('Por favor ingrese una Cédula de Identidad ecuatoriana válida (10 dígitos - Módulo 10).');
+    return;
+  }
+
+  if (!nombre || nombre.length < 5) {
+    alert('Por favor ingrese los nombres y apellidos completos del cliente.');
+    return;
+  }
+
+  if (!telefono || telefono.length < 9) {
+    alert('Por favor ingrese un número celular válido.');
+    return;
+  }
+
+  const indexExistente = adminState.clientes.findIndex(c => c.cedula === cedula);
+  if (indexExistente >= 0) {
+    alert(`El cliente con cédula ${cedula} ya se encuentra registrado (${adminState.clientes[indexExistente].nombre}).`);
+    return;
+  }
+
+  const nuevoCliente = {
+    cedula: cedula,
+    nombre: nombre,
+    telefono: telefono.startsWith('0') ? telefono : '0' + telefono,
+    ciudad: ciudad,
+    direccion: direccion || 'Recogida a domicilio',
+    viajes: 0,
+    totalGastado: 0.00,
+    calificacion: 5.0,
+    asistencia: 100,
+    estado: estado,
+    pin: pin || '1234',
+    fechaRegistro: new Date().toISOString().split('T')[0]
+  };
+
+  adminState.clientes.unshift(nuevoCliente);
+  saveState('clientes');
+  recalcularKPIs();
+  renderClientesTable();
+  cerrarModalNuevoCliente();
+
+  alert(`✓ ¡Cliente ${nombre} registrado exitosamente en el Directorio!\nCédula: ${cedula}\nPIN de App asignado: ${nuevoCliente.pin}`);
+}
+
+function verFichaCliente(cedula) {
+  const cli = adminState.clientes.find(c => c.cedula === cedula);
+  if (!cli) return;
+
+  const modal = document.getElementById('modalFichaCliente');
+  const contenedor = document.getElementById('contenidoFichaCliente');
+  if (!modal || !contenedor) return;
+
+  const waLink = `https://wa.me/593${(cli.telefono || '').replace(/^0/, '')}?text=${encodeURIComponent(`Hola estimado/a ${cli.nombre}, le saludamos de Macondo Express.`)}`;
+
+  contenedor.innerHTML = `
+    <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 14px; margin-bottom: 16px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(59,130,246,0.15); display: flex; align-items: center; justify-content: center; color: var(--blue); font-size: 22px;">🪪</div>
+        <div>
+          <h3 style="font-size: 16px; font-weight: 800; color: #fff;">${cli.nombre}</h3>
+          <div style="font-size: 11px; color: var(--accent); font-family: monospace;">C.I. ${cli.cedula} · Validación ANT Oficial ✓</div>
+        </div>
+      </div>
+      <div>
+        <span class="badge badge-purple" style="font-size: 11px; padding: 3px 8px;">${cli.estado}</span>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+      <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 10px; padding: 12px;">
+        <div style="font-size: 10px; color: var(--text-dim); text-transform: uppercase;">Contacto Telefónico</div>
+        <div style="font-size: 13px; font-weight: 700; color: #fff; margin-top: 2px;">+593 ${cli.telefono}</div>
+        <a href="${waLink}" target="_blank" style="font-size: 11px; color: #22c55e; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; text-decoration: none;">
+          <span>💬</span> Abrir Chat WhatsApp
+        </a>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 10px; padding: 12px;">
+        <div style="font-size: 10px; color: var(--text-dim); text-transform: uppercase;">Ciudad y Dirección Habitual</div>
+        <div style="font-size: 13px; font-weight: 700; color: var(--blue); margin-top: 2px;">${cli.ciudad || 'No especificada'}</div>
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">📍 ${cli.direccion || 'Recogida a domicilio'}</div>
+      </div>
+    </div>
+
+    <!-- Métricas del Pasajero -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px;">
+      <div style="background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px; padding: 10px; text-align: center;">
+        <div style="font-size: 10px; color: var(--text-dim);">VIAJES COMPLETADOS</div>
+        <div style="font-size: 18px; font-weight: 800; color: var(--accent); margin-top: 2px;">${cli.viajes || 0}</div>
+      </div>
+      <div style="background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.2); border-radius: 8px; padding: 10px; text-align: center;">
+        <div style="font-size: 10px; color: var(--text-dim);">GASTO ACUMULADO</div>
+        <div style="font-size: 18px; font-weight: 800; color: var(--amber); margin-top: 2px;">$${(cli.totalGastado || 0).toFixed(2)}</div>
+      </div>
+      <div style="background: rgba(59,130,246,0.05); border: 1px solid rgba(59,130,246,0.2); border-radius: 8px; padding: 10px; text-align: center;">
+        <div style="font-size: 10px; color: var(--text-dim);">ASISTENCIA / NO-SHOW</div>
+        <div style="font-size: 18px; font-weight: 800; color: var(--blue); margin-top: 2px;">${cli.asistencia || 100}%</div>
+      </div>
+    </div>
+
+    <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 10px; padding: 12px;">
+      <div style="font-size: 11px; font-weight: bold; color: #fff; margin-bottom: 8px;">🔐 Credenciales de Acceso Móvil:</div>
+      <div style="display: flex; gap: 20px; font-size: 12px;">
+        <div>Usuario de App: <strong style="color: var(--accent); font-family: monospace;">${cli.cedula}</strong></div>
+        <div>PIN de Seguridad: <strong style="color: var(--amber); font-family: monospace;">${cli.pin || '1234'}</strong></div>
+      </div>
+      <div style="font-size: 10px; color: var(--text-dim); margin-top: 4px;">El cliente ingresa a la aplicación móvil Macondo Pasajero digitando su número de Cédula y este PIN de 4 dígitos.</div>
+    </div>
+  `;
+
+  modal.style.display = 'flex';
+}
+
+function cerrarModalFichaCliente() {
+  const modal = document.getElementById('modalFichaCliente');
+  if (modal) modal.style.display = 'none';
+}
+
+function exportarClientesCSV() {
+  const clientes = adminState.clientes || [];
+  if (clientes.length === 0) {
+    alert('No hay clientes registrados para exportar.');
+    return;
+  }
+
+  let csvContent = 'data:text/csv;charset=utf-8,';
+  csvContent += 'Cedula,Nombre,Telefono,Ciudad,Direccion,Viajes,TotalGastado,Calificacion,Asistencia,Estado,FechaRegistro\r\n';
+
+  clientes.forEach(c => {
+    const row = [
+      `"${c.cedula}"`,
+      `"${(c.nombre || '').replace(/"/g, '""')}"`,
+      `"${c.telefono}"`,
+      `"${c.ciudad || ''}"`,
+      `"${(c.direccion || '').replace(/"/g, '""')}"`,
+      c.viajes || 0,
+      (c.totalGastado || 0).toFixed(2),
+      c.calificacion || 5.0,
+      c.asistencia || 100,
+      `"${c.estado}"`,
+      `"${c.fechaRegistro || ''}"`
+    ].join(',');
+    csvContent += row + '\r\n';
+  });
+
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download', `Directorio_Clientes_Macondo_${new Date().toISOString().split('T')[0]}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 // ── INICIALIZACIÓN GENERAL AL CARGAR EL DOM ──────────────────────────────────

@@ -130,14 +130,19 @@
         <span>Liquidaciones ($6/Turno)</span>
       </a>
 
-      <div class="nav-section-title" style="margin-top: 14px;">RECURSOS & FLOTA</div>
+      <div class="nav-section-title" style="margin-top: 14px;">CLIENTES & COOPERATIVA</div>
+      <a class="nav-item" id="nav-clientes" onclick="switchAdminTab('clientes')">
+        <span class="icon">🪪</span>
+        <span>Directorio de Clientes</span>
+        <span class="badge badge-green" id="badgeNavClientes" style="margin-left: auto; font-size: 10px; padding: 1px 6px;">0</span>
+      </a>
       <a class="nav-item" id="nav-flota" onclick="switchAdminTab('flota')">
         <span class="icon">🚘</span>
         <span>Flota & Choferes</span>
       </a>
       <a class="nav-item" id="nav-usuarios" onclick="switchAdminTab('usuarios')">
         <span class="icon">👥</span>
-        <span>Usuarios & Roles</span>
+        <span>Operadores & Roles</span>
       </a>
 
       <div class="nav-section-title" style="margin-top: 14px;">ENLACES RÁPIDOS</div>
@@ -756,6 +761,103 @@
                 </tr>
               </thead>
               <tbody id="tbodyUsuarios">
+                <!-- Inyectado dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- PESTAÑA 8: DIRECTORIO DE CLIENTES & PASAJEROS (CRM)      -->
+      <!-- ======================================================== -->
+      <section id="section-clientes" class="admin-section" style="display: none; flex-direction: column; gap: 20px;">
+        
+        <div class="panel-card">
+          <div class="panel-header">
+            <div>
+              <span class="badge badge-green" style="margin-bottom: 6px;">REGISTRO NACIONAL DE PASAJEROS · ANT & PÓLIZA SPPAT</span>
+              <h2 style="font-size: 18px; font-weight: 800; color: #fff;">Directorio Central de Clientes (CRM)</h2>
+              <p style="font-size: 12px; color: var(--text-dim); margin-top: 2px;">
+                Base de datos de pasajeros registrados con Cédula Oficial (Módulo 10). Historial de viajes, contacto directo WhatsApp y control de asistencia puerta a puerta.
+              </p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <button class="btn btn-outline" onclick="exportarClientesCSV()">
+                <span>📥</span> Exportar CSV
+              </button>
+              <button class="btn btn-primary" onclick="abrirModalNuevoCliente()">
+                <span>+</span> Registrar Cliente en Ventanilla
+              </button>
+            </div>
+          </div>
+
+          <!-- KPI Cards del CRM -->
+          <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 16px;">
+            <div class="kpi-card">
+              <div class="kpi-title">TOTAL CLIENTES</div>
+              <div class="kpi-value" id="kpiClientesTotal">0</div>
+              <div class="kpi-subtitle">Cédulas validadas en sistema</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-title">CLIENTES FRECUENTES / VIP</div>
+              <div class="kpi-value" id="kpiClientesFrecuentes" style="color: var(--accent);">0</div>
+              <div class="kpi-subtitle">> 3 viajes interurbanos</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-title">VIAJES TOTALES CLIENTES</div>
+              <div class="kpi-value" id="kpiClientesViajes">0</div>
+              <div class="kpi-subtitle">Puestos acumulados ocupados</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-title">CUMPLIMIENTO ASISTENCIA</div>
+              <div class="kpi-value" id="kpiClientesAsistencia" style="color: var(--blue);">98.8%</div>
+              <div class="kpi-subtitle">Tasa no-show menor al 1.2%</div>
+            </div>
+          </div>
+
+          <!-- Barra de Búsqueda y Filtros -->
+          <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 10px; border: 1px solid var(--border);">
+            <div style="flex: 2; min-width: 240px;">
+              <input type="text" id="filtroClientesBusqueda" class="admin-input" placeholder="🔍 Buscar por Cédula, Nombres, Celular o Dirección..." oninput="filtrarDirectorioClientes()">
+            </div>
+            <div style="flex: 1; min-width: 150px;">
+              <select id="filtroClientesEstado" class="admin-select" onchange="filtrarDirectorioClientes()">
+                <option value="todos">Todos los Estados</option>
+                <option value="VIP">VIP (Viajero Élite)</option>
+                <option value="Frecuente">Frecuente</option>
+                <option value="Regular">Regular</option>
+                <option value="Nuevo">Nuevo</option>
+              </select>
+            </div>
+            <div style="flex: 1; min-width: 150px;">
+              <select id="filtroClientesCiudad" class="admin-select" onchange="filtrarDirectorioClientes()">
+                <option value="todas">Todas las Ciudades</option>
+              </select>
+            </div>
+            <button class="btn btn-outline" onclick="limpiarFiltrosClientes()" style="padding: 0 14px;">
+              Limpiar
+            </button>
+          </div>
+
+          <!-- Tabla de Clientes -->
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>N°</th>
+                  <th>Cédula Oficial (ANT)</th>
+                  <th>Pasajero / Cliente</th>
+                  <th>Celular / WhatsApp</th>
+                  <th>Ciudad / Domicilio Frecuente</th>
+                  <th>Viajes</th>
+                  <th>Efectivo Aportado</th>
+                  <th>Confiabilidad</th>
+                  <th>Categoría</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyClientes">
                 <!-- Inyectado dinámicamente -->
               </tbody>
             </table>
@@ -1526,6 +1628,95 @@
         <button class="btn btn-primary" onclick="imprimirReciboLiquidacion()" style="background: var(--amber); color: #000; font-weight: 800;">
           <span>🖨️</span> Imprimir Recibo Térmico
         </button>
+      </div>
+    </div>
+  <!-- MODAL: REGISTRO DE CLIENTE EN VENTANILLA (COOPERATIVA CRM) -->
+  <div id="modalNuevoCliente" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 540px; border-color: var(--accent); box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 30px rgba(16,185,129,0.2);">
+      <button class="modal-close" onclick="cerrarModalNuevoCliente()">✕</button>
+      
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(16,185,129,0.15); display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 20px;">🪪</div>
+        <div>
+          <h3 style="font-size: 16px; font-weight: 800; color: #fff;">Registrar Cliente en Ventanilla / Teléfono</h3>
+          <p style="font-size: 11px; color: var(--text-dim);">Incorporación al Directorio Central de Pasajeros · Manifiesto ANT</p>
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label class="form-label">Cédula de Identidad (10 dígitos) *</label>
+          <input type="text" id="adminCliCedula" class="admin-input" maxlength="10" placeholder="0928374651" oninput="validarCedulaAdminInput()">
+          <div id="adminCliCedulaMsg" style="font-size: 10px; margin-top: 4px; color: var(--text-dim);">Validación algorítmica Módulo 10 ANT.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nombres y Apellidos Completos *</label>
+          <input type="text" id="adminCliNombre" class="admin-input" placeholder="Ej: Martha Cecilia Zambrano">
+        </div>
+      </div>
+
+      <div class="form-grid-2" style="margin-top: 10px;">
+        <div class="form-group">
+          <label class="form-label">Celular WhatsApp *</label>
+          <div style="display: flex; gap: 6px;">
+            <span style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12px; color: #fff;">+593</span>
+            <input type="tel" id="adminCliTelefono" class="admin-input" placeholder="0987654321" style="flex: 1;">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ciudad Base / Residencia *</label>
+          <select id="adminCliCiudad" class="admin-select">
+            <option value="Guayaquil" selected>Guayaquil</option>
+            <option value="Machala">Machala</option>
+            <option value="Babahoyo">Babahoyo</option>
+            <option value="Quevedo">Quevedo</option>
+            <option value="Naranjal">Naranjal</option>
+            <option value="Milagro">Milagro</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top: 10px;">
+        <label class="form-label">Dirección Habitual de Recogida (Domicilio / Oficina)</label>
+        <input type="text" id="adminCliDireccion" class="admin-input" placeholder="Ej: Av. Las Lomas y Callejón 3ra, Urb. Miraflores">
+      </div>
+
+      <div class="form-grid-2" style="margin-top: 10px;">
+        <div class="form-group">
+          <label class="form-label">PIN Numérico de Acceso para la App *</label>
+          <input type="password" id="adminCliPin" class="admin-input" maxlength="4" value="1234" style="text-align: center; letter-spacing: 4px; font-family: monospace;">
+          <div style="font-size: 10px; color: var(--text-dim); margin-top: 2px;">Por defecto se asigna '1234' para primer ingreso.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Categoría Inicial</label>
+          <select id="adminCliEstado" class="admin-select">
+            <option value="Regular" selected>Regular</option>
+            <option value="Frecuente">Frecuente</option>
+            <option value="VIP">VIP (Viajero Élite)</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 14px;">
+        <button class="btn btn-outline" onclick="cerrarModalNuevoCliente()">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarClienteDesdeAdmin()">
+          <span>✓</span> Guardar en Directorio
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: FICHA COMPLETA DEL CLIENTE & HISTORIAL (CRM) -->
+  <div id="modalFichaCliente" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 600px; border-color: var(--blue); box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 30px rgba(59,130,246,0.2);">
+      <button class="modal-close" onclick="cerrarModalFichaCliente()">✕</button>
+      
+      <div id="contenidoFichaCliente">
+        <!-- Inyectado dinámicamente -->
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 14px;">
+        <button class="btn btn-outline" onclick="cerrarModalFichaCliente()">Cerrar</button>
       </div>
     </div>
   </div>
