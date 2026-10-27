@@ -913,38 +913,47 @@
         entregada: false
       },
       rutaOptimizada: true,
-      clientesRegistrados: [
-        {
-          cedula: '0928374651',
-          nombre: 'Carlos Mendoza',
-          telefono: '0994123890',
-          pin: '1234',
-          ciudad: 'Guayaquil',
-          direccion: 'Cdla. Alborada 4ta Etapa Mz 412 V 15 (Norte Guayaquil)',
-          viajes: 14,
-          estado: 'VIP'
-        },
-        {
-          cedula: '1718293041',
-          nombre: 'Elena Viteri',
-          telefono: '0981923450',
-          pin: '1234',
-          ciudad: 'Guayaquil',
-          direccion: 'Av. 9 de Octubre y Boyacá (Centro Guayaquil)',
-          viajes: 9,
-          estado: 'Frecuente'
-        },
-        {
-          cedula: '0702938475',
-          nombre: 'Ing. Patricia Zambrano',
-          telefono: '0987654321',
-          pin: '1234',
-          ciudad: 'Machala',
-          direccion: 'Av. 25 de Junio y Colón (Centro Machala)',
-          viajes: 6,
-          estado: 'Regular'
-        }
-      ],
+      clientesRegistrados: (() => {
+        try {
+          const stored = localStorage.getItem('macondo_clientes');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          }
+        } catch(e) {}
+        return [
+          {
+            cedula: '0928374651',
+            nombre: 'Carlos Mendoza',
+            telefono: '0994123890',
+            pin: '1234',
+            ciudad: 'Guayaquil',
+            direccion: 'Cdla. Alborada 4ta Etapa Mz 412 V 15 (Norte Guayaquil)',
+            viajes: 14,
+            estado: 'VIP'
+          },
+          {
+            cedula: '1718293041',
+            nombre: 'Elena Viteri',
+            telefono: '0981923450',
+            pin: '1234',
+            ciudad: 'Guayaquil',
+            direccion: 'Av. 9 de Octubre y Boyacá (Centro Guayaquil)',
+            viajes: 9,
+            estado: 'Frecuente'
+          },
+          {
+            cedula: '0702938475',
+            nombre: 'Ing. Patricia Zambrano',
+            telefono: '0987654321',
+            pin: '1234',
+            ciudad: 'Machala',
+            direccion: 'Av. 25 de Junio y Colón (Centro Machala)',
+            viajes: 6,
+            estado: 'Regular'
+          }
+        ];
+      })(),
       pasajeroActual: {
         cedula: '0928374651',
         nombre: 'Carlos Mendoza',
@@ -1688,6 +1697,9 @@
       };
 
       state.clientesRegistrados.push(nuevoCliente);
+      try {
+        localStorage.setItem('macondo_clientes', JSON.stringify(state.clientesRegistrados));
+      } catch(e) {}
 
       state.pasajeroActual = {
         cedula: nuevoCliente.cedula,

@@ -1630,6 +1630,8 @@
         </button>
       </div>
     </div>
+  </div>
+
   <!-- MODAL: REGISTRO DE CLIENTE EN VENTANILLA (COOPERATIVA CRM) -->
   <div id="modalNuevoCliente" class="modal-overlay" style="display: none;">
     <div class="modal-card" style="max-width: 540px; border-color: var(--accent); box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 30px rgba(16,185,129,0.2);">
@@ -1672,6 +1674,9 @@
             <option value="Quevedo">Quevedo</option>
             <option value="Naranjal">Naranjal</option>
             <option value="Milagro">Milagro</option>
+            <option value="Pasaje">Pasaje</option>
+            <option value="Santa Rosa">Santa Rosa</option>
+            <option value="Huaquillas">Huaquillas</option>
           </select>
         </div>
       </div>
@@ -1706,6 +1711,117 @@
     </div>
   </div>
 
+  <!-- MODAL: EDITAR INFORMACIÓN DE CLIENTE (CRM) -->
+  <div id="modalEditarCliente" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 580px; border-color: var(--blue); box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 30px rgba(59,130,246,0.25);">
+      <button class="modal-close" onclick="cerrarModalEditarCliente()">✕</button>
+      
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(59,130,246,0.15); display: flex; align-items: center; justify-content: center; color: var(--blue); font-size: 22px;">✏️</div>
+        <div>
+          <h3 style="font-size: 16px; font-weight: 800; color: #fff;">Editar Información del Cliente</h3>
+          <p style="font-size: 11px; color: var(--text-dim);">Directorio Central de Pasajeros · Actualización de Datos y Credenciales</p>
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label class="form-label">Cédula Oficial (ANT Ecuador)</label>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <input type="text" id="adminEditCliCedula" class="admin-input" readonly style="opacity: 0.85; background: rgba(255,255,255,0.05); font-family: monospace; font-weight: 700; color: var(--accent);">
+            <span class="badge badge-green" style="font-size: 9px; white-space: nowrap;">ANT ✓</span>
+          </div>
+          <div style="font-size: 10px; margin-top: 3px; color: var(--text-dim);">Identificador único de ciudadanía no modificable.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nombres y Apellidos Completos *</label>
+          <input type="text" id="adminEditCliNombre" class="admin-input" placeholder="Nombres del cliente">
+        </div>
+      </div>
+
+      <div class="form-grid-2" style="margin-top: 10px;">
+        <div class="form-group">
+          <label class="form-label">Celular WhatsApp *</label>
+          <div style="display: flex; gap: 6px;">
+            <span style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12px; color: #fff;">+593</span>
+            <input type="tel" id="adminEditCliTelefono" class="admin-input" placeholder="0987654321" style="flex: 1;">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ciudad Base / Residencia *</label>
+          <select id="adminEditCliCiudad" class="admin-select">
+            <option value="Guayaquil">Guayaquil</option>
+            <option value="Machala">Machala</option>
+            <option value="Babahoyo">Babahoyo</option>
+            <option value="Quevedo">Quevedo</option>
+            <option value="Naranjal">Naranjal</option>
+            <option value="Milagro">Milagro</option>
+            <option value="Pasaje">Pasaje</option>
+            <option value="Santa Rosa">Santa Rosa</option>
+            <option value="Huaquillas">Huaquillas</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top: 10px;">
+        <label class="form-label">Dirección Habitual de Recogida (Domicilio / Oficina)</label>
+        <input type="text" id="adminEditCliDireccion" class="admin-input" placeholder="Calle principal, secundaria y referencia">
+      </div>
+
+      <div class="form-grid-3" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px;">
+        <div class="form-group">
+          <label class="form-label">PIN Móvil (4 dígitos) *</label>
+          <input type="password" id="adminEditCliPin" class="admin-input" maxlength="4" style="text-align: center; letter-spacing: 4px; font-family: monospace;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Categoría / Estado</label>
+          <select id="adminEditCliEstado" class="admin-select">
+            <option value="Regular">Regular</option>
+            <option value="Frecuente">Frecuente</option>
+            <option value="VIP">VIP (Viajero Élite)</option>
+            <option value="Nuevo">Nuevo</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Viajes Realizados</label>
+          <input type="number" id="adminEditCliViajes" class="admin-input" min="0" style="text-align: center;">
+        </div>
+      </div>
+
+      <div class="form-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+        <div class="form-group">
+          <label class="form-label">Calificación Pasajero</label>
+          <select id="adminEditCliCalificacion" class="admin-select">
+            <option value="5.0">⭐⭐⭐⭐⭐ 5.0 (Excelente)</option>
+            <option value="4.9">⭐⭐⭐⭐⭐ 4.9</option>
+            <option value="4.8">⭐⭐⭐⭐⭐ 4.8</option>
+            <option value="4.7">⭐⭐⭐⭐ 4.7</option>
+            <option value="4.5">⭐⭐⭐⭐ 4.5</option>
+            <option value="4.0">⭐⭐⭐⭐ 4.0</option>
+            <option value="3.5">⭐⭐⭐ 3.5</option>
+            <option value="3.0">⭐⭐⭐ 3.0</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Asistencia Puerta a Puerta (%)</label>
+          <input type="number" id="adminEditCliAsistencia" class="admin-input" min="0" max="100" style="text-align: center;">
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 14px;">
+        <button class="btn btn-outline" style="color: #ef4444; border-color: rgba(239,68,68,0.4);" onclick="eliminarClienteDesdeModalEdicion()">
+          <span>🗑️</span> Eliminar Cliente
+        </button>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-outline" onclick="cerrarModalEditarCliente()">Cancelar</button>
+          <button class="btn btn-primary" style="background: var(--blue);" onclick="guardarEdicionCliente()">
+            <span>💾</span> Guardar Cambios
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: FICHA COMPLETA DEL CLIENTE & HISTORIAL (CRM) -->
   <div id="modalFichaCliente" class="modal-overlay" style="display: none;">
     <div class="modal-card" style="max-width: 600px; border-color: var(--blue); box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 30px rgba(59,130,246,0.2);">
@@ -1715,8 +1831,16 @@
         <!-- Inyectado dinámicamente -->
       </div>
 
-      <div style="display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 14px;">
-        <button class="btn btn-outline" onclick="cerrarModalFichaCliente()">Cerrar</button>
+      <div id="footerFichaCliente" style="display: flex; gap: 10px; margin-top: 16px; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 14px; flex-wrap: wrap;">
+        <button class="btn btn-outline" style="color: #ef4444; border-color: rgba(239,68,68,0.4);" id="btnEliminarDesdeFicha">
+          <span>🗑️</span> Eliminar Cliente
+        </button>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-outline" onclick="cerrarModalFichaCliente()">Cerrar</button>
+          <button class="btn btn-primary" style="background: var(--blue);" id="btnEditarDesdeFicha">
+            <span>✏️</span> Editar Datos
+          </button>
+        </div>
       </div>
     </div>
   </div>

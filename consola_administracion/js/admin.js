@@ -2689,9 +2689,15 @@ function renderClientesTable(listaFiltrada) {
       </td>
       <td>${badgeEstado}</td>
       <td>
-        <div style="display: flex; gap: 6px;">
-          <button class="btn btn-outline" style="padding: 4px 8px; font-size: 11px;" onclick="verFichaCliente('${cli.cedula}')" title="Ver ficha completa e historial de viajes">
+        <div style="display: flex; gap: 5px; align-items: center;">
+          <button class="btn btn-outline" style="padding: 4px 7px; font-size: 11px;" onclick="verFichaCliente('${cli.cedula}')" title="Ver ficha técnica e historial">
             📋 Ficha
+          </button>
+          <button class="btn btn-outline" style="padding: 4px 7px; font-size: 11px; color: var(--blue); border-color: rgba(59,130,246,0.4);" onclick="abrirModalEditarCliente('${cli.cedula}')" title="Editar datos del cliente">
+            ✏️ Editar
+          </button>
+          <button class="btn btn-outline" style="padding: 4px 7px; font-size: 11px; color: #ef4444; border-color: rgba(239,68,68,0.4);" onclick="eliminarCliente('${cli.cedula}')" title="Eliminar cliente del directorio">
+            🗑️
           </button>
         </div>
       </td>
@@ -2907,11 +2913,164 @@ function verFichaCliente(cedula) {
   `;
 
   modal.style.display = 'flex';
+
+  const btnEliminar = document.getElementById('btnEliminarDesdeFicha');
+  if (btnEliminar) {
+    btnEliminar.onclick = () => eliminarCliente(cli.cedula, true);
+  }
+  const btnEditar = document.getElementById('btnEditarDesdeFicha');
+  if (btnEditar) {
+    btnEditar.onclick = () => {
+      cerrarModalFichaCliente();
+      abrirModalEditarCliente(cli.cedula);
+    };
+  }
 }
 
 function cerrarModalFichaCliente() {
   const modal = document.getElementById('modalFichaCliente');
   if (modal) modal.style.display = 'none';
+}
+
+function abrirModalEditarCliente(cedula) {
+  const cli = adminState.clientes.find(c => c.cedula === cedula);
+  if (!cli) {
+    alert('Cliente no encontrado en el Directorio.');
+    return;
+  }
+
+  const modal = document.getElementById('modalEditarCliente');
+  if (!modal) return;
+
+  document.getElementById('adminEditCliCedula').value = cli.cedula;
+  document.getElementById('adminEditCliNombre').value = cli.nombre || '';
+  document.getElementById('adminEditCliTelefono').value = (cli.telefono || '').replace(/^0/, '');
+  
+  const selectCiudad = document.getElementById('adminEditCliCiudad');
+  if (selectCiudad) {
+    selectCiudad.value = cli.ciudad || 'Guayaquil';
+  }
+
+  document.getElementById('adminEditCliDireccion').value = cli.direccion || '';
+  document.getElementById('adminEditCliPin').value = cli.pin || '1234';
+  
+  const selectEstado = document.getElementById('adminEditCliEstado');
+  if (selectEstado) {
+    selectEstado.value = cli.estado || 'Regular';
+  }
+
+  document.getElementById('adminEditCliViajes').value = cli.viajes !== undefined ? cli.viajes : 0;
+
+  const selectCal = document.getElementById('adminEditCliCalificacion');
+  if (selectCal) {
+    const calStr = (cli.calificacion || 5.0).toFixed(1);
+    if ([...selectCal.options].some(o => o.value === calStr)) {
+      selectCal.value = calStr;
+    } else {
+      selectCal.value = '5.0';
+    }
+  }
+
+  document.getElementById('adminEditCliAsistencia').value = cli.asistencia !== undefined ? cli.asistencia : 100;
+
+  modal.style.display = 'flex';
+}
+
+function cerrarModalEditarCliente() {
+  const modal = document.getElementById('modalEditarCliente');
+  if (modal) modal.style.display = 'none';
+}
+
+function guardarEdicionCliente() {
+  const cedula = document.getElementById('adminEditCliCedula').value.trim();
+  const nombre = document.getElementById('adminEditCliNombre').value.trim();
+  const telRaw = document.getElementById('adminEditCliTelefono').value.trim();
+  const ciudad = document.getElementById('adminEditCliCiudad').value;
+  const direccion = document.getElementById('adminEditCliDireccion').value.trim();
+  const pin = document.getElementById('adminEditCliPin').value.trim();
+  const estado = document.getElementById('adminEditCliEstado').value;
+  const viajes = parseInt(document.getElementById('adminEditCliViajes').value, 10);
+  const calificacion = parseFloat(document.getElementById('adminEditCliCalificacion').value);
+  const asistencia = parseInt(document.getElementById('adminEditCliAsistencia').value, 10);
+
+  if (!nombre || nombre.length < 3) {
+    alert('Por favor ingrese nombres completos válidos (mínimo 3 caracteres).');
+    return;
+  }
+
+  if (!telRaw || telRaw.length < 8) {
+    alert('Por favor ingrese un número celular válido (ej: 0987654321).');
+    return;
+  }
+
+  if (!pin || pin.length < 4) {
+    alert('Por favor ingrese un PIN numérico de 4 dígitos para acceso a la aplicación móvil.');
+    return;
+  }
+
+  const index = adminState.clientes.findIndex(c => c.cedula === cedula);
+  if (index < 0) {
+    alert('Error: No se encontró el registro del cliente.');
+    return;
+  }
+
+  const telefonoFormateado = telRaw.startsWith('0') ? telRaw : '0' + telRaw;
+
+  // Actualizar datos del cliente
+  adminState.clientes[index].nombre = nombre;
+  adminState.clientes[index].telefono = telefonoFormateado;
+  adminState.clientes[index].ciudad = ciudad;
+  adminState.clientes[index].direccion = direccion || 'Recogida a domicilio';
+  adminState.clientes[index].pin = pin;
+  adminState.clientes[index].estado = estado;
+  adminState.clientes[index].viajes = isNaN(viajes) ? 0 : Math.max(0, viajes);
+  adminState.clientes[index].calificacion = isNaN(calificacion) ? 5.0 : calificacion;
+  adminState.clientes[index].asistencia = isNaN(asistencia) ? 100 : Math.min(100, Math.max(0, asistencia));
+
+  saveState('clientes');
+  recalcularKPIs();
+  renderClientesTable();
+  cerrarModalEditarCliente();
+
+  alert(`✓ ¡Información de ${nombre} actualizada exitosamente en el Directorio!`);
+}
+
+function eliminarCliente(cedula, desdeFicha = false) {
+  const cli = adminState.clientes.find(c => c.cedula === cedula);
+  if (!cli) {
+    alert('Cliente no encontrado.');
+    return;
+  }
+
+  const confirmar = confirm(
+    `⚠️ ¿CONFIRMAR ELIMINACIÓN DE CLIENTE?\n\n` +
+    `• Pasajero: ${cli.nombre}\n` +
+    `• Cédula: ${cli.cedula} (ANT Oficial)\n` +
+    `• Celular: +593 ${cli.telefono}\n` +
+    `• Viajes acumulados: ${cli.viajes || 0}\n\n` +
+    `¿Desea eliminar definitivamente este cliente del Directorio Central de la Cooperativa? Esta acción no se puede deshacer.`
+  );
+
+  if (!confirmar) return;
+
+  adminState.clientes = adminState.clientes.filter(c => c.cedula !== cedula);
+  saveState('clientes');
+  recalcularKPIs();
+  renderClientesTable();
+
+  if (desdeFicha) {
+    cerrarModalFichaCliente();
+  }
+  cerrarModalEditarCliente();
+
+  alert(`✓ Cliente ${cli.nombre} (C.I. ${cli.cedula}) ha sido eliminado del Directorio.`);
+}
+
+function eliminarClienteDesdeModalEdicion() {
+  const cedula = document.getElementById('adminEditCliCedula')?.value?.trim();
+  if (cedula) {
+    eliminarCliente(cedula);
+  }
 }
 
 function exportarClientesCSV() {
