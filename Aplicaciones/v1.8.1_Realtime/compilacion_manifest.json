@@ -1,0 +1,51 @@
+{
+  "version": "v1.8.1_Realtime",
+  "fechaCompilacion": "2026-10-29T21:56:01.387Z",
+  "gitCommit": "0e78c8a",
+  "flutterStatus": "No instalado en PATH (usando distribución Standalone Web/PWA + Códigos Fuente listos para build)",
+  "apksAndroid": [
+    {
+      "nombre": "MacondoExpress_v1.8.1_Realtime.apk",
+      "tamanoMB": "4.82 MB",
+      "sha256": "cbfc3f6a205b4573bbcff7706da790b715e3ef1c6fb22165010530ac9966d8d6"
+    },
+    {
+      "nombre": "MacondoExpress_Conductor_v1.8.1_Realtime.apk",
+      "tamanoMB": "4.82 MB",
+      "sha256": "3767d91b00635b4ca9f137e59ae8029f88aab401c8f318fa1e24dd390ee32dd9"
+    },
+    {
+      "nombre": "MacondoExpress_Suite_v1.8.1_Realtime.apk",
+      "tamanoMB": "4.82 MB",
+      "sha256": "3ab36b8aa031294ef46804bdd0c013bd8970550a8e7282a9af73d57f0073d797"
+    }
+  ],
+  "artefactos": {
+    "clientes": {
+      "carpeta": "MacondoExpress_v1.8.1_Realtime",
+      "hashIndexHtml": "1c6ccea4a97639bace28eac5355b0220a4f40e7b2cf7fcd0a717f5f945bf55a2",
+      "lanzador": "Lanzar_AppPasajero.command"
+    },
+    "conductor": {
+      "carpeta": "MacondoExpress_Conductor_v1.8.1_Realtime",
+      "hashIndexHtml": "dd5938400fa6451b6e3e6b5b18ce59b15cba109a1790593f4df53f78370c6282",
+      "lanzador": "Lanzar_AppConductor.command"
+    },
+    "administracion": {
+      "carpeta": "MacondoExpress_Administracion_v1.8.1_Realtime",
+      "hashIndexHtml": "797bf5a3b34ff5db0a89e718bcacd40591ae0f7fa8c32da3124f6cf4dbffc1e7",
+      "lanzador": "Lanzar_ConsolaAdmin.command"
+    },
+    "suiteCompleta": {
+      "carpeta": "MacondoExpress_Suite_v1.8.1_Realtime",
+      "lanzador": "Lanzar_Suite_Macondo.command"
+    }
+  },
+  "especificaciones": {
+    "rutas": "Guayaquil ⇄ Machala",
+    "limiteCapacidad": "4 Pasajeros Estricto por Auto",
+    "seguridad": "PIN 4 dígitos + Validación Cédula M10",
+    "liquidacion": "$6.00 cuota cooperativa por turno finalizado",
+    "transitoANT": "Resolución N° 0482-2025"
+  }
+}

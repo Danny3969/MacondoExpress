@@ -3449,9 +3449,96 @@ function exportarClientesCSV() {
   document.body.removeChild(link);
 }
 
+// ── INTEGRACIÓN EN TIEMPO REAL CON MACONDO BACKEND (SUPABASE / SSE) ─────────
+function mostrarNotificacionDespacho(reserva) {
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: linear-gradient(135deg, #064E3B, #0F172A);
+    border: 1px solid #10B981;
+    border-radius: 12px;
+    padding: 16px 20px;
+    color: #fff;
+    z-index: 99999;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    max-width: 380px;
+  `;
+  toast.innerHTML = `
+    <div style="font-size: 26px;">🚐</div>
+    <div>
+      <div style="font-size: 11px; font-weight: 800; color: #10B981; text-transform: uppercase;">Nueva Reserva en Tiempo Real</div>
+      <div style="font-size: 13px; font-weight: 700; margin-top: 2px;">${reserva.pasajero_nombre || reserva.pasajero} (${reserva.cantidad_puestos || reserva.cupos} cupo)</div>
+      <div style="font-size: 11px; color: #94A3B8;">${reserva.origen_ciudad || 'Babahoyo'} ➔ ${reserva.destino_ciudad || 'Guayaquil'} · $${parseFloat(reserva.monto_total_efectivo || 12).toFixed(2)} Efectivo</div>
+    </div>
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 7000);
+}
+
+function procesarReservaRealtime(reserva) {
+  console.log('⚡ [Realtime] Nueva Reserva ingresada:', reserva);
+  mostrarNotificacionDespacho(reserva);
+
+  // Agregar al estado de turnos/reservas
+  const turno = (adminState.turnos || []).find(t => t.id === reserva.turno_id) || adminState.turnos[0];
+  if (turno) {
+    if (!turno.pasajeros) turno.pasajeros = [];
+    turno.pasajeros.push({
+      nombre: reserva.pasajero_nombre || reserva.pasajero,
+      telefono: reserva.pasajero_telefono || reserva.telefono,
+      direccion: reserva.direccion_recogida || reserva.direccion,
+      cupos: reserva.cantidad_puestos || 1,
+      monto: reserva.monto_total_efectivo || 12.00,
+      pin: reserva.codigo_abordaje_pin || '0000',
+      estado: 'Confirmado'
+    });
+    turno.cuposOcupados = Math.min(turno.cuposTotales || 4, turno.pasajeros.length);
+    saveState('turnos');
+  }
+
+  // Refrescar vistas activas
+  if (adminState.activeTab === 'despacho') {
+    renderTurnosDespacho();
+  }
+}
+
+function procesarTelemetriaRealtime(telemetria) {
+  console.log('📡 [Radar GPS] Ingesta Periódica (15s):', telemetria);
+  let turno = (adminState.turnos || []).find(t => t.id === telemetria.turno_id || (t.choferNombre && t.choferNombre.includes(telemetria.chofer_nombre)));
+  
+  if (!turno && adminState.turnos && adminState.turnos.length > 0) {
+    turno = adminState.turnos[0];
+  }
+
+  if (turno) {
+    turno.estado = 'en_ruta';
+    turno.velocidadGps = telemetria.velocidad_kmh || 72;
+    turno.coordenadasActuales = [telemetria.latitud, telemetria.longitud];
+    turno.ultimaActualizacionGps = new Date().toLocaleTimeString();
+    turno.senalGps = '4G En Vivo · Telemetría Activa (15s)';
+
+    if (adminState.activeTab === 'radar') {
+      renderRadarTelemetria();
+    }
+  }
+}
+
 // ── INICIALIZACIÓN GENERAL AL CARGAR EL DOM ──────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   initLocalStorageData();
   checkSuperUserSetup();
   switchAdminTab('despacho');
+
+  // Conectar con el cliente unificado de Backend Supabase & Realtime
+  if (window.MacondoBackend) {
+    window.MacondoBackend.conectarRealtime({
+      onReserva: (r) => procesarReservaRealtime(r),
+      onTelemetria: (t) => procesarTelemetriaRealtime(t)
+    });
+  }
 });

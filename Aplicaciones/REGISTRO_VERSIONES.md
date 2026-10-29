@@ -12,6 +12,7 @@ En este directorio se almacenan de manera versionada todas las compilaciones gen
 
 | Versión | Fecha y Hora | Commit Git | Componentes Empaquetados | Estado |
 |---|---|---|---|---|
+| **`v1.8.1_Realtime`** | 29/10/2026, 4:56:01 p. m. | `0e78c8a` | Pasajero, Conductor, Consola Admin, Suite | ✅ Compilado & Verificado |
 | **`v1.8.0_Oficial`** | 29/10/2026, 1:09:29 p. m. | `37cddd4` | Pasajero, Conductor, Consola Admin, Suite | ✅ Compilado & Verificado |
 | **`v1.7.0_Auditoria_Barras_y_Formularios_Limpios`** | 27/10/2026, 3:12:31 p. m. | `07d2ead` | Pasajero, Conductor, Consola Admin, Suite | ✅ Compilado & Verificado |
 | **`v1.6.0_Autenticacion_y_Registro_Completo`** | 22/9/2026, 10:16:53 a. m. | `f68bafd` | Pasajero, Conductor, Consola Admin, Suite | ✅ Compilado & Verificado |

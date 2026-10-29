@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Macondo Pasajero</title>
   <script src="qrcode.min.js"></script>
+  <script src="supabase.js"></script>
+  <script src="macondo_backend.js"></script>
   <style>
     :root {
       --bg-space: #070b14;
@@ -1071,7 +1073,7 @@
       document.getElementById('cardPinConfirmado').style.display = 'flex';
       document.getElementById('cardPinConfirmado').scrollIntoView({ behavior: 'smooth' });
 
-      // Guardar reserva activa en localStorage para que pueda ser leída por la app del Chofer / Suite
+      // Guardar reserva activa en localStorage y enviar en tiempo real a Supabase / Backend Central
       const reserva = {
         id: 'RES-' + Date.now().toString().slice(-4),
         pasajero: nom,
@@ -1083,6 +1085,21 @@
         estado: 'pendiente'
       };
       localStorage.setItem('macondo_reserva_activa', JSON.stringify(reserva));
+
+      if (window.MacondoBackend) {
+        window.MacondoBackend.crearReservaPasajero({
+          pasajero_nombre: nom,
+          telefono: tel,
+          direccion_recogida: dir,
+          cantidad_puestos: asientosSeleccionados,
+          monto_total_efectivo: (asientosSeleccionados * 12),
+          codigo_abordaje_pin: pin.toString()
+        }).then(res => {
+          console.log('⚡ Reserva sincronizada en tiempo real:', res);
+        }).catch(err => {
+          console.warn('Reserva guardada localmente (pendiente de sync):', err);
+        });
+      }
     }
 
     function crearEncomienda() {
