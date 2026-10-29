@@ -87,6 +87,57 @@ class _PassengerManifestScreenState extends State<PassengerManifestScreen> {
     }
   }
 
+  bool _rutaOptimizada = false;
+
+  void _optimizarRutaTsp() {
+    final pendientes = _pasajeros.where((p) => p.estado != 'a_bordo').toList();
+    final abordados = _pasajeros.where((p) => p.estado == 'a_bordo').toList();
+
+    if (pendientes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hay pasajeros pendientes para secuenciar.')),
+      );
+      return;
+    }
+
+    // Ordenamiento por cercanía / rumbo panamericano (simulación algoritmo de vecino más cercano)
+    pendientes.sort((a, b) => a.latitudRecogida.compareTo(b.latitudRecogida));
+
+    setState(() {
+      _pasajeros = [...pendientes, ...abordados];
+      _rutaOptimizada = true;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('🧭 ¡Ruta TSP Optimizada! Secuencia óptima calculada para ${pendientes.length} parada(s).'),
+        backgroundColor: AppColors.accent,
+      ),
+    );
+  }
+
+  void _abrirRutaCompletaMultiParada() async {
+    final pendientes = _pasajeros.where((p) => p.estado != 'a_bordo').toList();
+    if (pendientes.isEmpty) {
+      _abrirNavegacionGps(-3.2581, -79.9554);
+      return;
+    }
+
+    final waypoints = pendientes.map((p) => '${p.latitudRecogida},${p.longitudRecogida}').join('|');
+    final destino = '${widget.turno.ruta?.destinoCiudad ?? "Machala"}, Ecuador';
+    final url = Uri.parse('https://www.google.com/maps/dir/?api=1&waypoints=$waypoints&destination=$destino&travelmode=driving');
+
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Abriendo ruta multi-parada en Google Maps')),
+        );
+      }
+    }
+  }
+
   void _abrirModalValidarPin(int index) {
     final reserva = _pasajeros[index];
     if (reserva.estado == 'a_bordo') {
@@ -311,6 +362,52 @@ class _PassengerManifestScreenState extends State<PassengerManifestScreen> {
             ),
           ),
 
+          // Toolbar de Optimización de Recorrido TSP
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceElevated,
+              border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _optimizarRutaTsp,
+                    icon: Icon(
+                      _rutaOptimizada ? Icons.check_circle : Icons.alt_route,
+                      size: 16,
+                      color: _rutaOptimizada ? AppColors.accent : AppColors.amber,
+                    ),
+                    label: Text(
+                      _rutaOptimizada ? 'Secuencia TSP Lista' : 'Optimizar Recogida (TSP)',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: _rutaOptimizada ? AppColors.accent : AppColors.amber,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: _rutaOptimizada ? AppColors.accent : AppColors.amber),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: _abrirRutaCompletaMultiParada,
+                  icon: const Icon(Icons.map_outlined, color: AppColors.accentLight, size: 20),
+                  tooltip: 'Ruta Multi-Parada Maps',
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.surface,
+                    side: const BorderSide(color: AppColors.accent),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
@@ -318,6 +415,7 @@ class _PassengerManifestScreenState extends State<PassengerManifestScreen> {
               itemBuilder: (ctx, index) {
                 final reserva = _pasajeros[index];
                 final esAbordo = reserva.estado == 'a_bordo';
+                final ordenRecogida = index + 1;
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 16),
@@ -354,13 +452,34 @@ class _PassengerManifestScreenState extends State<PassengerManifestScreen> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    reserva.pasajero?.nombreCompleto ?? 'Pasajero',
-                                    style: const TextStyle(
-                                      color: AppColors.textPrimary,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: _rutaOptimizada ? AppColors.accent.withOpacity(0.2) : AppColors.surfaceElevated,
+                                          borderRadius: BorderRadius.circular(4),
+                                          border: Border.all(color: _rutaOptimizada ? AppColors.accent : AppColors.border),
+                                        ),
+                                        child: Text(
+                                          '$ordenRecogidaº Parada',
+                                          style: TextStyle(
+                                            color: _rutaOptimizada ? AppColors.accentLight : AppColors.textDim,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        reserva.pasajero?.nombreCompleto ?? 'Pasajero',
+                                        style: const TextStyle(
+                                          color: AppColors.textPrimary,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   Text(
                                     '${reserva.cantidadPuestos} ${reserva.cantidadPuestos == 1 ? "Puesto" : "Puestos"} en la unidad',

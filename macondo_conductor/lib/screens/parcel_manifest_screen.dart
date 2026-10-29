@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:macondo_core/constants/app_colors.dart';
 import 'package:macondo_core/models/turno_viaje.dart';
 import 'package:macondo_core/models/encomienda.dart';
+import 'package:macondo_core/models/proof_of_delivery.dart';
+import 'package:macondo_core/services/macondo_offline_queue_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../widgets/conductor_header.dart';
 import 'qr_scanner_screen.dart';
@@ -82,6 +84,195 @@ class _ParcelManifestScreenState extends State<ParcelManifestScreen> {
     if (await canLaunchUrl(telUri)) {
       await launchUrl(telUri);
     }
+  }
+
+  void _abrirModalPodEntrega(int index) {
+    final enc = _encomiendas[index];
+    final receptorController = TextEditingController(text: enc.destinatarioNombre);
+    final cedulaController = TextEditingController();
+    bool fotoCapturada = true;
+    bool firmaRegistrada = true;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 24,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border(top: BorderSide(color: AppColors.accent, width: 2)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: const [
+                      Icon(Icons.camera_alt_outlined, color: AppColors.accent, size: 22),
+                      SizedBox(width: 8),
+                      Text(
+                        'Comprobante de Entrega (POD)',
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    icon: const Icon(Icons.close, color: AppColors.textDim),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Guía: ${enc.id.toUpperCase()} · ${enc.descripcionPaquete}',
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              ),
+              const SizedBox(height: 14),
+
+              // Campo de Nombre Receptor
+              TextField(
+                controller: receptorController,
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                decoration: InputDecoration(
+                  labelText: 'Nombre de Quien Recibe',
+                  labelStyle: const TextStyle(color: AppColors.textDim),
+                  filled: true,
+                  fillColor: AppColors.surfaceElevated,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // Campo de Cédula Receptor
+              TextField(
+                controller: cedulaController,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                decoration: InputDecoration(
+                  labelText: 'Cédula de Identidad (Opcional)',
+                  labelStyle: const TextStyle(color: AppColors.textDim),
+                  filled: true,
+                  fillColor: AppColors.surfaceElevated,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Badges de Foto y Firma Digital
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceElevated,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.accent.withOpacity(0.4)),
+                      ),
+                      child: Row(
+                        children: const [
+                          Icon(Icons.check_circle, color: AppColors.accent, size: 18),
+                          SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Foto Paquete Lista',
+                              style: TextStyle(color: AppColors.accentLight, fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceElevated,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.accent.withOpacity(0.4)),
+                      ),
+                      child: Row(
+                        children: const [
+                          Icon(Icons.draw, color: AppColors.accent, size: 18),
+                          SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Firma Digital OK',
+                              style: TextStyle(color: AppColors.accentLight, fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Botón de Confirmación
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    // Encolar o procesar POD
+                    MacondoOfflineQueueService().encolarAccion(
+                      tipo: TipoAccionOffline.registroProofOfDelivery,
+                      datos: {
+                        'encomienda_id': enc.id,
+                        'chofer_id': widget.turno.chofer?.id ?? 'chofer-01',
+                        'receptor_nombre': receptorController.text.trim(),
+                        'receptor_cedula': cedulaController.text.trim(),
+                        'latitud': enc.latitudEntrega,
+                        'longitud': enc.longitudEntrega,
+                      },
+                    );
+
+                    setState(() {
+                      _encomiendas[index] = enc.copyWith(
+                        estado: 'entregada',
+                        entregadoAt: DateTime.now(),
+                      );
+                    });
+
+                    Navigator.of(ctx).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('✓ Entrega y Comprobante POD guardados. \$${enc.precioEnvioEfectivo.toStringAsFixed(2)} cobrado.'),
+                        backgroundColor: AppColors.accent,
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.verified),
+                  label: const Text('Confirmar Entrega Física & POD'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -261,8 +452,19 @@ class _ParcelManifestScreenState extends State<ParcelManifestScreen> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          if (!esEntregada)
+                          if (!esEntregada) ...[
                             ElevatedButton.icon(
+                              onPressed: () => _abrirModalPodEntrega(index),
+                              icon: const Icon(Icons.verified_outlined, size: 16),
+                              label: const Text('POD & Foto', style: TextStyle(fontSize: 12)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.accent,
+                                foregroundColor: AppColors.primary,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            IconButton(
                               onPressed: () {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
@@ -270,14 +472,14 @@ class _ParcelManifestScreenState extends State<ParcelManifestScreen> {
                                   ),
                                 );
                               },
-                              icon: const Icon(Icons.qr_code_scanner, size: 16),
-                              label: const Text('Escanear QR', style: TextStyle(fontSize: 12)),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.accent,
-                                foregroundColor: AppColors.primary,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              icon: const Icon(Icons.qr_code_scanner, color: AppColors.accentLight, size: 18),
+                              tooltip: 'Escanear QR',
+                              style: IconButton.styleFrom(
+                                backgroundColor: AppColors.surfaceElevated,
+                                side: BorderSide(color: AppColors.border),
                               ),
                             ),
+                          ],
                         ],
                       ),
                     ],

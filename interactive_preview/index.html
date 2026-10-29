@@ -580,6 +580,71 @@
     .step-dot.active-amber {
       background: var(--amber);
     }
+
+    /* Estilos Adicionales: Modo Offline, SOS, POD y Hoja de Ruta ANT */
+    .badge-sos {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1.5px solid #ef4444;
+      color: #ef4444;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      animation: pulseSos 1.8s infinite;
+    }
+    @keyframes pulseSos {
+      0%, 100% { box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+      50% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
+    }
+
+    .pill-offline-active {
+      border-color: #ef4444 !important;
+      color: #ef4444 !important;
+      background: rgba(239, 68, 68, 0.15) !important;
+    }
+
+    .offline-notice-bar {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px dashed #ef4444;
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      font-size: 11px;
+      color: #fca5a5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .signature-pad-container {
+      background: #06090e;
+      border: 1.5px dashed var(--border);
+      border-radius: 10px;
+      position: relative;
+      cursor: crosshair;
+      margin: 8px 0;
+    }
+
+    .ant-doc-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      margin-top: 10px;
+    }
+    .ant-doc-table th, .ant-doc-table td {
+      border: 1px solid var(--border);
+      padding: 6px 8px;
+      text-align: left;
+    }
+    .ant-doc-table th {
+      background: var(--bg-elevated);
+      color: var(--amber);
+      font-weight: 700;
+    }
   </style>
 </head>
 <body>
@@ -594,8 +659,11 @@
       </div>
     </div>
     <div class="studio-pills">
-      <div class="pill active"><span>●</span> Supabase Sync</div>
+      <div class="pill active" id="pillConectividad" style="cursor: pointer; user-select: none;" onclick="toggleConectividadCarretera()" title="Haz clic para simular entrar o salir de zona de sombra celular en carretera">
+        <span id="dotConectividad">●</span> <span id="txtConectividad">4G En Línea</span>
+      </div>
       <div class="pill active" style="border-color: #38bdf8; color: #38bdf8; background: rgba(56, 189, 248, 0.1);">📱 Registro Telefónico + OTP</div>
+      <div class="pill" style="border-color: #c084fc; color: #c084fc; background: rgba(192, 132, 252, 0.1); cursor: pointer;" onclick="abrirModalHojaRutaAnt()">📋 Hoja de Ruta ANT</div>
       <div class="pill">💵 100% Efectivo</div>
       <div class="pill">🗺️ GPS Waze / Maps</div>
       <a href="http://localhost:8094" target="_blank" class="pill active" style="border-color: var(--amber); color: var(--amber); background: rgba(245, 158, 11, 0.15); text-decoration: none; cursor: pointer; font-weight: 700;">
@@ -624,6 +692,7 @@
               <p id="pasajeroNombreHeader">Carlos Mendoza · C.I. 0928374651</p>
             </div>
             <div style="display: flex; gap: 6px; align-items: center;">
+              <button class="badge-sos" onclick="activarSosEmergencia('pasajero')">🚨 SOS</button>
               <button class="btn btn-outline" style="padding: 4px 8px; font-size: 10px; border-color: var(--accent); color: var(--accent);" onclick="abrirModalAuthPasajero()">🪪 Mi Cédula</button>
               <span class="badge-cash">💵 Efectivo</span>
             </div>
@@ -775,6 +844,7 @@
               <p id="conductorNombreHeader">Conductor Sin Asignar (Toque 'Chofer / OTP')</p>
             </div>
             <div style="display: flex; gap: 6px; align-items: center;">
+              <button class="badge-sos" onclick="activarSosEmergencia('chofer')">🚨 SOS</button>
               <button class="btn btn-outline" style="padding: 4px 8px; font-size: 10px; border-color: var(--amber); color: var(--amber);" onclick="abrirModalAuthChofer()">🚕 Chofer / OTP</button>
               <span class="badge-cash" style="background: rgba(16,185,129,0.15); border-color: var(--accent); color: var(--accent);">Turno</span>
             </div>
@@ -782,6 +852,12 @@
 
           <!-- Conductor Content -->
           <div class="app-content">
+            <!-- Offline Road Shadow Warning Banner -->
+            <div id="conductorOfflineWarning" class="offline-notice-bar" style="display: none;">
+              <span>📡 <strong>Zona Sombra (Sin 4G)</strong> · Cola Offline Activa</span>
+              <span id="cantColaOfflineBadge" class="pill" style="padding: 2px 6px; font-size: 9px; background: rgba(239,68,68,0.25); border-color: #ef4444; color: #fff;">0 en cola</span>
+            </div>
+
             <!-- Shift Header Status -->
             <div class="card" style="border-color: rgba(245, 158, 11, 0.4);">
               <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -842,9 +918,14 @@
                 <div class="scanner-reticle"></div>
               </div>
               
-              <button class="btn btn-amber" onclick="simularEscaneoQR()">
-                <span>⚡</span> Escanear QR y Confirmar Entrega
-              </button>
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <button class="btn btn-amber" onclick="simularEscaneoQR()">
+                  <span>⚡</span> Escanear QR y Confirmar Entrega
+                </button>
+                <button class="btn btn-outline" style="border-color: var(--accent); color: var(--accent); width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 11px; padding: 7px 10px;" onclick="abrirModalPodChofer()">
+                  <span>📷</span> Registrar POD (Foto & Firma Digital)
+                </button>
+              </div>
 
               <div id="entregaExitoBanner" style="display: none;"></div>
             </div>
@@ -960,7 +1041,11 @@
         telefono: '0994123890',
         ciudad: 'Guayaquil',
         direccion: 'Cdla. Alborada 4ta Etapa Mz 412 V 15 (Norte Guayaquil)'
-      }
+      },
+      isOffline: false,
+      colaOffline: [],
+      sosAlertas: [],
+      proofOfDeliveries: []
     };
 
     // ── RENDER DE ASIENTOS (MÁXIMO 4 POR UNIDAD) ──────────────────────────────
@@ -1396,7 +1481,35 @@
 
       state.encomienda.entregada = true;
 
-      // Banner en el teléfono del chofer
+      if (state.isOffline) {
+        // Encolar en modo offline (sombra celular en carretera)
+        state.colaOffline.push({
+          tipo: 'encomienda_qr',
+          id: state.encomienda.id,
+          destinatario: state.encomienda.destinatario,
+          tokenQR: state.encomienda.tokenQR,
+          precio: state.encomienda.precio,
+          hora: new Date().toLocaleTimeString()
+        });
+        actualizarBadgeColaOffline();
+
+        const banner = document.getElementById('entregaExitoBanner');
+        banner.style.display = 'block';
+        banner.className = 'notif-banner';
+        banner.innerHTML = `
+          <span style="font-size: 20px;">📡</span>
+          <div>
+            <strong style="color: var(--amber);">¡ENTREGA GUARDADA EN COLA OFFLINE!</strong>
+            <div style="font-size: 11px; color: #fff; margin-top: 2px;">
+              Zona Sombra Carretera. QR verificado localmente. Se sincronizará automáticamente con Supabase al recuperar señal 4G.
+            </div>
+          </div>
+        `;
+        renderConductorManifest();
+        return;
+      }
+
+      // Banner en el teléfono del chofer (Online)
       const banner = document.getElementById('entregaExitoBanner');
       banner.style.display = 'block';
       banner.className = 'notif-banner';
@@ -1417,6 +1530,242 @@
       `;
 
       renderConductorManifest();
+    }
+
+    // ── GESTIÓN DE CONECTIVIDAD Y COLA OFFLINE (RESILIENCIA EN CARRETERA) ─────
+    function toggleConectividadCarretera() {
+      state.isOffline = !state.isOffline;
+      const pill = document.getElementById('pillConectividad');
+      const dot = document.getElementById('dotConectividad');
+      const txt = document.getElementById('txtConectividad');
+      const warn = document.getElementById('conductorOfflineWarning');
+
+      if (state.isOffline) {
+        pill.className = 'pill active pill-offline-active';
+        dot.innerText = '📡';
+        txt.innerText = 'Zona Sombra (Offline)';
+        if (warn) warn.style.display = 'flex';
+        actualizarBadgeColaOffline();
+        alert('📡 ¡Modo Zona Sombra Activado!\nSimulando tramo vial rural/carretero sin cobertura 4G. Las entregas QR y abordajes se guardarán en la cola offline local.');
+      } else {
+        pill.className = 'pill active';
+        dot.innerText = '●';
+        txt.innerText = '4G En Línea';
+        if (warn) warn.style.display = 'none';
+        if (state.colaOffline.length > 0) {
+          procesarSincronizacionOffline();
+        } else {
+          alert('🌐 Cobertura 4G restablecida. Conexión activa con Supabase PostgreSQL.');
+        }
+      }
+    }
+
+    function actualizarBadgeColaOffline() {
+      const badge = document.getElementById('cantColaOfflineBadge');
+      if (badge) {
+        badge.innerText = `${state.colaOffline.length} en cola`;
+      }
+    }
+
+    function procesarSincronizacionOffline() {
+      const cant = state.colaOffline.length;
+      state.colaOffline = [];
+      actualizarBadgeColaOffline();
+
+      const banner = document.getElementById('entregaExitoBanner');
+      if (banner) {
+        banner.style.display = 'block';
+        banner.className = 'notif-banner';
+        banner.innerHTML = `
+          <span style="font-size: 20px;">⚡</span>
+          <div>
+            <strong style="color: var(--accent);">¡SINCRONIZACIÓN AUTOMÁTICA EXITOSA!</strong>
+            <div style="font-size: 11px; color: #fff; margin-top: 2px;">
+              ${cant} transacción(es) offline procesadas y confirmadas en Supabase. Notificaciones enviadas.
+            </div>
+          </div>
+        `;
+      }
+
+      alert(`⚡ ¡Cobertura 4G Detectada!\nSincronizando automáticamente ${cant} acción(es) offline contra Supabase.`);
+      renderConductorManifest();
+    }
+
+    // ── PROOF OF DELIVERY (POD) CON FOTO Y FIRMA DIGITAL ──────────────────────
+    function abrirModalPodChofer() {
+      if (!state.encomienda) {
+        alert('No hay encomiendas asignadas en la unidad.');
+        return;
+      }
+      document.getElementById('podGuiaTxt').innerText = state.encomienda.id;
+      document.getElementById('podContenidoTxt').innerText = state.encomienda.descripcion;
+      document.getElementById('podNombreReceptor').value = state.encomienda.destinatario;
+      document.getElementById('modalPodChofer').style.display = 'flex';
+
+      setTimeout(iniciarCanvasFirma, 100);
+    }
+
+    function cerrarModalPodChofer() {
+      document.getElementById('modalPodChofer').style.display = 'none';
+    }
+
+    let isDrawing = false;
+    function iniciarCanvasFirma() {
+      const canvas = document.getElementById('canvasFirmaPod');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#10b981';
+      ctx.lineCap = 'round';
+
+      canvas.onmousedown = (e) => {
+        isDrawing = true;
+        ctx.beginPath();
+        const rect = canvas.getBoundingClientRect();
+        ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+      };
+      canvas.onmousemove = (e) => {
+        if (!isDrawing) return;
+        const rect = canvas.getBoundingClientRect();
+        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+        ctx.stroke();
+      };
+      window.onmouseup = () => { isDrawing = false; };
+    }
+
+    function limpiarFirmaPod() {
+      const canvas = document.getElementById('canvasFirmaPod');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function autocompletarFirmaPod() {
+      const canvas = document.getElementById('canvasFirmaPod');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#10b981';
+      ctx.beginPath();
+      ctx.moveTo(30, 45);
+      ctx.bezierCurveTo(70, 15, 110, 75, 150, 35);
+      ctx.bezierCurveTo(180, 5, 210, 65, 260, 40);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(50, 60);
+      ctx.lineTo(280, 58);
+      ctx.stroke();
+    }
+
+    function confirmarPodEntrega() {
+      const nombre = document.getElementById('podNombreReceptor').value.trim();
+      const cedula = document.getElementById('podCedulaReceptor').value.trim();
+      if (!nombre) {
+        alert('Por favor ingrese el nombre del receptor.');
+        return;
+      }
+
+      state.encomienda.entregada = true;
+      state.proofOfDeliveries.push({
+        encomiendaId: state.encomienda.id,
+        receptor: nombre,
+        cedula: cedula || 'S/N',
+        fecha: new Date().toLocaleString()
+      });
+
+      cerrarModalPodChofer();
+
+      if (state.isOffline) {
+        state.colaOffline.push({
+          tipo: 'pod_entrega',
+          id: state.encomienda.id,
+          receptor: nombre,
+          cedula: cedula
+        });
+        actualizarBadgeColaOffline();
+      }
+
+      const banner = document.getElementById('entregaExitoBanner');
+      banner.style.display = 'block';
+      banner.className = 'notif-banner';
+      banner.innerHTML = `
+        <span style="font-size: 20px;">📷</span>
+        <div>
+          <strong style="color: var(--accent);">¡COMPROBANTE POD & FIRMA REGISTRADOS!</strong>
+          <div style="font-size: 11px; color: #fff; margin-top: 2px;">
+            Receptor: ${nombre} · Cédula: ${cedula || "Verificada"} · Constancia fotográfica y firma digital archivadas con sello criptográfico.
+          </div>
+        </div>
+      `;
+
+      renderConductorManifest();
+      alert(`✓ ¡Comprobante POD Registrado con Éxito!\nReceptor: ${nombre}\nSe generó la constancia fotográfica con coordenadas GPS y firma digital.`);
+    }
+
+    // ── BOTÓN SOS / PROTOCOLO DE EMERGENCIA ──────────────────────────────────
+    function activarSosEmergencia(rol) {
+      const seguro = confirm(`🚨 ¿Confirmas emitir una ALERTA SOS de EMERGENCIA a la Central de Despacho y Policía de Tránsito?`);
+      if (!seguro) return;
+
+      const coords = '-2.1894, -79.8891';
+      document.getElementById('sosCoordenadas').innerText = coords;
+      document.getElementById('sosDetalleTexto').innerText = `Alerta prioritaria emitida por ${rol === 'chofer' ? 'el Conductor' : 'el Pasajero a bordo'} de la Unidad #04.`;
+      document.getElementById('modalSosAlerta').style.display = 'flex';
+
+      state.sosAlertas.push({
+        rol: rol,
+        fecha: new Date().toLocaleTimeString(),
+        coordenadas: coords
+      });
+    }
+
+    function cerrarModalSosAlerta() {
+      document.getElementById('modalSosAlerta').style.display = 'none';
+    }
+
+    // ── HOJA DE RUTA OFICIAL ANT ECUADOR (INSPECCIÓN Y POLICÍA) ───────────────
+    function abrirModalHojaRutaAnt() {
+      // Poblar tabla de pasajeros
+      const tbodyPasajeros = document.getElementById('antTbodyPasajeros');
+      tbodyPasajeros.innerHTML = '';
+      state.pasajeros.forEach((p, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${idx + 1}</td>
+          <td><strong>${p.nombre}</strong></td>
+          <td>${p.cedula || '09' + Math.floor(10000000 + Math.random() * 90000000)}</td>
+          <td>${p.puestos} asiento(s)</td>
+          <td>${p.direccion}</td>
+          <td><span style="color: ${p.aBordo ? 'var(--accent)' : 'var(--amber)'}; font-weight: bold;">${p.aBordo ? 'A BORDO (PIN OK)' : 'PENDIENTE'}</span></td>
+        `;
+        tbodyPasajeros.appendChild(tr);
+      });
+
+      // Poblar tabla de encomiendas
+      const tbodyEncomiendas = document.getElementById('antTbodyEncomiendas');
+      tbodyEncomiendas.innerHTML = '';
+      if (state.encomienda) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${state.encomienda.id}</strong></td>
+          <td>${state.encomienda.destinatario}</td>
+          <td>${state.encomienda.telefono}</td>
+          <td>${state.encomienda.direccion}</td>
+          <td><span style="color: ${state.encomienda.entregada ? 'var(--accent)' : 'var(--amber)'}; font-weight: bold;">${state.encomienda.entregada ? 'ENTREGADA (QR OK)' : 'EN TRÁNSITO'}</span></td>
+        `;
+        tbodyEncomiendas.appendChild(tr);
+      }
+
+      document.getElementById('modalHojaRutaAnt').style.display = 'flex';
+    }
+
+    function cerrarModalHojaRutaAnt() {
+      document.getElementById('modalHojaRutaAnt').style.display = 'none';
+    }
+
+    function imprimirHojaRutaAnt() {
+      window.print();
     }
 
     function mostrarModalDespacho() {
@@ -2108,6 +2457,186 @@
           Volver a la Terminal de Conductor
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL: COMPROBANTE PROOF OF DELIVERY (POD) CON FOTO Y FIRMA DIGITAL -->
+  <div id="modalPodChofer" class="modal-overlay">
+    <div class="modal-card" style="border-color: rgba(16, 185, 129, 0.5); max-width: 440px;">
+      <button class="modal-close" onclick="cerrarModalPodChofer()">✕</button>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(16,185,129,0.15); display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 18px;">📷</div>
+        <div>
+          <h3 style="font-size: 15px; font-weight: 800; color: #fff;">Proof of Delivery (POD)</h3>
+          <p style="font-size: 11px; color: var(--accent);">Foto y Firma Digital de Entrega Física</p>
+        </div>
+      </div>
+
+      <div style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 12px; padding: 10px; margin-top: 12px;">
+        <div style="display: flex; justify-content: space-between; font-size: 11px;">
+          <span style="color: var(--text-dim);">Guía:</span>
+          <strong style="color: var(--amber);" id="podGuiaTxt">ENC-782</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 4px;">
+          <span style="color: var(--text-dim);">Contenido:</span>
+          <span style="color: #fff;" id="podContenidoTxt">Sobre manila con resultados médicos y llaves</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 4px;">
+          <span style="color: var(--text-dim);">Cobro Efectivo:</span>
+          <strong style="color: var(--amber);">$5.00 EFECTIVO</strong>
+        </div>
+      </div>
+
+      <div style="margin-top: 10px;">
+        <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">QUIEN RECIBE FÍSICAMENTE:</label>
+        <input type="text" id="podNombreReceptor" class="field-input" value="Dra. María Belén Torres" placeholder="Nombre y Apellido">
+      </div>
+
+      <div style="margin-top: 8px;">
+        <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">CÉDULA DE IDENTIDAD:</label>
+        <input type="text" id="podCedulaReceptor" class="field-input" value="0704918235" placeholder="Número de cédula">
+      </div>
+
+      <!-- Foto Preview con Marca de Agua GPS -->
+      <div style="margin-top: 10px;">
+        <label style="font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between;">
+          <span>FOTO CONSTANCIA DE ENTREGA:</span>
+          <span style="color: var(--accent); font-weight: bold;">✓ GPS WATERMARK</span>
+        </label>
+        <div style="position: relative; height: 85px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); background: #06090e; margin-top: 4px; display: flex; align-items: center; justify-content: center;">
+          <div style="position: absolute; inset: 0; background: linear-gradient(135deg, #1e293b, #0f172a); opacity: 0.9;"></div>
+          <div style="position: relative; z-index: 2; text-align: center; color: var(--text-dim); font-size: 11px;">
+            <div style="font-size: 22px;">📦</div>
+            <div style="color: var(--text-main); font-weight: 600; margin-top: 2px;">Paquete Entregado en Puerta</div>
+          </div>
+          <div style="position: absolute; bottom: 4px; left: 6px; z-index: 3; font-size: 8px; font-family: monospace; color: #10b981; background: rgba(0,0,0,0.7); padding: 2px 6px; border-radius: 4px;">
+            📍 LAT: -3.2581, LNG: -79.9554 · MACHALA · 29/OCT/2026
+          </div>
+        </div>
+      </div>
+
+      <!-- Canvas de Firma Digital -->
+      <div style="margin-top: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <label style="font-size: 11px; color: var(--text-muted);">FIRMA DIGITAL DEL RECEPTOR:</label>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" onclick="limpiarFirmaPod()" style="background: none; border: none; color: #ef4444; font-size: 10px; cursor: pointer; text-decoration: underline;">Borrar</button>
+            <button type="button" onclick="autocompletarFirmaPod()" style="background: none; border: none; color: var(--accent); font-size: 10px; cursor: pointer; text-decoration: underline;">✍️ Autocompletar</button>
+          </div>
+        </div>
+        <div class="signature-pad-container">
+          <canvas id="canvasFirmaPod" width="370" height="85" style="display: block; width: 100%; border-radius: 10px;"></canvas>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" style="margin-top: 12px; width: 100%;" onclick="confirmarPodEntrega()">
+        <span>✓</span> Confirmar Entrega Física & POD
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: HOJA DE RUTA OFICIAL ANT ECUADOR -->
+  <div id="modalHojaRutaAnt" class="modal-overlay">
+    <div class="modal-card" style="border-color: rgba(192, 132, 252, 0.5); max-width: 580px; max-height: 90vh; overflow-y: auto;">
+      <button class="modal-close" onclick="cerrarModalHojaRutaAnt()">✕</button>
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--border); padding-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="font-size: 28px;">🇪🇨</div>
+          <div>
+            <h3 style="font-size: 14px; font-weight: 900; color: #fff; letter-spacing: 0.5px;">AGENCIA NACIONAL DE TRÁNSITO (ANT)</h3>
+            <p style="font-size: 11px; color: #c084fc; font-weight: bold;">HOJA DE RUTA & MANIFIESTO OFICIAL DE OPERACIÓN</p>
+          </div>
+        </div>
+        <div style="text-align: right; font-size: 10px; color: var(--text-dim);">
+          <div>Resolución ANT-2026-081</div>
+          <strong style="color: var(--amber);">COOPERATIVA MACONDO</strong>
+        </div>
+      </div>
+
+      <div style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin-top: 12px; font-size: 11px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div>Unidad: <strong style="color: #fff;">Disco #04 (Camioneta D/C)</strong></div>
+          <div>Placa Oficial: <strong style="color: #fff;">GBA-4821</strong></div>
+          <div>Chofer Asignado: <strong id="antChoferNombre" style="color: var(--amber);">Manuel Palacios (Licencia Tipo E)</strong></div>
+          <div>Capacidad Autorizada: <strong style="color: var(--accent);">Estricto 4 Pasajeros</strong></div>
+          <div>Corredor Vial: <strong style="color: #fff;">Guayaquil ↔ Machala (Vía E25)</strong></div>
+          <div>Fecha y Hora: <strong style="color: #fff;">29/OCT/2026 · Salida: 07:00</strong></div>
+        </div>
+      </div>
+
+      <div style="margin-top: 14px;">
+        <h4 style="font-size: 12px; color: var(--amber); font-weight: bold;">1. MANIFIESTO DE PASAJEROS PUERTA A PUERTA (MÁX 4)</h4>
+        <table class="ant-doc-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Pasajero</th>
+              <th>Cédula</th>
+              <th>Puestos</th>
+              <th>Dirección Recogida</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="antTbodyPasajeros">
+            <!-- Dinámico -->
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top: 14px;">
+        <h4 style="font-size: 12px; color: var(--accent); font-weight: bold;">2. GUÍA DE ENCOMIENDAS & PAQUETERÍA</h4>
+        <table class="ant-doc-table">
+          <thead>
+            <tr>
+              <th>Guía</th>
+              <th>Destinatario</th>
+              <th>Teléfono</th>
+              <th>Destino Entrega</th>
+              <th>Control QR</th>
+            </tr>
+          </thead>
+          <tbody id="antTbodyEncomiendas">
+            <!-- Dinámico -->
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top: 14px; padding: 10px; background: rgba(16, 185, 129, 0.08); border: 1px dashed var(--accent); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+        <div>
+          <strong style="color: var(--accent);">Sello Digital de Despacho Cooperativa</strong>
+          <div style="color: var(--text-dim); font-size: 10px;">Token Criptográfico: SHA256-MCND-2026-991A4</div>
+        </div>
+        <div style="font-size: 20px;">🛡️</div>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 16px;">
+        <button class="btn btn-primary" onclick="imprimirHojaRutaAnt()" style="flex: 1; background: linear-gradient(135deg, #a855f7, #7e22ce);">
+          <span>🖨️</span> Imprimir / Exportar PDF Oficial
+        </button>
+        <button class="btn btn-outline" onclick="cerrarModalHojaRutaAnt()" style="border-color: var(--border); color: var(--text-muted);">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ALERTA SOS DE EMERGENCIA ACTIVADA -->
+  <div id="modalSosAlerta" class="modal-overlay">
+    <div class="modal-card" style="border-color: #ef4444; box-shadow: 0 0 50px rgba(239, 68, 68, 0.4); max-width: 420px; text-align: center;">
+      <div style="width: 50px; height: 50px; border-radius: 50%; background: rgba(239,68,68,0.2); border: 2px solid #ef4444; display: flex; align-items: center; justify-content: center; font-size: 26px; margin: 0 auto 12px; animation: pulseSos 1s infinite;">🚨</div>
+      <h3 style="font-size: 17px; font-weight: 900; color: #ef4444;">¡ALERTA SOS EMITIDA!</h3>
+      <p style="font-size: 12px; color: #fff; margin-top: 4px;" id="sosDetalleTexto">Auxilio transmitido a la Central de Macondo Express.</p>
+
+      <div style="background: var(--bg-elevated); border: 1px solid #ef4444; border-radius: 12px; padding: 12px; margin-top: 14px; text-align: left; font-size: 12px;">
+        <div>📍 Coordenadas GPS: <strong style="color: #ef4444;" id="sosCoordenadas">-2.1894, -79.8891</strong></div>
+        <div style="margin-top: 4px;">🚗 Unidad: <strong style="color: #fff;">Disco #04 (GBA-4821)</strong></div>
+        <div style="margin-top: 4px;">Corredor: <strong style="color: #fff;">Guayaquil ➔ Machala</strong></div>
+        <div style="margin-top: 4px;">Protocolo: <strong style="color: var(--accent);">ECU 911 & Policía de Tránsito Enlazados</strong></div>
+      </div>
+
+      <button class="btn btn-amber" style="margin-top: 16px; width: 100%; background: #ef4444; border-color: #ef4444;" onclick="cerrarModalSosAlerta()">
+        Entendido · Mantener Protocolo de Seguridad Activo
+      </button>
     </div>
   </div>
 </body>
