@@ -3528,6 +3528,52 @@ function procesarTelemetriaRealtime(telemetria) {
   }
 }
 
+function procesarPodRealtime(pod) {
+  console.log('📦 [POD Realtime] Encomienda Entregada:', pod);
+
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #0f172a;
+    border: 1px solid #F59E0B;
+    border-radius: 12px;
+    padding: 16px 20px;
+    color: #fff;
+    z-index: 99999;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    max-width: 400px;
+  `;
+  toast.innerHTML = `
+    <div style="font-size: 26px;">📦</div>
+    <div>
+      <div style="font-size: 11px; font-weight: 800; color: #F59E0B; text-transform: uppercase;">Encomienda Entregada (POD Digital)</div>
+      <div style="font-size: 13px; font-weight: 700; margin-top: 2px;">Guía: ${pod.guia_id} · Recibió: ${pod.receptor_nombre}</div>
+      <div style="font-size: 11px; color: #94A3B8;">Cédula: ${pod.receptor_cedula} · $${parseFloat(pod.monto || 5).toFixed(2)} Efectivo · ${pod.tiene_foto ? '📸 Con Foto' : ''} ${pod.tiene_firma ? '✍️ Con Firma' : ''}</div>
+    </div>
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 8000);
+
+  if (adminState.encomiendas) {
+    const enc = adminState.encomiendas.find(e => e.guia === pod.guia_id || e.id === pod.guia_id);
+    if (enc) {
+      enc.estado = 'Entregado';
+      enc.receptor = pod.receptor_nombre;
+      enc.fechaEntrega = pod.fecha_entrega;
+      saveState('encomiendas');
+    }
+  }
+
+  if (adminState.activeTab === 'encomiendas' && typeof renderEncomiendas === 'function') {
+    renderEncomiendas();
+  }
+}
+
 // ── INICIALIZACIÓN GENERAL AL CARGAR EL DOM ──────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   initLocalStorageData();
@@ -3538,7 +3584,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.MacondoBackend) {
     window.MacondoBackend.conectarRealtime({
       onReserva: (r) => procesarReservaRealtime(r),
-      onTelemetria: (t) => procesarTelemetriaRealtime(t)
+      onTelemetria: (t) => procesarTelemetriaRealtime(t),
+      onPod: (p) => procesarPodRealtime(p)
     });
   }
 });

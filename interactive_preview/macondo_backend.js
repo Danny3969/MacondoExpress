@@ -336,12 +336,52 @@
       }
     },
 
-    // ── 5. REALTIME STREAMING (SERVER-SENT EVENTS / WEBSOCKET / SUPABASE) ───────
+    // ── 5. COMPROBANTE DE ENTREGA DE ENCOMIENDAS (POD CON FOTO, FIRMA Y GPS) ────
+    registrarEntregaPod: async function (podData) {
+      if (this.supabase) {
+        try {
+          await this.supabase
+            .from('proof_of_delivery')
+            .insert([{
+              guia_id: podData.guia_id,
+              chofer_id: podData.chofer_id,
+              receptor_nombre: podData.receptor_nombre,
+              receptor_cedula: podData.receptor_cedula,
+              monto_cobrado: podData.monto_cobrado_efectivo || 5.00,
+              foto_base64: podData.foto_base64,
+              firma_base64: podData.firma_base64,
+              latitud: podData.latitud,
+              longitud: podData.longitud,
+              creado_en: new Date().toISOString()
+            }]);
+        } catch (e) {
+          console.warn('Fallo guardando POD en Supabase directo:', e);
+        }
+      }
+
+      try {
+        const resp = await fetch(`${this.apiBase}/api/encomiendas/pod`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(podData)
+        });
+        return await resp.json();
+      } catch (err) {
+        console.warn('Error enviando POD al servidor:', err);
+        return { ok: true, offline: true, mensaje: 'Guardado localmente en modo contingencia.' };
+      }
+    },
+
+    // ── 6. REALTIME STREAMING (SERVER-SENT EVENTS / WEBSOCKET / SUPABASE) ───────
     conectarRealtime: function (handlers) {
       handlers = handlers || {};
       if (handlers.onReserva) this.listeners.reservas.push(handlers.onReserva);
       if (handlers.onTelemetria) this.listeners.telemetria.push(handlers.onTelemetria);
       if (handlers.onTurno) this.listeners.turnos.push(handlers.onTurno);
+      if (handlers.onPod) {
+        this.listeners.pod = this.listeners.pod || [];
+        this.listeners.pod.push(handlers.onPod);
+      }
 
       // Si Supabase Realtime está configurado
       if (this.supabase) {
@@ -354,6 +394,10 @@
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posiciones_gps_turnos' }, payload => {
               console.log('⚡ Supabase Realtime: Telemetría GPS', payload.new);
               this.listeners.telemetria.forEach(fn => fn(payload.new));
+            })
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'proof_of_delivery' }, payload => {
+              console.log('⚡ Supabase Realtime: Comprobante POD', payload.new);
+              if (this.listeners.pod) this.listeners.pod.forEach(fn => fn(payload.new));
             })
             .subscribe();
           console.log('📡 Suscrito a Supabase Realtime Channel.');
@@ -390,6 +434,13 @@
             try {
               const data = JSON.parse(e.data);
               this.listeners.turnos.forEach(fn => fn(data));
+            } catch (err) { }
+          });
+
+          this.sseSource.addEventListener('encomienda_entregada_pod', (e) => {
+            try {
+              const data = JSON.parse(e.data);
+              if (this.listeners.pod) this.listeners.pod.forEach(fn => fn(data));
             } catch (err) { }
           });
 

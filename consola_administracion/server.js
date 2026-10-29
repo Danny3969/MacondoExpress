@@ -68,6 +68,7 @@ const centralState = {
   ],
   reservas: [],
   telemetriaUltima: {},
+  entregasPod: [],
   sseClients: new Set()
 };
 
@@ -83,13 +84,13 @@ function broadcastSSE(event, data) {
   }
 }
 
-// Helper para parsear JSON de peticiones POST
+// Helper para parsear JSON de peticiones POST (Soporta fotos en Base64 hasta 10MB)
 function parseJsonBody(req) {
   return new Promise((resolve, reject) => {
     let body = '';
     req.on('data', chunk => {
       body += chunk.toString();
-      if (body.length > 1e6) { // Limite 1MB
+      if (body.length > 10e6) { // Limite 10MB para fotos de encomienda
         req.destroy();
         reject(new Error('Payload demasiado grande'));
       }
@@ -269,7 +270,57 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // ── 5. SERVIDOR DE ARCHIVOS ESTÁTICOS Y DESCARGAS ───────────────────────────
+  // ── 5. API: COMPROBANTE DE ENTREGA DE ENCOMIENDAS (POD CON FOTO Y FIRMA) ────
+  if (reqUrl === '/api/encomiendas/pod') {
+    if (req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, entregas: centralState.entregasPod }));
+      return;
+    }
+
+    if (req.method === 'POST') {
+      try {
+        const body = await parseJsonBody(req);
+        const pod = {
+          id: 'pod-' + Date.now(),
+          guia_id: body.guia_id || body.encomienda_id || 'ENC-' + Math.floor(100000 + Math.random() * 900000),
+          chofer_id: body.chofer_id || 'chofer-carlos',
+          chofer_nombre: body.chofer_nombre || 'Carlos Méndez',
+          receptor_nombre: body.receptor_nombre || 'Destinatario',
+          receptor_cedula: body.receptor_cedula || '',
+          monto_cobrado_efectivo: parseFloat(body.monto_cobrado_efectivo || 5.00),
+          foto_base64: body.foto_base64 || null,
+          firma_base64: body.firma_base64 || null,
+          latitud: parseFloat(body.latitud || -3.2581),
+          longitud: parseFloat(body.longitud || -79.9554),
+          fecha_entrega: new Date().toISOString()
+        };
+
+        centralState.entregasPod.unshift(pod);
+        if (centralState.entregasPod.length > 50) centralState.entregasPod.pop();
+
+        // Notificar en tiempo real a la Consola de Administración
+        broadcastSSE('encomienda_entregada_pod', {
+          guia_id: pod.guia_id,
+          receptor_nombre: pod.receptor_nombre,
+          receptor_cedula: pod.receptor_cedula,
+          fecha_entrega: pod.fecha_entrega,
+          monto: pod.monto_cobrado_efectivo,
+          tiene_foto: !!pod.foto_base64,
+          tiene_firma: !!pod.firma_base64
+        });
+
+        res.writeHead(201, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, pod_id: pod.id, mensaje: 'Comprobante POD registrado exitosamente' }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, error: 'Error procesando comprobante POD' }));
+      }
+      return;
+    }
+  }
+
+  // ── 6. SERVIDOR DE ARCHIVOS ESTÁTICOS Y DESCARGAS ───────────────────────────
   if (reqUrl === '/' || reqUrl === '') {
     reqUrl = '/index.html';
   } else if (reqUrl === '/descargas' || reqUrl === '/descargar' || reqUrl === '/apps' || reqUrl === '/apks') {

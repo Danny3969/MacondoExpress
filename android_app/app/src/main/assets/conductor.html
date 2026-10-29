@@ -386,10 +386,91 @@
         <div>
           <div style="font-size: 13px; font-weight: 800;">Guía ENC-884910</div>
           <div style="font-size: 11px; color: var(--text-dim);">Destinatario: Luisa Mora · Machala</div>
-          <div style="font-size: 10px; color: var(--accent); margin-top: 2px;">Sobre Documentos · $5.00 Cobrado</div>
+          <div style="font-size: 10px; color: var(--accent); margin-top: 2px;">Sobre Documentos · $5.00 Efectivo</div>
         </div>
-        <button class="btn btn-amber" id="btnEnc1" style="font-size: 11px; padding: 7px 12px;" onclick="entregarEncomienda('ENC-884910')">
-          <span>✓</span> Entregar QR
+        <button class="btn btn-amber" id="btnEnc1" style="font-size: 11px; padding: 7px 12px;" onclick="abrirModalPodEntrega('ENC-884910', 'Luisa Mora', 'Machala', 5.00)">
+          <span>📸</span> Entregar con POD
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Comprobante de Entrega con Foto y Firma (POD) -->
+  <div class="modal-overlay" id="modalPodEntrega">
+    <div class="modal-box" style="max-height: 92vh; overflow-y: auto; max-width: 380px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 15px; font-weight: 800; color: var(--amber); display:flex; align-items:center; gap:6px;">
+          <span>📦</span> Entrega de Encomienda (POD)
+        </h3>
+        <span style="cursor: pointer; font-size: 18px; color: var(--text-dim); padding:4px;" onclick="cerrarModalPod()">✕</span>
+      </div>
+
+      <!-- Guía info -->
+      <div style="background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25); border-radius: 10px; padding: 10px 12px; font-size: 12px;">
+        <div style="display:flex; justify-content:space-between; font-weight:800; color:#fff;">
+          <span id="podGuiaId">Guía ENC-884910</span>
+          <span style="color:var(--accent);" id="podGuiaMonto">$5.00 Efectivo</span>
+        </div>
+        <div style="color: var(--text-muted); font-size: 11px; margin-top: 3px;" id="podGuiaDest">
+          Destinatario oficial: Luisa Mora · Machala
+        </div>
+      </div>
+
+      <!-- Receptor Fields -->
+      <div class="field-group">
+        <label class="field-label">Persona que recibe el paquete *</label>
+        <input type="text" id="podNombreReceptor" class="field-input" placeholder="Nombre y Apellido del receptor" style="font-size:12.5px; padding:9px 12px;" />
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Cédula de Identidad de quien recibe *</label>
+        <input type="tel" id="podCedulaReceptor" class="field-input" placeholder="Ej: 0704981234" maxlength="10" style="font-size:12.5px; padding:9px 12px;" />
+      </div>
+
+      <!-- Sección Cámara / Captura Fotográfica -->
+      <div class="field-group">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <label class="field-label">📸 Foto del Paquete Entregado *</label>
+          <span id="podFotoStatus" style="font-size:10px; color:var(--text-dim);">Sin foto</span>
+        </div>
+
+        <video id="podVideo" autoplay playsinline style="width:100%; height:140px; background:#000; border-radius:8px; object-fit:cover; display:none; border:1px solid var(--accent);"></video>
+        <canvas id="podFotoCanvas" style="display:none;"></canvas>
+        <img id="podFotoPreview" style="display:none; width:100%; height:140px; object-fit:cover; border-radius:8px; border:1px solid var(--accent);" />
+
+        <div style="display:flex; gap:6px;">
+          <button type="button" class="btn btn-outline" id="btnIniciarCamara" style="flex:1; font-size:11px; padding:8px 6px;" onclick="activarCamaraPod()">
+            <span>📷</span> Activar Cámara
+          </button>
+          <button type="button" class="btn btn-amber" id="btnDispararCamara" style="flex:1; font-size:11px; padding:8px 6px; display:none;" onclick="capturarFotoCamara()">
+            <span>⚡</span> Tomar Foto
+          </button>
+          <label class="btn btn-outline" style="flex:1; font-size:11px; padding:8px 6px; cursor:pointer; text-align:center;">
+            <span>📁</span> Archivo
+            <input type="file" id="podInputFile" accept="image/*" capture="environment" style="display:none;" onchange="procesarFotoArchivo(event)">
+          </label>
+        </div>
+      </div>
+
+      <!-- Sección Firma Digital (Touch Canvas) -->
+      <div class="field-group">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <label class="field-label">✍️ Firma Digital del Receptor *</label>
+          <button type="button" onclick="limpiarPadFirma()" style="background:none; border:none; color:var(--danger); font-size:11px; font-weight:700; cursor:pointer;">
+            Limpiar ✕
+          </button>
+        </div>
+        <div style="background:#090d16; border:1px dashed var(--border); border-radius:8px; padding:4px;">
+          <canvas id="padFirma" width="340" height="110" style="width:100%; height:110px; background:#0c1322; border-radius:6px; display:block; touch-action:none; cursor:crosshair;"></canvas>
+        </div>
+        <span style="font-size:10px; color:var(--text-dim); text-align:center;">El receptor debe firmar con el dedo sobre la pantalla</span>
+      </div>
+
+      <!-- Acciones Finales -->
+      <div style="display: flex; gap: 8px; margin-top:4px;">
+        <button class="btn btn-outline" style="flex: 1;" onclick="cerrarModalPod()">Cancelar</button>
+        <button class="btn btn-green" id="btnConfirmarPod" style="flex: 1.5;" onclick="guardarPodEntrega()">
+          <span>✓</span> Confirmar Entrega
         </button>
       </div>
     </div>
@@ -716,17 +797,319 @@
       }
     }
 
-    function entregarEncomienda(guia) {
-      if (confirm(`¿Confirmar entrega física de la encomienda ${guia} con escaneo QR?`)) {
-        alert(`✓ Encomienda ${guia} entregada con éxito. Remitente notificado.`);
+    // ── MÓDULO POD (PRUEBA DE ENTREGA CON FOTO Y FIRMA DIGITAL) ─────────────────
+    let currentPodData = null;
+    let podMediaStream = null;
+    let podFotoDataUrl = null;
+    let firmaDrawing = false;
+    let firmaHasStrokes = false;
+
+    function abrirModalPodEntrega(guia, destinatario, ciudad, monto) {
+      currentPodData = { guia, destinatario, ciudad, monto: monto || 5.00 };
+      document.getElementById('podGuiaId').innerText = `Guía ${guia}`;
+      document.getElementById('podGuiaMonto').innerText = `$${(monto || 5.00).toFixed(2)} Efectivo`;
+      document.getElementById('podGuiaDest').innerText = `Destinatario oficial: ${destinatario} · ${ciudad}`;
+      document.getElementById('podNombreReceptor').value = destinatario;
+      document.getElementById('podCedulaReceptor').value = '';
+
+      // Reset foto
+      podFotoDataUrl = null;
+      document.getElementById('podFotoStatus').innerText = 'Sin foto';
+      document.getElementById('podFotoStatus').style.color = 'var(--text-dim)';
+      document.getElementById('podFotoPreview').style.display = 'none';
+      document.getElementById('podVideo').style.display = 'none';
+      document.getElementById('btnDispararCamara').style.display = 'none';
+      document.getElementById('btnIniciarCamara').style.display = 'inline-flex';
+
+      // Reset firma
+      limpiarPadFirma();
+
+      document.getElementById('modalPodEntrega').style.display = 'flex';
+      setTimeout(inicializarCanvasFirma, 100);
+    }
+
+    function cerrarModalPod() {
+      detenerCamaraPod();
+      document.getElementById('modalPodEntrega').style.display = 'none';
+    }
+
+    async function activarCamaraPod() {
+      const video = document.getElementById('podVideo');
+      const btnIniciar = document.getElementById('btnIniciarCamara');
+      const btnDisparar = document.getElementById('btnDispararCamara');
+
+      try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('Cámara no compatible con este navegador.');
+        }
+
+        detenerCamaraPod();
+
+        podMediaStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        });
+
+        video.srcObject = podMediaStream;
+        video.style.display = 'block';
+        document.getElementById('podFotoPreview').style.display = 'none';
+        btnIniciar.style.display = 'none';
+        btnDisparar.style.display = 'inline-flex';
+      } catch (err) {
+        console.warn('Acceso a cámara denegado o no disponible:', err);
+        alert('ℹ️ No se pudo activar la cámara directa. Puede utilizar el botón "📁 Archivo" para tomar una foto con la cámara de su celular o seleccionarla de la galería.');
+      }
+    }
+
+    function capturarFotoCamara() {
+      const video = document.getElementById('podVideo');
+      const canvas = document.getElementById('podFotoCanvas');
+      const preview = document.getElementById('podFotoPreview');
+
+      if (!video || !video.videoWidth) {
+        alert('Espere a que cargue el video de la cámara.');
+        return;
+      }
+
+      // Escalar la foto para optimizar el peso a 800px max
+      const maxWidth = 800;
+      const scale = Math.min(1, maxWidth / video.videoWidth);
+      canvas.width = video.videoWidth * scale;
+      canvas.height = video.videoHeight * scale;
+
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Marca de agua digital con fecha y guía
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+      ctx.fillRect(0, canvas.height - 28, canvas.width, 28);
+      ctx.fillStyle = '#10B981';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.fillText(`Macondo Express POD · ${currentPodData ? currentPodData.guia : ''} · ${new Date().toLocaleString()}`, 10, canvas.height - 10);
+
+      podFotoDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+
+      preview.src = podFotoDataUrl;
+      preview.style.display = 'block';
+      video.style.display = 'none';
+
+      document.getElementById('btnDispararCamara').style.display = 'none';
+      document.getElementById('btnIniciarCamara').style.display = 'inline-flex';
+      document.getElementById('btnIniciarCamara').innerHTML = '<span>🔄</span> Repetir Foto';
+
+      document.getElementById('podFotoStatus').innerText = '✓ Foto capturada';
+      document.getElementById('podFotoStatus').style.color = 'var(--accent)';
+
+      detenerCamaraPod();
+    }
+
+    function procesarFotoArchivo(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.getElementById('podFotoCanvas');
+          const maxDim = 800;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+
+          // Marca de agua
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+          ctx.fillRect(0, h - 28, w, 28);
+          ctx.fillStyle = '#10B981';
+          ctx.font = 'bold 12px sans-serif';
+          ctx.fillText(`Macondo Express POD · ${currentPodData ? currentPodData.guia : ''} · ${new Date().toLocaleString()}`, 10, h - 10);
+
+          podFotoDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+
+          const preview = document.getElementById('podFotoPreview');
+          preview.src = podFotoDataUrl;
+          preview.style.display = 'block';
+          document.getElementById('podVideo').style.display = 'none';
+
+          document.getElementById('podFotoStatus').innerText = '✓ Foto cargada';
+          document.getElementById('podFotoStatus').style.color = 'var(--accent)';
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function detenerCamaraPod() {
+      if (podMediaStream) {
+        podMediaStream.getTracks().forEach(t => t.stop());
+        podMediaStream = null;
+      }
+    }
+
+    // Inicialización del Pad de Firma Digital
+    function inicializarCanvasFirma() {
+      const canvas = document.getElementById('padFirma');
+      if (!canvas) return;
+
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * 2;
+      canvas.height = rect.height * 2;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(2, 2);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#10B981';
+
+      function getPos(e) {
+        const r = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+          x: clientX - r.left,
+          y: clientY - r.top
+        };
+      }
+
+      function empezarTrazo(e) {
+        e.preventDefault();
+        firmaDrawing = true;
+        const pos = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+      }
+
+      function moverTrazo(e) {
+        if (!firmaDrawing) return;
+        e.preventDefault();
+        const pos = getPos(e);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        firmaHasStrokes = true;
+      }
+
+      function terminarTrazo(e) {
+        if (!firmaDrawing) return;
+        e.preventDefault();
+        firmaDrawing = false;
+        ctx.closePath();
+      }
+
+      // Remover listeners viejos si existen
+      canvas.onpointerdown = empezarTrazo;
+      canvas.onpointermove = moverTrazo;
+      canvas.onpointerup = terminarTrazo;
+      canvas.onpointercancel = terminarTrazo;
+
+      // Soporte touch táctil
+      canvas.ontouchstart = empezarTrazo;
+      canvas.ontouchmove = moverTrazo;
+      canvas.ontouchend = terminarTrazo;
+    }
+
+    function limpiarPadFirma() {
+      const canvas = document.getElementById('padFirma');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      firmaHasStrokes = false;
+    }
+
+    async function guardarPodEntrega() {
+      const nombre = document.getElementById('podNombreReceptor').value.trim();
+      const cedula = document.getElementById('podCedulaReceptor').value.trim();
+      const btn = document.getElementById('btnConfirmarPod');
+
+      if (!nombre) {
+        alert('Por favor ingrese el nombre de la persona que recibe el paquete.');
+        document.getElementById('podNombreReceptor').focus();
+        return;
+      }
+
+      if (!cedula || cedula.length < 10) {
+        alert('Por favor ingrese los 10 dígitos de la cédula del receptor.');
+        document.getElementById('podCedulaReceptor').focus();
+        return;
+      }
+
+      if (!podFotoDataUrl && !firmaHasStrokes) {
+        alert('Se requiere al menos la foto del paquete entregado o la firma digital del receptor para validar el comprobante POD.');
+        return;
+      }
+
+      // Obtener firma en base64
+      let firmaDataUrl = null;
+      if (firmaHasStrokes) {
+        const canvasFirma = document.getElementById('padFirma');
+        firmaDataUrl = canvasFirma.toDataURL('image/png');
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳</span> Registrando POD...';
+
+      const choferId = currentDriver ? currentDriver.id : 'chofer-carlos';
+      const choferNombre = currentDriver ? currentDriver.nombre : 'Carlos Méndez';
+
+      const payloadPod = {
+        guia_id: currentPodData ? currentPodData.guia : 'ENC-884910',
+        chofer_id: choferId,
+        chofer_nombre: choferNombre,
+        receptor_nombre: nombre,
+        receptor_cedula: cedula,
+        monto_cobrado_efectivo: currentPodData ? currentPodData.monto : 5.00,
+        foto_base64: podFotoDataUrl,
+        firma_base64: firmaDataUrl,
+        latitud: -3.2581,
+        longitud: -79.9554,
+        fecha_entrega: new Date().toISOString()
+      };
+
+      try {
+        if (window.MacondoBackend) {
+          await window.MacondoBackend.registrarEntregaPod(payloadPod);
+        }
+
+        // Éxito: Actualizar UI del conductor
         const el = document.getElementById('itemEnc1');
         if (el) {
           el.className = 'manifest-item boarded';
-          const btn = document.getElementById('btnEnc1');
-          btn.innerText = '✓ Entregada';
-          btn.disabled = true;
-          btn.style.opacity = '0.6';
+          const btnEnc = document.getElementById('btnEnc1');
+          btnEnc.innerText = '✓ Entregada POD';
+          btnEnc.disabled = true;
+          btnEnc.style.opacity = '0.6';
+          btnEnc.style.background = '#10B981';
+          btnEnc.style.color = '#fff';
         }
+
+        // Sumar $5.00 al total recaudado en efectivo
+        totalRecaudado += 5.00;
+
+        alert(`✓ Comprobante Digital POD Registrado con Éxito.\nGuía: ${payloadPod.guia_id}\nReceptor: ${nombre} (${cedula})\nCobro: $5.00 Efectivo registrado en caja del turno.\nConsola y cliente notificados en tiempo real.`);
+
+        cerrarModalPod();
+      } catch (err) {
+        console.error('Error guardando POD:', err);
+        alert('Error al enviar el comprobante POD. Por favor intente nuevamente.');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>✓</span> Confirmar Entrega';
       }
     }
 
