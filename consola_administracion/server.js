@@ -41,6 +41,8 @@ const server = http.createServer((req, res) => {
   let reqUrl = req.url.split('?')[0];
   if (reqUrl === '/' || reqUrl === '') {
     reqUrl = '/index.html';
+  } else if (reqUrl === '/descargas' || reqUrl === '/descargar' || reqUrl === '/apps' || reqUrl === '/apks') {
+    reqUrl = '/descargas.html';
   }
 
   let filePath;
