@@ -29,10 +29,10 @@ console.log(`===============================================================\n`)
 if (!fs.existsSync(APPS_DIR)) fs.mkdirSync(APPS_DIR, { recursive: true });
 if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
 
-const pasajeroDir = path.join(targetDir, `MacondoPasajero_${versionName}`);
-const conductorDir = path.join(targetDir, `MacondoConductor_${versionName}`);
-const adminDir = path.join(targetDir, `MacondoConsolaAdmin_${versionName}`);
-const suiteDir = path.join(targetDir, `MacondoSuiteCompleta_${versionName}`);
+const pasajeroDir = path.join(targetDir, `MacondoExpress_${versionName}`);
+const conductorDir = path.join(targetDir, `MacondoExpress_Conductor_${versionName}`);
+const adminDir = path.join(targetDir, `MacondoExpress_Administracion_${versionName}`);
+const suiteDir = path.join(targetDir, `MacondoExpress_Suite_${versionName}`);
 
 [pasajeroDir, conductorDir, adminDir, suiteDir].forEach(d => {
   if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
@@ -262,8 +262,8 @@ if (process.env.BUILD_GRADLE === 'true' && fs.existsSync(path.join(androidAppDir
 
 const apkBuildOutputs = path.join(ROOT_DIR, 'android_app', 'app', 'build', 'outputs', 'apk');
 const apkSources = [
-  { flavor: 'pasajero', filename: `MacondoPasajero_${versionName}.apk`, oficialName: 'MacondoPasajero.apk', targetFolder: pasajeroDir },
-  { flavor: 'conductor', filename: `MacondoConductor_${versionName}.apk`, oficialName: 'MacondoConductor.apk', targetFolder: conductorDir },
+  { flavor: 'pasajero', filename: `MacondoExpress_${versionName}.apk`, oficialName: 'MacondoExpress.apk', targetFolder: pasajeroDir },
+  { flavor: 'conductor', filename: `MacondoExpress_Conductor_${versionName}.apk`, oficialName: 'MacondoExpress_Conductor.apk', targetFolder: conductorDir },
   { flavor: 'suite', filename: `MacondoExpress_Suite_${versionName}.apk`, oficialName: 'MacondoExpress_Suite.apk', targetFolder: suiteDir }
 ];
 
@@ -280,11 +280,18 @@ apkSources.forEach(item => {
     fs.copyFileSync(srcApk, destOficial);
     fs.copyFileSync(srcApk, path.join(apkOficialesDir, item.oficialName));
     if (item.flavor === 'pasajero') {
+      fs.copyFileSync(srcApk, path.join(apkOficialesDir, 'MacondoExpress_UltimaVersion.apk'));
+      // Compatibilidad con enlaces existentes
+      fs.copyFileSync(srcApk, path.join(apkOficialesDir, 'MacondoPasajero.apk'));
       fs.copyFileSync(srcApk, path.join(apkOficialesDir, 'MacondoPasajero_UltimaVersion.apk'));
     } else if (item.flavor === 'conductor') {
+      fs.copyFileSync(srcApk, path.join(apkOficialesDir, 'MacondoExpress_Conductor_UltimaVersion.apk'));
+      // Compatibilidad con enlaces existentes
+      fs.copyFileSync(srcApk, path.join(apkOficialesDir, 'MacondoConductor.apk'));
       fs.copyFileSync(srcApk, path.join(apkOficialesDir, 'MacondoConductor_UltimaVersion.apk'));
     } else if (item.flavor === 'suite') {
       fs.copyFileSync(srcApk, path.join(apkOficialesDir, 'MacondoSuite_UltimaVersion.apk'));
+      fs.copyFileSync(srcApk, path.join(apkOficialesDir, 'MacondoExpress_Suite_UltimaVersion.apk'));
     }
 
     apksGeneradas.push({
@@ -303,23 +310,23 @@ const manifestData = {
   flutterStatus: flutterStatus,
   apksAndroid: apksGeneradas,
   artefactos: {
-    pasajero: {
-      carpeta: `MacondoPasajero_${versionName}`,
+    clientes: {
+      carpeta: `MacondoExpress_${versionName}`,
       hashIndexHtml: getFileHash(path.join(pasajeroDir, 'index.html')),
       lanzador: 'Lanzar_AppPasajero.command'
     },
     conductor: {
-      carpeta: `MacondoConductor_${versionName}`,
+      carpeta: `MacondoExpress_Conductor_${versionName}`,
       hashIndexHtml: getFileHash(path.join(conductorDir, 'index.html')),
       lanzador: 'Lanzar_AppConductor.command'
     },
-    consolaAdmin: {
-      carpeta: `MacondoConsolaAdmin_${versionName}`,
+    administracion: {
+      carpeta: `MacondoExpress_Administracion_${versionName}`,
       hashIndexHtml: getFileHash(path.join(adminDir, 'index.html')),
       lanzador: 'Lanzar_ConsolaAdmin.command'
     },
     suiteCompleta: {
-      carpeta: `MacondoSuiteCompleta_${versionName}`,
+      carpeta: `MacondoExpress_Suite_${versionName}`,
       lanzador: 'Lanzar_Suite_Macondo.command'
     }
   },

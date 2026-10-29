@@ -10,8 +10,8 @@ android {
         applicationId "ec.macondo.express"
         minSdk 24
         targetSdk 34
-        versionCode 150
-        versionName "1.5.0"
+        versionCode 180
+        versionName "1.8.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -45,19 +45,19 @@ android {
         pasajero {
             dimension "role"
             applicationId "ec.macondo.pasajero"
-            resValue "string", "app_name", "Macondo Pasajero"
+            resValue "string", "app_name", "Macondo Express"
             resValue "string", "default_role", "pasajero"
         }
         conductor {
             dimension "role"
             applicationId "ec.macondo.conductor"
-            resValue "string", "app_name", "Macondo Conductor"
+            resValue "string", "app_name", "Macondo Express Conductor"
             resValue "string", "default_role", "conductor"
         }
         suite {
             dimension "role"
             applicationId "ec.macondo.express"
-            resValue "string", "app_name", "Macondo Express"
+            resValue "string", "app_name", "Macondo Express Suite"
             resValue "string", "default_role", "suite"
         }
     }
