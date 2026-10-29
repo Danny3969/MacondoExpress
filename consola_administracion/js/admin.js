@@ -500,7 +500,15 @@ function switchAdminTab(tabName) {
   if (tabName === 'usuarios') renderUsuariosTable();
   if (tabName === 'ciudades') renderCiudadesTable();
   if (tabName === 'encomiendas') renderEncomiendasTable();
-  if (tabName === 'radar') renderRadarTelemetria();
+  if (tabName === 'radar') {
+    renderRadarTelemetria();
+    setTimeout(() => {
+      if (radarMapInstance) {
+        radarMapInstance.invalidateSize();
+        centrarCorredorE25();
+      }
+    }, 200);
+  }
   if (tabName === 'clientes') renderClientesTable();
 }
 
@@ -1887,52 +1895,384 @@ function renderFlotaTables() {
   }
 }
 
-// ── 12. RADAR GPS & TELEMETRÍA SATELITAL ────────────────────────────────────
+// ── 12. RADAR GPS & TELEMETRÍA SATELITAL EN TIEMPO REAL ─────────────────────
+
+// Coordenadas oficiales de la Troncal E25 (Corredor Guayas ➔ El Oro)
+const CORREDOR_E25_COORDS = [
+  [-2.1522, -79.8824], // Terminal Terrestre Guayaquil (Salida Norte)
+  [-2.1645, -79.8690], // Av. Benjamín Rosales
+  [-2.1718, -79.8519], // Puente de la Unidad Nacional / Durán
+  [-2.1980, -79.7820], // Salida Durán - Boliche
+  [-2.2471, -79.6234], // Virgen de Fátima (Km 26)
+  [-2.4150, -79.6100], // Puerto Inca
+  [-2.6738, -79.6186], // Naranjal (Estación de Control)
+  [-2.8500, -79.6800], // San Carlos
+  [-3.0645, -79.7423], // Camilo Ponce Enríquez (Retén Azuay)
+  [-3.1600, -79.7900], // Río Bonito
+  [-3.2427, -79.8324], // El Guabo (El Oro)
+  [-3.2581, -79.9554]  // Machala (Terminal Terrestre)
+];
+
+// Puntos de control, peajes y terminales autorizados por la ANT
+const PUNTOS_CONTROL_E25 = [
+  { nombre: "Terminal Terrestre Guayaquil", coords: [-2.1522, -79.8824], tipo: "terminal", icon: "🏛️", desc: "Punto de salida oficial Norte" },
+  { nombre: "Peaje Durán - Boliche", coords: [-2.1980, -79.7820], tipo: "peaje", icon: "🛂", desc: "Control peaje Km 12" },
+  { nombre: "Control Km 26 (Virgen de Fátima)", coords: [-2.2471, -79.6234], tipo: "control", icon: "🛣️", desc: "Bifurcación hacia Naranjal" },
+  { nombre: "Estación de Paso Naranjal", coords: [-2.6738, -79.6186], tipo: "estacion", icon: "🚩", desc: "Parada intermedia autorizada" },
+  { nombre: "Retén CTE Ponce Enríquez", coords: [-3.0645, -79.7423], tipo: "reten", icon: "🚔", desc: "Inspección de Tránsito CTE" },
+  { nombre: "Control Fitosanitario El Guabo", coords: [-3.2427, -79.8324], tipo: "control", icon: "🍌", desc: "Ingreso a la provincia de El Oro" },
+  { nombre: "Terminal Terrestre Machala", coords: [-3.2581, -79.9554], tipo: "terminal", icon: "🏁", desc: "Destino final del servicio" }
+];
+
+let radarMapInstance = null;
+let radarPolyline = null;
+let radarVehicleMarkers = {};
+let radarAnimationInterval = null;
+
+// Inicialización del Mapa Satelital con Leaflet
+function initRadarMap() {
+  const mapEl = document.getElementById('radarMap');
+  if (!mapEl || typeof L === 'undefined') return;
+
+  if (radarMapInstance) {
+    radarMapInstance.invalidateSize();
+    return;
+  }
+
+  // Centrado en el corredor vial Guayas - El Oro
+  radarMapInstance = L.map('radarMap', {
+    center: [-2.7000, -79.7500],
+    zoom: 9,
+    minZoom: 8,
+    maxZoom: 16
+  });
+
+  // Capa CartoDB Dark Matter para estética de centro de comando táctico
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO · Cooperativa Macondo Express',
+    subdomains: 'abcd',
+    maxZoom: 19
+  }).addTo(radarMapInstance);
+
+  // Trazo principal de la Troncal E25 con efecto neón
+  radarPolyline = L.polyline(CORREDOR_E25_COORDS, {
+    color: '#10b981',
+    weight: 4,
+    opacity: 0.85,
+    dashArray: '6, 8',
+    lineCap: 'round'
+  }).addTo(radarMapInstance);
+
+  // Halo resplandeciente exterior
+  L.polyline(CORREDOR_E25_COORDS, {
+    color: '#059669',
+    weight: 10,
+    opacity: 0.25
+  }).addTo(radarMapInstance);
+
+  // Marcadores de terminales y puntos de control
+  PUNTOS_CONTROL_E25.forEach(pt => {
+    const iconHtml = `
+      <div style="background: rgba(15,23,42,0.92); border: 1px solid var(--border); border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.8); cursor: pointer;">
+        ${pt.icon}
+      </div>
+    `;
+    const customIcon = L.divIcon({
+      html: iconHtml,
+      className: 'checkpoint-marker',
+      iconSize: [30, 30],
+      iconAnchor: [15, 15]
+    });
+
+    L.marker(pt.coords, { icon: customIcon })
+      .bindPopup(`
+        <div style="font-family: inherit; font-size: 12px; color: #fff; padding: 4px; line-height: 1.4;">
+          <strong style="color: var(--accent); font-size: 13px;">${pt.icon} ${pt.nombre}</strong><br>
+          <span style="font-size: 11px; color: #94a3b8;">${pt.desc}</span><br>
+          <span style="font-size: 10px; color: var(--amber); margin-top: 4px; display: inline-block;">📍 Coordenadas: ${pt.coords[0].toFixed(4)}, ${pt.coords[1].toFixed(4)}</span>
+        </div>
+      `)
+      .addTo(radarMapInstance);
+  });
+}
+
+function centrarCorredorE25() {
+  if (radarMapInstance && radarPolyline) {
+    radarMapInstance.fitBounds(radarPolyline.getBounds(), { padding: [40, 40] });
+  }
+}
+
+// Calcular coordenadas interpoladas a lo largo de la ruta según el progreso (0.0 a 1.0)
+function getCoordenadasEnRuta(progreso) {
+  if (progreso <= 0) return CORREDOR_E25_COORDS[0];
+  if (progreso >= 1) return CORREDOR_E25_COORDS[CORREDOR_E25_COORDS.length - 1];
+
+  const totalSegmentos = CORREDOR_E25_COORDS.length - 1;
+  const floatIndex = progreso * totalSegmentos;
+  const segIndex = Math.min(Math.floor(floatIndex), totalSegmentos - 1);
+  const factor = floatIndex - segIndex;
+
+  const p1 = CORREDOR_E25_COORDS[segIndex];
+  const p2 = CORREDOR_E25_COORDS[segIndex + 1];
+
+  const lat = p1[0] + (p2[0] - p1[0]) * factor;
+  const lng = p1[1] + (p2[1] - p1[1]) * factor;
+  return [lat, lng];
+}
+
+// Render principal de la telemetría y actualización del mapa en vivo
 function renderRadarTelemetria() {
+  initRadarMap();
+
   const feed = document.getElementById('telemetriaFeed');
+  const countEl = document.getElementById('radarCountEnRuta');
+  const paxEl = document.getElementById('radarPaxEnRuta');
+  const velEl = document.getElementById('radarVelocidadPromedio');
+  const overlay = document.getElementById('radarMapOverlay');
+  const overlayTexto = document.getElementById('radarOverlayTexto');
+
+  // Filtrar turnos activos en ruta (activados por el chofer)
+  const turnosEnRuta = (adminState.turnos || []).filter(t => t.estado === 'en_ruta');
+
+  let totalPax = 0;
+  let sumaVelocidad = 0;
+
+  turnosEnRuta.forEach(t => {
+    totalPax += (t.cuposOcupados || (t.pasajeros ? t.pasajeros.length : 3));
+    sumaVelocidad += (t.velocidadGps || 76);
+  });
+
+  if (countEl) countEl.innerText = turnosEnRuta.length;
+  if (paxEl) paxEl.innerText = totalPax;
+  if (velEl) velEl.innerText = turnosEnRuta.length > 0 ? `${Math.round(sumaVelocidad / turnosEnRuta.length)} km/h` : '-- km/h';
+
   if (!feed) return;
 
-  const turnosEnRuta = adminState.turnos.filter(t => t.estado === 'en_ruta');
-
   if (turnosEnRuta.length === 0) {
+    // Limpiar marcadores de vehículos anteriores si ya no hay en ruta
+    Object.keys(radarVehicleMarkers).forEach(placa => {
+      if (radarMapInstance && radarVehicleMarkers[placa]) {
+        radarMapInstance.removeLayer(radarVehicleMarkers[placa]);
+      }
+    });
+    radarVehicleMarkers = {};
+
+    if (overlay) overlay.style.display = 'none';
+
     feed.innerHTML = `
-      <div style="background: var(--bg-card); border: 1px dashed var(--border); border-radius: 12px; padding: 40px; text-align: center; color: var(--text-dim);">
-        <div style="font-size: 36px; margin-bottom: 10px;">🛰️</div>
-        <strong style="color: #fff; font-size: 15px;">No hay unidades en ruta en este momento</strong>
-        <p style="font-size: 12px; margin-top: 6px; max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.5;">
-          Cuando un turno sea despachado y puesto en estado <strong>"En Ruta"</strong>, la telemetría satelital GPS en tiempo real se sincronizará automáticamente aquí.
+      <div style="background: var(--bg-card); border: 1px dashed var(--border); border-radius: 12px; padding: 36px; text-align: center; color: var(--text-dim);">
+        <div style="font-size: 38px; margin-bottom: 12px;">🛰️</div>
+        <strong style="color: #fff; font-size: 15px;">Ningún chofer ha activado el botón "En Ruta" todavía</strong>
+        <p style="font-size: 12px; margin-top: 6px; max-width: 520px; margin-left: auto; margin-right: auto; line-height: 1.6;">
+          Para proteger la privacidad y batería del conductor, el rastreo satelital solo se inicia cuando el chofer pulsa <strong>"🚀 Iniciar Viaje / En Ruta"</strong> en su aplicación móvil.
         </p>
+        <button class="btn btn-primary" style="margin-top: 16px; font-size: 12px;" onclick="simularActivacionChoferEnRuta()">
+          <span>🚀</span> Simular Activación Chofer "En Ruta"
+        </button>
       </div>
     `;
     return;
   }
 
-  feed.innerHTML = turnosEnRuta.map(t => `
-    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; justify-content: space-between; align-items: center;">
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(16,185,129,0.15); display: flex; align-items: center; justify-content: center; font-size: 18px;">
-          🚗
+  // Si hay unidades en ruta, renderizar cada una en el mapa y en el feed
+  if (overlay) overlay.style.display = 'block';
+
+  feed.innerHTML = turnosEnRuta.map((t, idx) => {
+    const progreso = t.progresoRuta !== undefined ? t.progresoRuta : 0.35;
+    const coords = t.coordenadasActuales || getCoordenadasEnRuta(progreso);
+    const velocidad = t.velocidadGps || 78;
+    const signal = t.senalGps || '4G Óptimo (3 Satélites)';
+    const ocupacion = t.cuposOcupados || (t.pasajeros ? t.pasajeros.length : 3);
+    const efectivo = t.totalEfectivo || (t.pasajeros ? t.pasajeros.reduce((acc, p) => acc + (p.monto || 12), 0) : 41.00);
+
+    // Actualizar o crear marcador Leaflet para esta unidad
+    if (radarMapInstance) {
+      const markerHtml = `
+        <div style="position: relative; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+          <div style="position: absolute; width: 40px; height: 40px; border-radius: 50%; background: rgba(16,185,129,0.25); animation: pulseDot 1.4s infinite;"></div>
+          <div style="position: relative; z-index: 2; width: 32px; height: 32px; border-radius: 50%; background: #064e3b; border: 2px solid #10b981; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 4px 14px rgba(16,185,129,0.6);">
+            🚗
+          </div>
+          <div style="position: absolute; bottom: -8px; background: #0f172a; border: 1px solid #10b981; border-radius: 4px; padding: 1px 4px; font-size: 9px; font-weight: 800; color: #10b981; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.8);">
+            ${t.vehiculoPlaca || 'GBE-4589'}
+          </div>
         </div>
-        <div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <strong style="color: #fff; font-size: 14px;">Unidad: ${t.vehiculoPlaca}</strong>
-            <span class="badge badge-green">En Carretera normal</span>
+      `;
+
+      const carIcon = L.divIcon({
+        html: markerHtml,
+        className: 'vehicle-marker-pulse',
+        iconSize: [44, 44],
+        iconAnchor: [22, 22]
+      });
+
+      const popupContent = `
+        <div style="font-family: inherit; font-size: 12px; color: #fff; padding: 6px; min-width: 230px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 6px;">
+            <strong style="color: #10b981; font-size: 13px;">Unidad: ${t.vehiculoPlaca}</strong>
+            <span class="badge badge-green" style="font-size: 9px;">EN RUTA (E25)</span>
           </div>
-          <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
-            Chofer: ${t.choferNombre} · Ruta: <strong style="color: var(--accent);">${t.rutaOrigen} ➔ ${t.rutaDestino}</strong>
+          <div style="line-height: 1.5; color: #cbd5e1;">
+            <div>👤 <strong>Chofer:</strong> ${t.choferNombre}</div>
+            <div>🗺️ <strong>Ruta:</strong> ${t.rutaOrigen} ➔ ${t.rutaDestino}</div>
+            <div>⚡ <strong>Velocidad GPS:</strong> <span style="color: #10b981; font-weight: 800;">${velocidad} km/h</span></div>
+            <div>👥 <strong>Pasajeros a Bordo:</strong> ${ocupacion} de 4 cupos</div>
+            <div>💵 <strong>Efectivo en Caja:</strong> <span style="color: var(--amber); font-weight: 800;">$${efectivo.toFixed(2)}</span></div>
+            <div>📡 <strong>Conexión:</strong> ${signal}</div>
           </div>
-          <div style="font-size: 11px; color: var(--amber); margin-top: 2px;">
-            📍 Ubicación Satelital: Troncal E25 (En trayecto) · Turno: ${t.codigo}
+        </div>
+      `;
+
+      if (radarVehicleMarkers[t.vehiculoPlaca]) {
+        radarVehicleMarkers[t.vehiculoPlaca].setLatLng(coords);
+        radarVehicleMarkers[t.vehiculoPlaca].setPopupContent(popupContent);
+      } else {
+        const marker = L.marker(coords, { icon: carIcon }).bindPopup(popupContent).addTo(radarMapInstance);
+        radarVehicleMarkers[t.vehiculoPlaca] = marker;
+      }
+    }
+
+    if (idx === 0 && overlayTexto) {
+      overlayTexto.innerHTML = `
+        <strong>${t.vehiculoPlaca} (${t.choferNombre})</strong><br>
+        Velocidad: <strong style="color: #10b981;">${velocidad} km/h</strong> · En Troncal E25<br>
+        Pasajeros: ${ocupacion}/4 · Efectivo: $${efectivo.toFixed(2)}
+      `;
+    }
+
+    return `
+      <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.4); display: flex; align-items: center; justify-content: center; font-size: 22px;">
+            🚗
+          </div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <strong style="color: #fff; font-size: 14px;">Unidad: ${t.vehiculoPlaca}</strong>
+              <span class="badge badge-green">🟢 EN RUTA (GPS ACTIVO)</span>
+              <span style="font-size: 11px; color: var(--text-dim);">Turno: ${t.codigo}</span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+              Chofer: <strong style="color: #fff;">${t.choferNombre}</strong> · Corredor: <strong style="color: var(--accent);">${t.rutaOrigen} ➔ ${t.rutaDestino}</strong>
+            </div>
+            <div style="font-size: 11px; color: var(--amber); margin-top: 2px; display: flex; gap: 12px; flex-wrap: wrap;">
+              <span>📍 Tramo: Troncal E25 (Sector Naranjal - Ponce Enríquez)</span>
+              <span>👥 Ocupación: ${ocupacion}/4</span>
+              <span>💵 Efectivo a bordo: $${efectivo.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div style="text-align: right;">
+            <span style="font-size: 10px; color: var(--text-dim); text-transform: uppercase;">Velocidad Satelital</span>
+            <div style="font-size: 20px; font-weight: 900; color: var(--accent);">${velocidad} km/h</div>
+            <span style="font-size: 10px; color: #10b981;">● ${signal}</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <button class="btn btn-outline" style="font-size: 11px; padding: 6px 10px;" onclick="enfocarUnidadEnMapa('${t.vehiculoPlaca}')">
+              🎯 Ver en Mapa
+            </button>
+            <button class="btn btn-outline" style="font-size: 11px; padding: 6px 10px; border-color: var(--amber); color: var(--amber);" onclick="simularFinalizarTurno('${t.id}')">
+              🏁 Finalizar Turno
+            </button>
           </div>
         </div>
       </div>
-      <div style="text-align: right;">
-        <span style="font-size: 10px; color: var(--text-dim); text-transform: uppercase;">Velocidad GPS</span>
-        <div style="font-size: 18px; font-weight: 900; color: var(--accent);">75 km/h</div>
-      </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
+
+// Enfocar con zoom suave una unidad en el mapa satelital
+function enfocarUnidadEnMapa(placa) {
+  if (radarMapInstance && radarVehicleMarkers[placa]) {
+    const marker = radarVehicleMarkers[placa];
+    radarMapInstance.setView(marker.getLatLng(), 13, { animate: true });
+    marker.openPopup();
+  }
+}
+
+// Simular el momento exacto en que el chofer presiona "En Ruta" desde su app
+function simularActivacionChoferEnRuta() {
+  let turno = adminState.turnos.find(t => t.estado === 'en_espera' || t.estado === 'programado');
+
+  if (!turno) {
+    // Si no hay turnos pendientes, creamos uno de demostración con datos reales
+    turno = {
+      id: 'turno_demo_' + Date.now(),
+      codigo: 'TN-001',
+      rutaOrigen: 'Guayaquil',
+      rutaDestino: 'Machala',
+      fecha: new Date().toISOString().split('T')[0],
+      horaSalida: '14:30',
+      vehiculoPlaca: 'GBE-4589',
+      choferNombre: 'Carlos Mendoza Moreira',
+      choferCedula: '0928374651',
+      cuposTotales: 4,
+      cuposOcupados: 3,
+      precioPorPuesto: 12.00,
+      totalEfectivo: 41.00,
+      estado: 'en_espera',
+      pasajeros: [
+        { nombre: 'Dra. Elena Ramos', puestos: 1, monto: 15.00, direccion: 'Samborondón Plaza' },
+        { nombre: 'Ing. Carlos Vera', puestos: 1, monto: 14.00, direccion: 'Ceibos Av. Principal' },
+        { nombre: 'Sr. Marcos Peña', puestos: 1, monto: 12.00, direccion: 'Terminal Terrestre GYE' }
+      ]
+    };
+    adminState.turnos.unshift(turno);
+  }
+
+  // Cambiar estado a "en_ruta" simulando la pulsación del chofer
+  turno.estado = 'en_ruta';
+  turno.progresoRuta = 0.38; // Ubicado entre Virgen de Fátima y Naranjal
+  turno.velocidadGps = 78;
+  turno.senalGps = '4G En Línea (3 Satélites)';
+  turno.coordenadasActuales = getCoordenadasEnRuta(turno.progresoRuta);
+
+  saveState('turnos');
+  recalcularKPIs();
+  renderRadarTelemetria();
+
+  // Iniciar animación continua de avance en carretera E25
+  if (!radarAnimationInterval) {
+    radarAnimationInterval = setInterval(() => {
+      const turnosActivos = (adminState.turnos || []).filter(t => t.estado === 'en_ruta');
+      if (turnosActivos.length === 0) {
+        clearInterval(radarAnimationInterval);
+        radarAnimationInterval = null;
+        return;
+      }
+
+      turnosActivos.forEach(t => {
+        t.progresoRuta = (t.progresoRuta || 0.38) + 0.01;
+        if (t.progresoRuta > 0.98) t.progresoRuta = 0.10; // Ciclo continuo para demostración
+        t.coordenadasActuales = getCoordenadasEnRuta(t.progresoRuta);
+        t.velocidadGps = 74 + Math.floor(Math.random() * 9); // Fluctuación natural 74 - 82 km/h
+      });
+
+      renderRadarTelemetria();
+    }, 4000);
+  }
+
+  alert(`✓ ¡Chofer ${turno.choferNombre} (Unidad ${turno.vehiculoPlaca}) pulsó "EN RUTA"!\n\nSe activó la telemetría satelital GPS en tiempo real.\nEl vehículo se visualiza ahora desplazándose en el mapa sobre la Troncal E25.`);
+}
+
+// Simular llegada y finalización del viaje desde la app del chofer
+function simularFinalizarTurno(turnoId) {
+  const turno = adminState.turnos.find(t => t.id === turnoId);
+  if (!turno) return;
+
+  if (confirm(`¿Finalizar el viaje de la Unidad ${turno.vehiculoPlaca} (${turno.choferNombre})?\n\nAl llegar a destino, el chofer apaga la transmisión GPS y se procede al arqueo de caja de efectivo.`)) {
+    turno.estado = 'finalizado';
+    saveState('turnos');
+    recalcularKPIs();
+    renderRadarTelemetria();
+    alert(`✓ Viaje finalizado exitosamente.\nSe apagó la telemetría GPS de la unidad.\nTurno listo para arqueo y liquidación ($6.00 de cuota cooperativa).`);
+  }
+}
+
+// ── 13. MÓDULO DE ENCOMIENDAS & PAQUETERÍA PUERTA A PUERTA ─────────────────
 
 // ── 13. MÓDULO DE ENCOMIENDAS & PAQUETERÍA PUERTA A PUERTA ─────────────────
 function renderEncomiendasTable(listaFiltrada) {

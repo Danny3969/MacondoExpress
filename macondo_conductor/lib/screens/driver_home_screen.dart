@@ -428,11 +428,11 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       case 'programado':
         return 'Iniciar Recogida Puerta a Puerta';
       case 'recogiendo':
-        return 'Pasajeros Listos ➔ Salir a Carretera';
+        return '🚀 En Ruta / Salir a Carretera (Activar GPS)';
       case 'en_camino':
-        return 'Finalizar Turno de Viaje';
+        return '🏁 Finalizar Turno / Llegada a Destino';
       case 'finalizado':
-        return 'Viaje Completado';
+        return 'Viaje Completado & Liquidar';
       default:
         return 'Siguiente Fase';
     }
@@ -443,11 +443,11 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       case 'programado':
         return Icons.play_arrow;
       case 'recogiendo':
-        return Icons.departure_board;
+        return Icons.navigation;
       case 'en_camino':
-        return Icons.check_circle_outline;
+        return Icons.flag_circle;
       default:
-        return Icons.flag;
+        return Icons.check_circle;
     }
   }
 

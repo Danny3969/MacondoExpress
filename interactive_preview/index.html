@@ -868,7 +868,11 @@
                 <span>Ocupación Unidad: <strong style="color: var(--accent);" id="condOcupacion">3 de 4 puestos</strong></span>
                 <span>Efectivo: <strong style="color: var(--amber);" id="condEfectivoTotal">$41.00</strong></span>
               </div>
-              <button class="btn btn-outline" style="margin-top: 10px; border-color: var(--amber); color: var(--amber); font-size: 11px; padding: 6px 12px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="abrirModalLiquidacionChofer()">
+              <!-- Botón Maestro del Chofer: Salida a Carretera / EN RUTA -->
+              <button id="btnEstadoViajeChofer" class="btn btn-primary" style="margin-top: 10px; background: linear-gradient(135deg, #10b981, #059669); font-size: 11px; padding: 9px 12px; width: 100%; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 14px rgba(16,185,129,0.35);" onclick="toggleEstadoEnRutaChofer()">
+                <span>🚀</span> INICIAR VIAJE / EN RUTA (Activar GPS)
+              </button>
+              <button class="btn btn-outline" style="margin-top: 8px; border-color: var(--amber); color: var(--amber); font-size: 11px; padding: 6px 12px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="abrirModalLiquidacionChofer()">
                 <span>💰</span> Arqueo & Cierre de Caja (Cooperativa)
               </button>
             </div>
@@ -1237,6 +1241,107 @@
             </div>
           </div>
         `;
+      }
+    }
+
+    state.estadoViajeChofer = 'recogiendo';
+
+    function toggleEstadoEnRutaChofer() {
+      const btn = document.getElementById('btnEstadoViajeChofer');
+      const tag = document.getElementById('tagEstadoTurno');
+      const radarTexto = document.getElementById('radarChoferTexto');
+      const radarKm = document.getElementById('radarChoferKm');
+
+      if (!state.estadoViajeChofer || state.estadoViajeChofer === 'recogiendo' || state.estadoViajeChofer === 'programado') {
+        state.estadoViajeChofer = 'en_ruta';
+
+        if (tag) {
+          tag.innerText = '🚗 EN RUTA (E25)';
+          tag.style.color = 'var(--accent)';
+          tag.style.background = 'rgba(16,185,129,0.2)';
+          tag.style.border = '1px solid var(--accent)';
+        }
+        if (btn) {
+          btn.innerHTML = '<span>🏁</span> FINALIZAR VIAJE / LLEGADA A DESTINO';
+          btn.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+          btn.style.boxShadow = '0 4px 14px rgba(245,158,11,0.35)';
+        }
+        if (radarTexto && radarKm) {
+          radarTexto.innerHTML = '🟢 <strong>GPS Transmitiendo en Vivo</strong> · Troncal E25';
+          radarKm.innerText = '78 km/h · 142 Km rest.';
+        }
+
+        // Sincronizar en localStorage para que la Consola Admin lo visualice inmediatamente
+        try {
+          const stored = localStorage.getItem('macondo_turnos');
+          let turnos = stored ? JSON.parse(stored) : [];
+          let turno = turnos.find(t => t.codigo === 'TN-001' || t.vehiculoPlaca === 'GBE-4589');
+          if (turno) {
+            turno.estado = 'en_ruta';
+            turno.progresoRuta = 0.35;
+            turno.velocidadGps = 78;
+            turno.senalGps = '4G En Línea (3 Satélites)';
+          } else {
+            turnos.unshift({
+              id: 'turno_live_' + Date.now(),
+              codigo: 'TN-001',
+              rutaOrigen: 'Guayaquil',
+              rutaDestino: 'Machala',
+              fecha: new Date().toISOString().split('T')[0],
+              horaSalida: '14:30',
+              vehiculoPlaca: 'GBE-4589',
+              choferNombre: 'Carlos Mendoza Moreira',
+              choferCedula: '0928374651',
+              cuposTotales: 4,
+              cuposOcupados: 3,
+              precioPorPuesto: 12.00,
+              totalEfectivo: 41.00,
+              estado: 'en_ruta',
+              progresoRuta: 0.35,
+              velocidadGps: 78,
+              senalGps: '4G En Línea (3 Satélites)',
+              pasajeros: [
+                { nombre: 'Dra. Elena Ramos', puestos: 1, monto: 15.00, direccion: 'Samborondón Plaza' },
+                { nombre: 'Ing. Carlos Vera', puestos: 1, monto: 14.00, direccion: 'Ceibos Av. Principal' },
+                { nombre: 'Sr. Marcos Peña', puestos: 1, monto: 12.00, direccion: 'Terminal Terrestre GYE' }
+              ]
+            });
+          }
+          localStorage.setItem('macondo_turnos', JSON.stringify(turnos));
+        } catch(e) {}
+
+        alert('✓ ¡VIAJE INICIADO!\nHas marcado "EN RUTA".\nSe activó la telemetría GPS satelital.\nTu vehículo ya se encuentra visible y en movimiento sobre el mapa radar en la Consola Central de Administración.');
+      } else if (state.estadoViajeChofer === 'en_ruta') {
+        if (confirm('¿Confirmas que has llegado a la terminal/destino en Machala?\n\nAl finalizar se apagará la transmisión GPS y se procederá al arqueo de caja de efectivo.')) {
+          state.estadoViajeChofer = 'finalizado';
+          if (tag) {
+            tag.innerText = '🏁 FINALIZADO';
+            tag.style.color = 'var(--text-dim)';
+            tag.style.background = 'rgba(255,255,255,0.08)';
+            tag.style.border = 'none';
+          }
+          if (btn) {
+            btn.innerHTML = '<span>💰</span> ARQUEO & CIERRE DE CAJA ($6 COOP)';
+            btn.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)';
+            btn.style.boxShadow = 'none';
+          }
+          if (radarTexto && radarKm) {
+            radarTexto.innerText = 'GPS Desconectado · Turno Finalizado';
+            radarKm.innerText = '0 km/h · 0 Km';
+          }
+
+          try {
+            const stored = localStorage.getItem('macondo_turnos');
+            let turnos = stored ? JSON.parse(stored) : [];
+            let turno = turnos.find(t => t.estado === 'en_ruta');
+            if (turno) {
+              turno.estado = 'finalizado';
+              localStorage.setItem('macondo_turnos', JSON.stringify(turnos));
+            }
+          } catch(e) {}
+
+          abrirModalLiquidacionChofer();
+        }
       }
     }
 
