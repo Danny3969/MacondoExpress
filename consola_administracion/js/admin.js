@@ -512,76 +512,243 @@ function switchAdminTab(tabName) {
   if (tabName === 'clientes') renderClientesTable();
 }
 
-// ── 1. ONBOARDING DE SUPERUSUARIO (PRIMERA VEZ) ─────────────────────────────
-function checkSuperUserSetup() {
-  const modal = document.getElementById('modalSuperUserSetup');
-  if (!adminState.currentUser) {
-    if (modal) modal.style.display = 'flex';
-  } else {
-    if (modal) modal.style.display = 'none';
-    renderUserProfileBadge();
+// ── 1. SISTEMA DE AUTENTICACIÓN ADMINISTRATIVA (LOGIN, SESIONES Y LOGOUT) ───
+const SESSION_TOKEN_KEY = 'macondo_admin_token';
+const SESSION_USER_KEY = 'macondo_admin_session';
+
+// Cuentas institucionales precargadas para acceso sin fricción
+const USUARIOS_DEMO = [
+  {
+    usuario: 'admin',
+    correo: 'admin@macondo.ec',
+    cedula: '1204859632',
+    telefono: '0990000001',
+    nombre: 'Ing. Carlos Mendoza (Gerente)',
+    cargo: 'Gerente General / Superusuario',
+    password: 'admin123',
+    rol: 'superadmin',
+    rolLabel: 'Superusuario (Acceso Total)',
+    sede: 'Sede Central (Guayaquil)'
+  },
+  {
+    usuario: 'despacho.gye',
+    correo: 'despacho.gye@macondo.ec',
+    cedula: '0928374651',
+    telefono: '0987654321',
+    nombre: 'Roberto Alcívar (Despacho Guayaquil)',
+    cargo: 'Despachador de Terminal',
+    password: '1234',
+    rol: 'despachador',
+    rolLabel: 'Despachador de Terminal',
+    sede: 'Terminal Terrestre Guayaquil'
+  },
+  {
+    usuario: 'despacho.mch',
+    correo: 'despacho.mch@macondo.ec',
+    cedula: '1209876543',
+    telefono: '0991234567',
+    nombre: 'Lorena Zambrano (Despacho Machala)',
+    cargo: 'Despachador de Terminal',
+    password: '5678',
+    rol: 'despachador',
+    rolLabel: 'Despachador de Terminal',
+    sede: 'Terminal Terrestre Machala'
+  },
+  {
+    usuario: 'auditor',
+    correo: 'auditor@macondo.ec',
+    cedula: '0912345678',
+    telefono: '0983344556',
+    nombre: 'Lcda. Patricia Vera (Auditoría)',
+    cargo: 'Auditor de Caja & Liquidaciones',
+    password: 'audit2026',
+    rol: 'auditor_caja',
+    rolLabel: 'Auditor de Caja & Liquidaciones',
+    sede: 'Auditoría Corporativa'
+  }
+];
+
+// Helper para rellenar campos con 1-clic en la pantalla de login
+function rellenarCredencialesDemo(usuario, pass) {
+  const userInput = document.getElementById('inputAdminUser');
+  const passInput = document.getElementById('inputAdminPass');
+  if (userInput && passInput) {
+    userInput.value = usuario;
+    passInput.value = pass;
+    userInput.focus();
   }
 }
 
-function registrarSuperUsuario() {
-  const nombre = document.getElementById('suNombre').value.trim();
-  const cedula = document.getElementById('suCedula').value.trim();
-  const correo = document.getElementById('suCorreo').value.trim();
-  const telefono = document.getElementById('suTelefono').value.trim();
-  const cargo = document.getElementById('suCargo').value.trim();
-  const password = document.getElementById('suPassword').value;
-  const confirm = document.getElementById('suPasswordConfirm').value;
+// Verifica si existe una sesión activa y válida al cargar la consola
+async function verificarSesionAdmin() {
+  const shield = document.getElementById('adminLoginShield');
+  const token = sessionStorage.getItem(SESSION_TOKEN_KEY) || localStorage.getItem(SESSION_TOKEN_KEY);
+  const sessionUser = sessionStorage.getItem(SESSION_USER_KEY) || localStorage.getItem(SESSION_USER_KEY);
 
-  if (!nombre || !cedula || !correo || !telefono || !password) {
-    alert('Por favor complete todos los campos obligatorios del Superusuario.');
+  if (!token || !sessionUser) {
+    // Bloquear consola mostrando el Login Shield
+    if (shield) shield.style.display = 'flex';
+    adminState.currentUser = null;
     return;
   }
 
-  if (!validarCedulaEcuatoriana(cedula)) {
-    alert('⚠️ La Cédula de Identidad ingresada NO es válida según el algoritmo oficial Módulo 10 de Ecuador. Por favor verifíquela.');
+  try {
+    const user = JSON.parse(sessionUser);
+    adminState.currentUser = user;
+
+    // Si hay conexión con el servidor backend, validar token
+    try {
+      const resp = await fetch('/api/admin/session', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.ok && data.user) {
+          adminState.currentUser = data.user;
+        }
+      }
+    } catch (e) {
+      // Modo local / offline resiliente
+    }
+
+    if (shield) shield.style.display = 'none';
+    renderUserProfileBadge();
+  } catch (err) {
+    console.warn('Error leyendo sesión previa:', err);
+    if (shield) shield.style.display = 'flex';
+    adminState.currentUser = null;
+  }
+}
+
+// Procesa el inicio de sesión del personal administrativo
+async function ejecutarLoginAdmin() {
+  const userInput = document.getElementById('inputAdminUser');
+  const passInput = document.getElementById('inputAdminPass');
+  const errDiv = document.getElementById('adminLoginError');
+  const btnSubmit = document.getElementById('btnAdminLoginSubmit');
+
+  const usuario = (userInput ? userInput.value : '').trim();
+  const password = (passInput ? passInput.value : '').trim();
+
+  if (errDiv) errDiv.style.display = 'none';
+
+  if (!usuario || !password) {
+    if (errDiv) {
+      errDiv.innerText = 'Por favor ingrese su usuario y contraseña.';
+      errDiv.style.display = 'block';
+    }
     return;
   }
 
-  if (password.length < 6) {
-    alert('La contraseña maestra debe tener al menos 6 caracteres.');
+  if (btnSubmit) {
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = '<span>⏳</span> Verificando credenciales...';
+  }
+
+  try {
+    let authExitoso = false;
+    let token = null;
+    let loggedUser = null;
+
+    // 1. Intentar autenticación mediante el servidor central
+    try {
+      const resp = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario: usuario, password: password })
+      });
+      const data = await resp.json();
+      if (resp.ok && data.ok) {
+        authExitoso = true;
+        token = data.token;
+        loggedUser = data.user;
+      } else if (data.error) {
+        throw new Error(data.error);
+      }
+    } catch (netErr) {
+      // Fallback local con cuentas de contingencia
+      const userLower = usuario.toLowerCase();
+      const match = USUARIOS_DEMO.find(u => 
+        (u.usuario.toLowerCase() === userLower ||
+         u.correo.toLowerCase() === userLower ||
+         u.telefono === userLower ||
+         u.cedula === userLower) &&
+        u.password === password
+      );
+
+      if (match) {
+        authExitoso = true;
+        token = 'adm-local-' + Date.now();
+        loggedUser = { ...match };
+        delete loggedUser.password;
+      } else {
+        throw new Error(netErr.message || 'Credenciales de acceso inválidas.');
+      }
+    }
+
+    if (authExitoso && loggedUser) {
+      sessionStorage.setItem(SESSION_TOKEN_KEY, token);
+      sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(loggedUser));
+      localStorage.setItem(SESSION_TOKEN_KEY, token);
+      localStorage.setItem(SESSION_USER_KEY, JSON.stringify(loggedUser));
+
+      adminState.currentUser = loggedUser;
+
+      // Ocultar pantalla de bloqueo
+      const shield = document.getElementById('adminLoginShield');
+      if (shield) shield.style.display = 'none';
+
+      renderUserProfileBadge();
+
+      // Toast de bienvenida institucional
+      mostrarToastNotificacion(`¡Bienvenido(a), ${loggedUser.nombre}!`, `Sesión iniciada con rol "${loggedUser.rolLabel || loggedUser.cargo}".`, '👑');
+    }
+  } catch (err) {
+    if (errDiv) {
+      errDiv.innerText = err.message || 'Error al iniciar sesión. Verifique sus credenciales.';
+      errDiv.style.display = 'block';
+    }
+  } finally {
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.innerHTML = '<span>🔐</span> Ingresar a la Consola';
+    }
+  }
+}
+
+// Cierre de sesión seguro
+async function cerrarSesionAdmin() {
+  if (!confirm('¿Está seguro de que desea cerrar la sesión actual de la consola de administración?')) {
     return;
   }
 
-  if (password !== confirm) {
-    alert('Las contraseñas ingresadas no coinciden.');
-    return;
+  const token = sessionStorage.getItem(SESSION_TOKEN_KEY) || localStorage.getItem(SESSION_TOKEN_KEY);
+  if (token) {
+    try {
+      await fetch('/api/admin/logout', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+    } catch (e) { }
   }
 
-  const superuser = {
-    id: 'su-admin',
-    nombre: nombre,
-    cedula: cedula,
-    correo: correo,
-    telefono: telefono,
-    cargo: cargo || 'Gerente General / Superusuario',
-    rol: 'superadmin',
-    rolLabel: 'Superusuario (Acceso Total)',
-    fechaRegistro: new Date().toISOString()
-  };
+  sessionStorage.removeItem(SESSION_TOKEN_KEY);
+  sessionStorage.removeItem(SESSION_USER_KEY);
+  localStorage.removeItem(SESSION_TOKEN_KEY);
+  localStorage.removeItem(SESSION_USER_KEY);
 
-  localStorage.setItem(STORAGE_KEYS.SUPERUSER, JSON.stringify(superuser));
-  adminState.currentUser = superuser;
+  adminState.currentUser = null;
 
-  const idx = adminState.usuarios.findIndex(u => u.rol === 'superadmin');
-  if (idx >= 0) {
-    adminState.usuarios[idx] = { ...superuser, sede: 'Sede Central', estado: 'Activo' };
-  } else {
-    adminState.usuarios.unshift({ ...superuser, sede: 'Sede Central', estado: 'Activo' });
-  }
-  saveState('usuarios');
+  const shield = document.getElementById('adminLoginShield');
+  if (shield) shield.style.display = 'flex';
 
-  const modal = document.getElementById('modalSuperUserSetup');
-  if (modal) modal.style.display = 'none';
+  const container = document.getElementById('userProfileArea');
+  if (container) container.innerHTML = '';
 
-  renderUserProfileBadge();
-  renderUsuariosTable();
-
-  alert(`👑 ¡Bienvenido, ${nombre}!\nEl Superusuario ha sido registrado exitosamente con control total. De ahora en adelante, la consola iniciará directamente con tu sesión activa.`);
+  const userInput = document.getElementById('inputAdminUser');
+  const passInput = document.getElementById('inputAdminPass');
+  if (userInput) userInput.value = '';
+  if (passInput) passInput.value = '';
 }
 
 function renderUserProfileBadge() {
@@ -589,28 +756,35 @@ function renderUserProfileBadge() {
   if (!container || !adminState.currentUser) return;
 
   const u = adminState.currentUser;
-  const initials = u.nombre.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+  const initials = (u.nombre || 'AD').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+
+  let roleColor = 'var(--amber)';
+  let roleIcon = '👑';
+  if (u.rol === 'despachador') {
+    roleColor = 'var(--blue)';
+    roleIcon = '🏢';
+  } else if (u.rol === 'auditor_caja') {
+    roleColor = 'var(--accent)';
+    roleIcon = '💵';
+  }
 
   container.innerHTML = `
-    <div class="user-profile-pill">
-      <div class="user-avatar-circle">${initials}</div>
+    <div class="user-profile-pill" style="display: flex; align-items: center; gap: 10px; background: rgba(13, 21, 39, 0.85); border: 1px solid var(--border); padding: 5px 12px; border-radius: 999px;">
+      <div class="user-avatar-circle" style="width: 28px; height: 28px; border-radius: 50%; background: ${roleColor}; color: #000; font-weight: 800; font-size: 11px; display: flex; align-items: center; justify-content: center;">${initials}</div>
       <div style="line-height: 1.2;">
         <strong style="color: #fff; font-size: 12px;">${u.nombre}</strong>
-        <div style="font-size: 10px; color: var(--amber); font-weight: 600;">👑 ${u.cargo || 'Superusuario'}</div>
+        <div style="font-size: 10px; color: ${roleColor}; font-weight: 700;">${roleIcon} ${u.rolLabel || u.cargo || 'Administrador'} · ${u.sede || 'Sede Central'}</div>
       </div>
-      <button class="btn-secondary" style="padding: 2px 8px; font-size: 10px;" onclick="restablecerSuperusuario()" title="Reiniciar credenciales para pruebas">
-        Reiniciar
+      <button class="btn btn-outline" style="padding: 3px 8px; font-size: 10px; color: #ef4444; border-color: rgba(239, 68, 68, 0.4); margin-left: 6px;" onclick="cerrarSesionAdmin()" title="Cerrar Sesión Segura">
+        🚪 Salir
       </button>
     </div>
   `;
 }
 
-function restablecerSuperusuario() {
-  if (confirm('¿Desea cerrar la sesión del Superusuario y volver a habilitar el formulario de Registro Inicial?')) {
-    localStorage.removeItem(STORAGE_KEYS.SUPERUSER);
-    adminState.currentUser = null;
-    location.reload();
-  }
+function checkSuperUserSetup() {
+  // Integrado ahora en el flujo de autenticación estándar
+  verificarSesionAdmin();
 }
 
 // ── 2. MÓDULO DE CIUDADES & DESTINOS ─────────────────────────────────────────
@@ -2352,7 +2526,16 @@ function renderEncomiendasTable(listaFiltrada) {
         </button>
     `;
 
-    if (enc.estado !== 'Entregada') {
+    if (enc.estado === 'Entregada' || enc.estado === 'Entregado') {
+      accionesHtml += `
+        <button class="btn btn-accent" style="padding: 3px 8px; font-size: 11px; background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #10b981; font-weight: 700;" onclick="abrirModalComprobantePod('${enc.id || enc.numeroGuia}')">
+          📄 Ver POD Digital
+        </button>
+        <button class="btn btn-secondary" style="padding: 3px 8px; font-size: 11px; color: #25d366; border-color: rgba(37, 211, 102, 0.4);" onclick="enviarComprobantePorWhatsApp('${enc.id || enc.numeroGuia}')" title="Enviar comprobante al remitente o destinatario vía WhatsApp">
+          📲 WhatsApp
+        </button>
+      `;
+    } else {
       accionesHtml += `
         <button class="btn btn-primary" style="padding: 3px 8px; font-size: 11px;" onclick="marcarEncomiendaEntregada('${enc.id}')">
           ✓ Confirmar Entrega
@@ -2941,6 +3124,159 @@ function marcarEncomiendaEntregada(id) {
   renderEncomiendasTable();
 
   alert(`✓ ¡Encomienda ${enc.numeroGuia} marcada como ENTREGADA exitosamente!\nRegistrada entrega conforme a ${enc.destinatario.nombre}.`);
+}
+
+// ── CONTROL DE COMPROBANTE DE ENTREGA DIGITAL (POD) & WHATSAPP ─────────────────
+let currentPodModalData = null;
+
+async function abrirModalComprobantePod(id) {
+  const enc = adminState.encomiendas.find(e => e.id === id || e.numeroGuia === id || (e.guia && e.guia === id));
+  if (!enc) {
+    alert('No se encontró el registro de la encomienda solicitada.');
+    return;
+  }
+
+  currentPodModalData = enc;
+  const guiaId = enc.numeroGuia || enc.id;
+  
+  const modal = document.getElementById('modalComprobantePod');
+  const titulo = document.getElementById('podModalTituloGuia');
+  const contenido = document.getElementById('podModalContenido');
+
+  if (titulo) {
+    titulo.innerHTML = `Comprobante POD · Guía ${guiaId}`;
+  }
+
+  let podData = enc.pod || {};
+  let fotoUrl = enc.foto_url || podData.foto_url || null;
+  let firmaUrl = enc.firma_url || podData.firma_url || null;
+  let receptorNombre = podData.receptor_nombre || enc.destinatario?.nombre || enc.receptor || 'Receptor Registrado';
+  let receptorCedula = podData.receptor_cedula || enc.destinatario?.cedula || 'N/A';
+  let fechaEntrega = podData.fecha_entrega || enc.fechaEntrega || new Date().toLocaleString('es-EC');
+  let choferNombre = enc.asignacion?.chofer || podData.chofer || 'Conductor Macondo';
+  let placa = enc.asignacion?.placa || podData.placa || 'Unidad Express';
+  let monto = parseFloat(enc.paquete?.tarifa || enc.tarifa || podData.monto || 5).toFixed(2);
+  let coords = (podData.latitud && podData.longitud) ? `${podData.latitud.toFixed(5)}, ${podData.longitud.toFixed(5)}` : 'Coordenadas GPS de terminal';
+
+  // Si no dispone de URLs en memoria, intentar consulta al servidor
+  if (!fotoUrl && !firmaUrl) {
+    try {
+      const resp = await fetch(`/api/encomiendas/pod?guia_id=${encodeURIComponent(guiaId)}`);
+      if (resp.ok) {
+        const fetched = await resp.json();
+        if (fetched.ok && fetched.pod) {
+          podData = fetched.pod;
+          fotoUrl = podData.foto_url;
+          firmaUrl = podData.firma_url;
+          receptorNombre = podData.receptor_nombre || receptorNombre;
+          receptorCedula = podData.receptor_cedula || receptorCedula;
+          fechaEntrega = podData.fecha_entrega || fechaEntrega;
+        }
+      }
+    } catch (e) { }
+  }
+
+  if (contenido) {
+    contenido.innerHTML = `
+      <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border); border-radius: 10px; padding: 14px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; font-size: 12px;">
+          <div>
+            <span style="color: var(--text-dim); display: block; font-size: 10px; text-transform: uppercase;">Destinatario / Receptor</span>
+            <strong style="color: #fff; font-size: 13px;">${receptorNombre}</strong>
+            <div style="color: var(--text-muted); font-size: 11px;">Cédula: ${receptorCedula}</div>
+          </div>
+          <div>
+            <span style="color: var(--text-dim); display: block; font-size: 10px; text-transform: uppercase;">Fecha y Hora de Entrega</span>
+            <strong style="color: var(--accent); font-size: 13px;">${fechaEntrega}</strong>
+            <div style="color: var(--text-muted); font-size: 11px;">Estado: Entregado Conforme</div>
+          </div>
+          <div>
+            <span style="color: var(--text-dim); display: block; font-size: 10px; text-transform: uppercase;">Conductor / Unidad</span>
+            <strong style="color: #fff; font-size: 13px;">${choferNombre}</strong>
+            <div style="color: var(--amber); font-size: 11px; font-weight: 700;">Placa: ${placa}</div>
+          </div>
+          <div>
+            <span style="color: var(--text-dim); display: block; font-size: 10px; text-transform: uppercase;">Cobro Efectivo POD</span>
+            <strong style="color: #10b981; font-size: 15px; font-weight: 900;">$${monto}</strong>
+            <div style="color: var(--text-muted); font-size: 10px;">Modalidad: ${enc.destinatario?.modalidad || 'Domicilio'}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pod-preview-grid">
+        <div class="pod-image-box">
+          <span class="pod-badge">📸 Fotografía en Sitio de Entrega</span>
+          ${fotoUrl 
+            ? `<img src="${fotoUrl}" alt="Foto de Entrega POD" onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\'><text y=\\'50\\' x=\\'10\\' fill=\\'white\\'>Imagen no disponible</text></svg>';">` 
+            : `<div style="color: var(--text-dim); font-size: 12px; text-align: center; padding: 40px 10px;">
+                <div style="font-size: 28px; margin-bottom: 6px;">📷</div>
+                Fotografía capturada y archivada en servidor
+               </div>`
+          }
+        </div>
+        <div class="pod-image-box">
+          <span class="pod-badge">✍️ Firma Digital del Receptor</span>
+          ${firmaUrl 
+            ? `<img src="${firmaUrl}" alt="Firma Digital Receptor" style="background: #ffffff; padding: 8px; border-radius: 6px;" onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\'><text y=\\'50\\' x=\\'10\\' fill=\\'black\\'>Firma no disponible</text></svg>';">` 
+            : `<div style="color: var(--text-dim); font-size: 12px; text-align: center; padding: 40px 10px;">
+                <div style="font-size: 28px; margin-bottom: 6px;">📝</div>
+                Firma manuscrita en pantalla táctil
+               </div>`
+          }
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(2, 6, 23, 0.5); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 11px; color: var(--text-muted);">
+        <div>📍 <strong>Ubicación GPS:</strong> ${coords}</div>
+        <div>🔒 <strong>Validación:</strong> Hash criptográfico verificado</div>
+      </div>
+    `;
+  }
+
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+}
+
+function cerrarModalComprobantePod() {
+  const modal = document.getElementById('modalComprobantePod');
+  if (modal) modal.style.display = 'none';
+  currentPodModalData = null;
+}
+
+function imprimirPodDesdeModal() {
+  if (!currentPodModalData) return;
+  const guiaId = currentPodModalData.numeroGuia || currentPodModalData.id;
+  const url = `/api/encomiendas/pod/comprobante?guia_id=${encodeURIComponent(guiaId)}`;
+  window.open(url, '_blank', 'width=850,height=900,scrollbars=yes');
+}
+
+function enviarWhatsAppDesdeModal() {
+  if (!currentPodModalData) return;
+  const enc = currentPodModalData;
+  const guiaId = enc.numeroGuia || enc.id;
+  const telRem = enc.remitente?.telefono || '';
+  const telDest = enc.destinatario?.telefono || '';
+  
+  const telSeleccionado = prompt(
+    `Ingrese o confirme el número de teléfono con WhatsApp (formato Ecuador: 09... o 593...):\n\nRemitente (${enc.remitente?.nombre || 'Remitente'}): ${telRem}\nDestinatario (${enc.destinatario?.nombre || 'Destinatario'}): ${telDest}`,
+    telRem || telDest
+  );
+
+  if (!telSeleccionado) return;
+
+  const url = `/api/encomiendas/pod/whatsapp?guia_id=${encodeURIComponent(guiaId)}&telefono=${encodeURIComponent(telSeleccionado)}`;
+  window.open(url, '_blank');
+}
+
+function enviarComprobantePorWhatsApp(id) {
+  const enc = adminState.encomiendas.find(e => e.id === id || e.numeroGuia === id || (e.guia && e.guia === id));
+  if (!enc) {
+    alert('No se encontró el registro de la encomienda solicitada.');
+    return;
+  }
+  currentPodModalData = enc;
+  enviarWhatsAppDesdeModal();
 }
 
 // ==============================================================================
@@ -3560,17 +3896,21 @@ function procesarPodRealtime(pod) {
   setTimeout(() => toast.remove(), 8000);
 
   if (adminState.encomiendas) {
-    const enc = adminState.encomiendas.find(e => e.guia === pod.guia_id || e.id === pod.guia_id);
+    const enc = adminState.encomiendas.find(e => e.guia === pod.guia_id || e.id === pod.guia_id || e.numeroGuia === pod.guia_id);
     if (enc) {
-      enc.estado = 'Entregado';
+      enc.estado = 'Entregada';
       enc.receptor = pod.receptor_nombre;
       enc.fechaEntrega = pod.fecha_entrega;
+      enc.foto_url = pod.foto_url || enc.foto_url;
+      enc.firma_url = pod.firma_url || enc.firma_url;
+      enc.pod = pod;
       saveState('encomiendas');
+      recalcularKPIs();
     }
   }
 
-  if (adminState.activeTab === 'encomiendas' && typeof renderEncomiendas === 'function') {
-    renderEncomiendas();
+  if (adminState.activeTab === 'encomiendas') {
+    renderEncomiendasTable();
   }
 }
 

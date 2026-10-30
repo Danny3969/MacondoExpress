@@ -17,6 +17,69 @@
 <body>
 
   <!-- ======================================================== -->
+  <!-- ESCUDO DE AUTENTICACIÓN ADMINISTRATIVA (LOGIN SHIELD)    -->
+  <!-- ======================================================== -->
+  <div id="adminLoginShield" class="admin-login-overlay" style="display: flex;">
+    <div class="admin-login-card">
+      <div style="text-align: center;">
+        <span class="login-badge">🛡️ ACCESO ADMINISTRATIVO RESTRINGIDO</span>
+        <div style="font-size: 42px; margin: 4px 0;">🚐</div>
+        <h2 style="color: #fff; font-size: 22px; font-weight: 900; letter-spacing: -0.5px;">MACONDO EXPRESS</h2>
+        <p style="color: var(--text-dim); font-size: 12px; margin-top: 4px; line-height: 1.4;">
+          Consola Central de Despacho, Radar GPS & Auditoría de Encomiendas POD
+        </p>
+      </div>
+
+      <div id="adminLoginError" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; border-radius: 10px; padding: 10px 14px; font-size: 12px; color: #fca5a5; text-align: center;"></div>
+
+      <form id="formAdminLogin" onsubmit="event.preventDefault(); ejecutarLoginAdmin();" style="display: flex; flex-direction: column; gap: 12px;">
+        <div class="form-group">
+          <label class="form-label" style="font-size: 11px;">Usuario, Correo o Celular *</label>
+          <input type="text" id="inputAdminUser" class="admin-input" placeholder="ej. admin o despacho.gye" required autofocus autocomplete="username">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="font-size: 11px;">Contraseña de Acceso o PIN *</label>
+          <input type="password" id="inputAdminPass" class="admin-input" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <button type="submit" id="btnAdminLoginSubmit" class="btn btn-primary" style="padding: 12px; font-size: 14px; font-weight: 800; justify-content: center; margin-top: 4px;">
+          <span>🔐</span> Ingresar a la Consola
+        </button>
+      </form>
+
+      <div style="border-top: 1px dashed var(--border); padding-top: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 11px; font-weight: 700; color: var(--amber);">⚡ Accesos Rápidos Demo (1-Click):</span>
+          <span style="font-size: 10px; color: var(--text-dim);">Selecciona un rol:</span>
+        </div>
+        <div class="login-fast-access">
+          <button type="button" class="fast-access-btn" onclick="rellenarCredencialesDemo('admin', 'admin123')">
+            <strong>👑 Superusuario</strong>
+            <span>Gerente General</span>
+          </button>
+          <button type="button" class="fast-access-btn" onclick="rellenarCredencialesDemo('despacho.gye', '1234')">
+            <strong>🏢 Despacho GYE</strong>
+            <span>Terminal Guayaquil</span>
+          </button>
+          <button type="button" class="fast-access-btn" onclick="rellenarCredencialesDemo('despacho.mch', '5678')">
+            <strong>🏢 Despacho MCH</strong>
+            <span>Terminal Machala</span>
+          </button>
+          <button type="button" class="fast-access-btn" onclick="rellenarCredencialesDemo('auditor', 'audit2026')">
+            <strong>💵 Auditor Caja</strong>
+            <span>Liquidaciones & Turnos</span>
+          </button>
+        </div>
+      </div>
+
+      <div style="font-size: 10px; color: var(--text-dim); text-align: center; border-top: 1px solid var(--border-subtle); padding-top: 10px;">
+        🔒 Conexión Cifrada SSL · Tokens de Sesión 12 Horas · Auditoría ANT
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
   <!-- MODAL DE ONBOARDING: REGISTRO DE SUPERUSUARIO (1RA VEZ) -->
   <!-- ======================================================== -->
   <div id="modalSuperUserSetup" class="onboarding-overlay" style="display: none;">
@@ -1917,6 +1980,39 @@
           <button class="btn btn-outline" onclick="cerrarModalFichaCliente()">Cerrar</button>
           <button class="btn btn-primary" style="background: var(--blue);" id="btnEditarDesdeFicha">
             <span>✏️</span> Editar Datos
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: DETALLE DE COMPROBANTE POD (FOTO, FIRMA Y WHATSAPP) -->
+  <!-- ======================================================== -->
+  <div id="modalComprobantePod" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 640px; border-color: var(--amber); box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 35px rgba(245, 158, 11, 0.2);">
+      <button class="modal-close" onclick="cerrarModalComprobantePod()">✕</button>
+      
+      <div style="display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px;">
+        <div style="font-size: 32px;">📦</div>
+        <div>
+          <span class="badge badge-green" style="font-size: 10px;">✓ ENTREGA CERTIFICADA POD</span>
+          <h2 style="color: #fff; font-size: 18px; font-weight: 800; margin-top: 2px;" id="podModalTituloGuia">Comprobante Oficial de Entrega</h2>
+        </div>
+      </div>
+
+      <div id="podModalContenido" style="display: flex; flex-direction: column; gap: 14px;">
+        <!-- Inyectado dinámicamente -->
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 14px; flex-wrap: wrap;">
+        <button class="btn btn-outline" onclick="cerrarModalComprobantePod()">Cerrar</button>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary" id="btnImprimirPodModal" onclick="imprimirPodDesdeModal()">
+            <span>🖨️</span> Imprimir / PDF
+          </button>
+          <button class="btn btn-primary" style="background: #25D366; border-color: #25D366; color: #fff;" id="btnWhatsAppPodModal" onclick="enviarWhatsAppDesdeModal()">
+            <span>📲</span> Enviar por WhatsApp
           </button>
         </div>
       </div>

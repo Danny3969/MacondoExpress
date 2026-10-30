@@ -70,3 +70,8 @@ migrate_working_dir/
 .env
 .env.local
 .env.production
+
+# Storage uploads runtime files
+consola_administracion/uploads/pod/*
+!consola_administracion/uploads/pod/.gitkeep
+

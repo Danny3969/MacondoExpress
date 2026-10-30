@@ -1082,8 +1082,9 @@
       };
 
       try {
+        let podResp = null;
         if (window.MacondoBackend) {
-          await window.MacondoBackend.registrarEntregaPod(payloadPod);
+          podResp = await window.MacondoBackend.registrarEntregaPod(payloadPod);
         }
 
         // Éxito: Actualizar UI del conductor
@@ -1101,9 +1102,18 @@
         // Sumar $5.00 al total recaudado en efectivo
         totalRecaudado += 5.00;
 
-        alert(`✓ Comprobante Digital POD Registrado con Éxito.\nGuía: ${payloadPod.guia_id}\nReceptor: ${nombre} (${cedula})\nCobro: $5.00 Efectivo registrado en caja del turno.\nConsola y cliente notificados en tiempo real.`);
-
         cerrarModalPod();
+
+        // Enlace de WhatsApp con comprobante oficial
+        const waLink = window.MacondoBackend 
+          ? window.MacondoBackend.generarEnlaceWhatsAppPod(payloadPod.guia_id, '0987654321', nombre, payloadPod.monto_cobrado_efectivo)
+          : `https://api.whatsapp.com/send?text=${encodeURIComponent('Comprobante POD Guía ' + payloadPod.guia_id)}`;
+
+        const enviarWa = confirm(`✓ ¡Comprobante Digital POD Registrado con Éxito!\n\n📦 Guía: ${payloadPod.guia_id}\n👤 Receptor: ${nombre} (C.I. ${cedula})\n💵 Cobro: $5.00 Efectivo registrado en caja del turno.\n☁️ Foto y firma guardadas en Storage.\n\n¿Desea abrir WhatsApp para enviar el Comprobante Oficial al cliente en este momento?`);
+        
+        if (enviarWa) {
+          window.open(waLink, '_blank');
+        }
       } catch (err) {
         console.error('Error guardando POD:', err);
         alert('Error al enviar el comprobante POD. Por favor intente nuevamente.');

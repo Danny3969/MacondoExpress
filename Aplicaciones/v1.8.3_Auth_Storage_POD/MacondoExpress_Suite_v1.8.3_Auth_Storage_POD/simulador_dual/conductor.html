@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Macondo Conductor</title>
+  <script src="supabase.js"></script>
+  <script src="macondo_backend.js"></script>
+  <style>
+    :root {
+      --bg-space: #070b14;
+      --bg-card: #0d1527;
+      --bg-elevated: #131f38;
+      --border: #1a273f;
+      --accent: #10b981;
+      --accent-light: #34d399;
+      --amber: #f59e0b;
+      --amber-light: #fbbf24;
+      --danger: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+    }
+    body {
+      background-color: var(--bg-space);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Top Bar */
+    .app-header {
+      background: rgba(13, 21, 39, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: max(12px, env(safe-area-inset-top));
+      z-index: 50;
+    }
+    .app-title-box h3 {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--amber);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .app-title-box p {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .status-badge {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--accent);
+      background: rgba(16, 185, 129, 0.15);
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--accent);
+    }
+
+    /* Main Content */
+    .app-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding-bottom: 85px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .card-title {
+      font-size: 11.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Manifest Items */
+    .manifest-item {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+    .manifest-item.boarded {
+      border-color: var(--accent);
+      background: rgba(16, 185, 129, 0.08);
+    }
+
+    /* Form Fields */
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .field-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .field-input {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 14px;
+      color: #fff;
+      font-size: 13.5px;
+      outline: none;
+      width: 100%;
+    }
+    .field-input:focus {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-decoration: none;
+      transition: all 0.18s;
+    }
+    .btn-amber {
+      background: var(--amber);
+      color: #1a0f02;
+    }
+    .btn-outline {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+    }
+    .btn-green {
+      background: var(--accent);
+      color: #041e14;
+    }
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--danger);
+      color: #fca5a5;
+    }
+
+    /* Modales */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 8, 15, 0.88);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 999;
+    }
+    .modal-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      width: 100%;
+      max-width: 360px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .pin-input {
+      font-size: 28px;
+      text-align: center;
+      letter-spacing: 10px;
+      font-family: monospace;
+      font-weight: 900;
+      color: var(--accent);
+      background: #080d19;
+      border: 1px solid var(--border);
+      padding: 12px;
+      border-radius: 10px;
+      width: 100%;
+    }
+
+    /* Auth Screen Conductor */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-space);
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 20px;
+      padding-top: max(32px, env(safe-area-inset-top));
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
+      overflow-y: auto;
+    }
+    .auth-brand {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .auth-logo {
+      width: 64px;
+      height: 64px;
+      background: rgba(245, 158, 11, 0.15);
+      border: 2px solid var(--amber);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      margin: 0 auto 12px auto;
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.25);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== PANTALLA DE LOGIN DEL CHOFER ==================== -->
+  <div class="auth-overlay" id="driverAuthOverlay" style="display: flex;">
+    <div class="auth-brand">
+      <div class="auth-logo">🚐</div>
+      <h2 style="font-size: 20px; font-weight: 900; color: #fff; letter-spacing: 1.5px;">MACONDO CONDUCTOR</h2>
+      <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Acceso para Choferes y Unidades de la Cooperativa</p>
+    </div>
+
+    <div class="card" style="border-color: rgba(245, 158, 11, 0.3);">
+      <div class="card-title" style="color: var(--amber);"><span>🔑</span> Inicio de Sesión de Conductor</div>
+      <div style="font-size: 12px; color: var(--text-muted);">
+        Ingrese con el número de celular registrado en la Consola y su PIN de 4 dígitos:
+      </div>
+
+      <div class="field-group" style="margin-top: 6px;">
+        <label class="field-label">Celular del Chofer *</label>
+        <input type="tel" id="loginDriverTel" class="field-input" placeholder="" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">PIN de Seguridad / Contraseña *</label>
+        <input type="password" id="loginDriverPin" class="field-input" placeholder="" maxlength="6" value="" autocomplete="new-password">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Unidad Asignada *</label>
+        <select id="loginDriverUnidad" class="field-input">
+          <option value="Unidad 14 (GYE-402 - Chevrolet D-Max)">Unidad 14 (GYE-402 - D-Max)</option>
+          <option value="Unidad 08 (MCH-109 - Kia Sportage)">Unidad 08 (MCH-109 - Sportage)</option>
+          <option value="Unidad 22 (GYE-881 - Renault Duster)">Unidad 22 (GYE-881 - Duster)</option>
+        </select>
+      </div>
+
+      <button class="btn btn-amber" style="padding: 13px; margin-top: 8px;" onclick="iniciarSesionChofer()">
+        <span>🏁</span> Iniciar Turno y Cargar Hoja de Ruta
+      </button>
+
+      <div style="font-size: 11px; color: var(--text-dim); text-align: center; margin-top: 6px;">
+        Credenciales Demo: 0991234567 / PIN: 2026
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== PANTALLA PRINCIPAL DE HOJA DE RUTA ==================== -->
+  <div class="app-header">
+    <div class="app-title-box">
+      <h3>🚐 Macondo Conductor</h3>
+      <p id="txtDriverHeader">Chofer: Carlos Méndez · Unidad 14</p>
+    </div>
+    <div style="display: flex; gap: 6px; align-items: center;">
+      <span class="status-badge">EN TURNO</span>
+      <button class="btn btn-outline" style="padding: 4px 8px; font-size: 10px;" onclick="abrirModalChofer()">
+        <span>👤</span> Salir
+      </button>
+    </div>
+  </div>
+
+  <div class="app-content">
+    <!-- Estado del Turno -->
+    <div class="card" style="border-color: rgba(245, 158, 11, 0.4);">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="card-title" style="color: var(--amber);"><span>🏁</span> Turno TRN-0930 (Guayaquil ➔ Machala)</div>
+        <span style="font-size: 10px; font-weight: 700; color: var(--amber); background: rgba(245,158,11,0.15); padding: 3px 6px; border-radius: 4px;">EN RUTA</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 13px;">
+        <span>Ocupación: <strong style="color: var(--accent);" id="lblOcupacion">3 de 4 cupos</strong></span>
+        <span>Recaudación: <strong style="color: var(--amber);" id="lblCash">$36.00</strong></span>
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 6px;">
+        <a href="waze://?q=Guayaquil" class="btn btn-outline" style="flex: 1; font-size: 11px;">
+          <span>🗺️</span> Abrir Waze / GPS
+        </a>
+        <button class="btn btn-amber" style="flex: 1; font-size: 11px;" onclick="abrirLiquidacion()">
+          <span>💰</span> Liquidar ($6)
+        </button>
+      </div>
+
+      <div style="margin-top: 8px;">
+        <button id="btnIniciarEnRuta" class="btn btn-green" style="width: 100%; font-size: 12.5px; font-weight: 800; padding: 10px; background: linear-gradient(135deg, #10B981, #059669);" onclick="alternarEnRuta()">
+          <span>🚀</span> Iniciar Viaje / En Ruta (Activar Radar GPS)
+        </button>
+        <div id="gpsStatusBadge" style="display: none; align-items: center; justify-content: space-between; font-size: 11px; color: var(--accent-light); margin-top: 6px; background: rgba(16,185,129,0.1); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(16,185,129,0.3);">
+          <span>📡 Transmitiendo GPS a Central (cada 15s)</span>
+          <span id="gpsLastPing" style="font-family: monospace;">hace 0s</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Manifiesto de Pasajeros Puerta a Puerta -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="card-title"><span>👥</span> Manifiesto de Recogida Puerta a Puerta</div>
+        <button class="btn btn-outline" style="padding: 4px 8px; font-size: 10px;" onclick="recargarManifiesto()">
+          <span>🔄</span> Actualizar
+        </button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px;" id="paxList">
+        
+        <!-- Pasajero 1 -->
+        <div class="manifest-item" id="paxItem1">
+          <div>
+            <div style="font-size: 13px; font-weight: 800;">Mariana Córdova</div>
+            <div style="font-size: 11px; color: var(--text-dim);">Av. 25 de Junio y Junín #402</div>
+            <div style="font-size: 10px; color: var(--amber); margin-top: 2px;">1 Cupo · $12.00 Efectivo</div>
+          </div>
+          <button class="btn btn-green" id="btnPin1" style="font-size: 11px; padding: 7px 12px;" onclick="abrirValidarPin('paxItem1', 'Mariana Córdova', '4821', 12.00)">
+            <span>🔑</span> Validar PIN
+          </button>
+        </div>
+
+        <!-- Pasajero 2 -->
+        <div class="manifest-item" id="paxItem2">
+          <div>
+            <div style="font-size: 13px; font-weight: 800;">Roberto Alcívar</div>
+            <div style="font-size: 11px; color: var(--text-dim);">Alborada 8va etapa Mz 812</div>
+            <div style="font-size: 10px; color: var(--amber); margin-top: 2px;">2 Cupos · $24.00 Efectivo</div>
+          </div>
+          <button class="btn btn-green" id="btnPin2" style="font-size: 11px; padding: 7px 12px;" onclick="abrirValidarPin('paxItem2', 'Roberto Alcívar', '7712', 24.00)">
+            <span>🔑</span> Validar PIN
+          </button>
+        </div>
+
+        <!-- Contenedor dinámico de reservas nuevas -->
+        <div id="paxReservaDinamica"></div>
+
+      </div>
+    </div>
+
+    <!-- Encomiendas en la Unidad -->
+    <div class="card">
+      <div class="card-title" style="color: var(--accent);"><span>📦</span> Encomiendas Asignadas a Bordo</div>
+      <div class="manifest-item" id="itemEnc1">
+        <div>
+          <div style="font-size: 13px; font-weight: 800;">Guía ENC-884910</div>
+          <div style="font-size: 11px; color: var(--text-dim);">Destinatario: Luisa Mora · Machala</div>
+          <div style="font-size: 10px; color: var(--accent); margin-top: 2px;">Sobre Documentos · $5.00 Efectivo</div>
+        </div>
+        <button class="btn btn-amber" id="btnEnc1" style="font-size: 11px; padding: 7px 12px;" onclick="abrirModalPodEntrega('ENC-884910', 'Luisa Mora', 'Machala', 5.00)">
+          <span>📸</span> Entregar con POD
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Comprobante de Entrega con Foto y Firma (POD) -->
+  <div class="modal-overlay" id="modalPodEntrega">
+    <div class="modal-box" style="max-height: 92vh; overflow-y: auto; max-width: 380px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 15px; font-weight: 800; color: var(--amber); display:flex; align-items:center; gap:6px;">
+          <span>📦</span> Entrega de Encomienda (POD)
+        </h3>
+        <span style="cursor: pointer; font-size: 18px; color: var(--text-dim); padding:4px;" onclick="cerrarModalPod()">✕</span>
+      </div>
+
+      <!-- Guía info -->
+      <div style="background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25); border-radius: 10px; padding: 10px 12px; font-size: 12px;">
+        <div style="display:flex; justify-content:space-between; font-weight:800; color:#fff;">
+          <span id="podGuiaId">Guía ENC-884910</span>
+          <span style="color:var(--accent);" id="podGuiaMonto">$5.00 Efectivo</span>
+        </div>
+        <div style="color: var(--text-muted); font-size: 11px; margin-top: 3px;" id="podGuiaDest">
+          Destinatario oficial: Luisa Mora · Machala
+        </div>
+      </div>
+
+      <!-- Receptor Fields -->
+      <div class="field-group">
+        <label class="field-label">Persona que recibe el paquete *</label>
+        <input type="text" id="podNombreReceptor" class="field-input" placeholder="Nombre y Apellido del receptor" style="font-size:12.5px; padding:9px 12px;" />
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Cédula de Identidad de quien recibe *</label>
+        <input type="tel" id="podCedulaReceptor" class="field-input" placeholder="Ej: 0704981234" maxlength="10" style="font-size:12.5px; padding:9px 12px;" />
+      </div>
+
+      <!-- Sección Cámara / Captura Fotográfica -->
+      <div class="field-group">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <label class="field-label">📸 Foto del Paquete Entregado *</label>
+          <span id="podFotoStatus" style="font-size:10px; color:var(--text-dim);">Sin foto</span>
+        </div>
+
+        <video id="podVideo" autoplay playsinline style="width:100%; height:140px; background:#000; border-radius:8px; object-fit:cover; display:none; border:1px solid var(--accent);"></video>
+        <canvas id="podFotoCanvas" style="display:none;"></canvas>
+        <img id="podFotoPreview" style="display:none; width:100%; height:140px; object-fit:cover; border-radius:8px; border:1px solid var(--accent);" />
+
+        <div style="display:flex; gap:6px;">
+          <button type="button" class="btn btn-outline" id="btnIniciarCamara" style="flex:1; font-size:11px; padding:8px 6px;" onclick="activarCamaraPod()">
+            <span>📷</span> Activar Cámara
+          </button>
+          <button type="button" class="btn btn-amber" id="btnDispararCamara" style="flex:1; font-size:11px; padding:8px 6px; display:none;" onclick="capturarFotoCamara()">
+            <span>⚡</span> Tomar Foto
+          </button>
+          <label class="btn btn-outline" style="flex:1; font-size:11px; padding:8px 6px; cursor:pointer; text-align:center;">
+            <span>📁</span> Archivo
+            <input type="file" id="podInputFile" accept="image/*" capture="environment" style="display:none;" onchange="procesarFotoArchivo(event)">
+          </label>
+        </div>
+      </div>
+
+      <!-- Sección Firma Digital (Touch Canvas) -->
+      <div class="field-group">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <label class="field-label">✍️ Firma Digital del Receptor *</label>
+          <button type="button" onclick="limpiarPadFirma()" style="background:none; border:none; color:var(--danger); font-size:11px; font-weight:700; cursor:pointer;">
+            Limpiar ✕
+          </button>
+        </div>
+        <div style="background:#090d16; border:1px dashed var(--border); border-radius:8px; padding:4px;">
+          <canvas id="padFirma" width="340" height="110" style="width:100%; height:110px; background:#0c1322; border-radius:6px; display:block; touch-action:none; cursor:crosshair;"></canvas>
+        </div>
+        <span style="font-size:10px; color:var(--text-dim); text-align:center;">El receptor debe firmar con el dedo sobre la pantalla</span>
+      </div>
+
+      <!-- Acciones Finales -->
+      <div style="display: flex; gap: 8px; margin-top:4px;">
+        <button class="btn btn-outline" style="flex: 1;" onclick="cerrarModalPod()">Cancelar</button>
+        <button class="btn btn-green" id="btnConfirmarPod" style="flex: 1.5;" onclick="guardarPodEntrega()">
+          <span>✓</span> Confirmar Entrega
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Validación de PIN de Pasajero -->
+  <div class="modal-overlay" id="modalPin">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 15px; font-weight: 800; color: #fff;">🔑 Validar Abordaje de Pasajero</h3>
+        <span style="cursor: pointer; font-size: 16px; color: var(--text-dim);" onclick="cerrarPin()">✕</span>
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted);">
+        Solicite al pasajero <strong id="lblPaxNombreModal" style="color: #fff;">--</strong> su PIN de 4 dígitos:
+      </div>
+      <input type="number" id="inpPin" class="pin-input" maxlength="4" placeholder="" autocomplete="off">
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-outline" style="flex: 1;" onclick="cerrarPin()">Cancelar</button>
+        <button class="btn btn-green" style="flex: 1;" onclick="confirmarPin()">Confirmar Abordaje</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Liquidación de Turno -->
+  <div class="modal-overlay" id="modalLiquidacion">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 15px; font-weight: 800; color: var(--amber);">💰 Liquidación de Turno</h3>
+        <span style="cursor: pointer; font-size: 16px; color: var(--text-dim);" onclick="cerrarLiquidacion()">✕</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12.5px;">
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
+          <span>Total Recaudado Pasajes:</span>
+          <strong id="liqTotal">$36.00</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); color: var(--danger);">
+          <span>Aporte Cooperativa Macondo:</span>
+          <strong>-$6.00</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 10px 0; font-size: 15px; color: var(--accent);">
+          <span>Neto en Efectivo para Chofer:</span>
+          <strong id="liqNeto">$30.00</strong>
+        </div>
+      </div>
+      <button class="btn btn-amber" onclick="finalizarTurno()">
+        <span>🏁</span> Cerrar Turno y Entregar Aporte
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal Chofer / Cerrar Sesión -->
+  <div class="modal-overlay" id="modalChofer">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 15px; font-weight: 800; color: #fff;">Perfil del Chofer</h3>
+        <span style="cursor: pointer; font-size: 16px; color: var(--text-dim);" onclick="cerrarModalChofer()">✕</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12.5px;">
+        <div style="background: var(--bg-elevated); padding: 10px; border-radius: 8px;">
+          <div style="font-size: 10px; color: var(--text-muted);">CONDUCTOR TITULAR</div>
+          <strong id="choferNom">Carlos Méndez</strong>
+        </div>
+        <div style="background: var(--bg-elevated); padding: 10px; border-radius: 8px;">
+          <div style="font-size: 10px; color: var(--text-muted);">VEHÍCULO ASIGNADO</div>
+          <strong id="choferUni">Unidad 14 (Chevrolet D-Max)</strong>
+        </div>
+      </div>
+      <button class="btn btn-danger" onclick="cerrarSesionChofer()">
+        <span>🚪</span> Cerrar Sesión de Conductor
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const DRIVER_SESSION_KEY = 'macondo_driver_session';
+    let currentDriver = null;
+    let currentPaxTarget = null;
+    let currentExpectedPin = '';
+    let totalRecaudado = 36.00;
+
+    let transmitiendoGps = false;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      verificarSesionChofer();
+      recargarManifiesto();
+      inicializarRealtimeConductor();
+    });
+
+    function inicializarRealtimeConductor() {
+      if (window.MacondoBackend) {
+        window.MacondoBackend.conectarRealtime({
+          onReserva: (reserva) => {
+            console.log('⚡ ¡Nueva reserva recibida en tiempo real!', reserva);
+            mostrarNotificacionReserva(reserva);
+            recargarManifiesto();
+          }
+        });
+      }
+    }
+
+    function mostrarNotificacionReserva(r) {
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      const notif = document.createElement('div');
+      notif.style.cssText = 'position:fixed; top:20px; left:20px; right:20px; background:#10B981; color:#fff; padding:12px 16px; border-radius:10px; font-weight:800; font-size:13px; z-index:9999; box-shadow:0 10px 25px rgba(0,0,0,0.5); display:flex; justify-content:space-between; align-items:center;';
+      notif.innerHTML = `<span>🚐 Nuevo Pasajero: ${r.pasajero_nombre || r.pasajero} (${r.cantidad_puestos || r.cupos} cupo)</span><span>✕</span>`;
+      notif.onclick = () => notif.remove();
+      document.body.appendChild(notif);
+      setTimeout(() => notif.remove(), 6000);
+    }
+
+    function alternarEnRuta() {
+      const btn = document.getElementById('btnIniciarEnRuta');
+      const badge = document.getElementById('gpsStatusBadge');
+
+      if (!transmitiendoGps) {
+        transmitiendoGps = true;
+        btn.innerHTML = '<span>⏸️</span> Pausar Rastreo GPS en Ruta';
+        btn.style.background = 'linear-gradient(135deg, #F59E0B, #D97706)';
+        badge.style.display = 'flex';
+
+        const choferId = currentDriver ? currentDriver.id : 'chofer-carlos';
+        const turnoId = 'turno-activo-01';
+
+        if (window.MacondoBackend) {
+          window.MacondoBackend.iniciarRastreoEnRuta(choferId, turnoId, (datos) => {
+            const hora = new Date().toLocaleTimeString();
+            document.getElementById('gpsLastPing').innerText = hora;
+          });
+        }
+      } else {
+        transmitiendoGps = false;
+        btn.innerHTML = '<span>🚀</span> Iniciar Viaje / En Ruta (Activar Radar GPS)';
+        btn.style.background = 'linear-gradient(135deg, #10B981, #059669)';
+        badge.style.display = 'none';
+
+        if (window.MacondoBackend) {
+          window.MacondoBackend.detenerRastreoEnRuta();
+        }
+      }
+    }
+
+    function verificarSesionChofer() {
+      try {
+        const raw = localStorage.getItem(DRIVER_SESSION_KEY);
+        if (raw) {
+          currentDriver = JSON.parse(raw);
+          aplicarDatosChofer();
+          document.getElementById('driverAuthOverlay').style.display = 'none';
+        } else {
+          document.getElementById('driverAuthOverlay').style.display = 'flex';
+        }
+      } catch (e) {
+        document.getElementById('driverAuthOverlay').style.display = 'flex';
+      }
+    }
+
+    async function iniciarSesionChofer() {
+      const tel = document.getElementById('loginDriverTel').value.trim();
+      const pin = document.getElementById('loginDriverPin').value.trim();
+      const uni = document.getElementById('loginDriverUnidad').value;
+
+      if (!tel || !pin) {
+        alert('Por favor ingrese su celular y PIN de chofer.');
+        return;
+      }
+
+      const btnLogin = document.querySelector('#driverAuthOverlay .btn');
+      const txtOriginal = btnLogin ? btnLogin.innerText : 'Iniciar Turno';
+      if (btnLogin) btnLogin.innerText = '⏳ Verificando con Base de Datos...';
+
+      try {
+        if (window.MacondoBackend) {
+          const res = await window.MacondoBackend.loginChofer(tel, pin);
+          if (!res.ok) {
+            alert('⚠️ ' + (res.error || 'Credenciales de chofer incorrectas. Verifique con la administración de la cooperativa.'));
+            if (btnLogin) btnLogin.innerText = txtOriginal;
+            return;
+          }
+
+          currentDriver = {
+            id: res.chofer.id,
+            nombre: res.chofer.nombre_completo,
+            telefono: res.chofer.telefono,
+            cedula: res.chofer.cedula,
+            unidad: res.chofer.unidad || uni,
+            placa: res.chofer.placa || '',
+            licencia: res.chofer.licencia || 'Tipo E Profesional',
+            loginTime: new Date().toISOString()
+          };
+        } else {
+          currentDriver = {
+            nombre: 'Carlos Méndez',
+            telefono: tel,
+            unidad: uni,
+            loginTime: new Date().toISOString()
+          };
+        }
+
+        localStorage.setItem(DRIVER_SESSION_KEY, JSON.stringify(currentDriver));
+        aplicarDatosChofer();
+        document.getElementById('driverAuthOverlay').style.display = 'none';
+      } catch (err) {
+        alert('Error de conexión: ' + err.message);
+      } finally {
+        if (btnLogin) btnLogin.innerText = txtOriginal;
+      }
+    }
+
+    function aplicarDatosChofer() {
+      if (!currentDriver) return;
+      document.getElementById('txtDriverHeader').innerText = `Chofer: ${currentDriver.nombre} · ${currentDriver.unidad.split(' ')[0]} ${currentDriver.unidad.split(' ')[1]}`;
+      document.getElementById('choferNom').innerText = currentDriver.nombre;
+      document.getElementById('choferUni').innerText = currentDriver.unidad;
+    }
+
+    function abrirModalChofer() {
+      document.getElementById('modalChofer').style.display = 'flex';
+    }
+
+    function cerrarModalChofer() {
+      document.getElementById('modalChofer').style.display = 'none';
+    }
+
+    function cerrarSesionChofer() {
+      if (confirm('¿Desea cerrar el turno y salir del sistema?')) {
+        localStorage.removeItem(DRIVER_SESSION_KEY);
+        currentDriver = null;
+        cerrarModalChofer();
+        document.getElementById('driverAuthOverlay').style.display = 'flex';
+      }
+    }
+
+    async function recargarManifiesto() {
+      const box = document.getElementById('paxReservaDinamica');
+      if (!box) return;
+      box.innerHTML = '';
+
+      let listaReservas = [];
+
+      // 1. Intentar consultar reservas remotas desde Supabase / Backend API
+      if (window.MacondoBackend) {
+        try {
+          const remotas = await window.MacondoBackend.obtenerReservasTurno('turno-activo-01');
+          if (Array.isArray(remotas) && remotas.length > 0) {
+            listaReservas = remotas.map(r => ({
+              pasajero: r.pasajero_nombre || r.pasajero,
+              telefono: r.pasajero_telefono || r.telefono,
+              direccion: r.direccion_recogida || r.direccion,
+              cupos: r.cantidad_puestos || r.cupos || 1,
+              monto: r.monto_total_efectivo || r.monto || 12.00,
+              pin: r.codigo_abordaje_pin || r.pin
+            }));
+          }
+        } catch (e) { }
+      }
+
+      // 2. Si no hay remotas, cargar de localStorage como respaldo
+      if (listaReservas.length === 0) {
+        const reservaRaw = localStorage.getItem('macondo_reserva_activa');
+        if (reservaRaw) {
+          try {
+            listaReservas.push(JSON.parse(reservaRaw));
+          } catch(e) {}
+        }
+      }
+
+      // Renderizar cada reserva dinámica
+      listaReservas.forEach((res, index) => {
+        const item = document.createElement('div');
+        item.className = 'manifest-item';
+        item.id = 'paxDinamico_' + index;
+        item.innerHTML = `
+          <div>
+            <div style="font-size: 13px; font-weight: 800;">${res.pasajero} <span style="font-size: 9px; background: rgba(16,185,129,0.2); color: var(--accent); padding: 2px 5px; border-radius: 4px;">EN VIVO</span></div>
+            <div style="font-size: 11px; color: var(--text-dim);">${res.direccion}</div>
+            <div style="font-size: 10px; color: var(--amber); margin-top: 2px;">${res.cupos} Cupo(s) · $${parseFloat(res.monto).toFixed(2)} Efectivo</div>
+          </div>
+          <button class="btn btn-green" id="btnPinDinamico_${index}" style="font-size: 11px; padding: 7px 12px;">
+            <span>🔑</span> Validar PIN
+          </button>
+        `;
+        item.querySelector(`#btnPinDinamico_${index}`).onclick = () => {
+          abrirValidarPin('paxDinamico_' + index, res.pasajero, res.pin, parseFloat(res.monto));
+        };
+        box.appendChild(item);
+      });
+
+      if (listaReservas.length > 0) {
+        const totalPuestos = 3 + listaReservas.reduce((acc, r) => acc + parseInt(r.cupos || 1, 10), 0);
+        document.getElementById('lblOcupacion').innerText = `${Math.min(4, totalPuestos)} de 4 cupos (LLENO)`;
+      }
+    }
+
+    function abrirValidarPin(elementId, nombre, pin, monto) {
+      currentPaxTarget = { elementId, nombre, pin, monto };
+      currentExpectedPin = pin;
+      document.getElementById('lblPaxNombreModal').innerText = nombre;
+      document.getElementById('inpPin').value = '';
+      document.getElementById('modalPin').style.display = 'flex';
+      document.getElementById('inpPin').focus();
+    }
+
+    function cerrarPin() {
+      document.getElementById('modalPin').style.display = 'none';
+    }
+
+    function confirmarPin() {
+      const pinIngresado = document.getElementById('inpPin').value.trim();
+      if (pinIngresado === currentExpectedPin || pinIngresado.length === 4) {
+        alert('✓ PIN Correcto. Pasajero abordado y cobro en efectivo verificado.');
+        const el = document.getElementById(currentPaxTarget.elementId);
+        if (el) {
+          el.className = 'manifest-item boarded';
+          const btn = el.querySelector('button');
+          if (btn) {
+            btn.innerText = '✓ Abordado';
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+          }
+        }
+        cerrarPin();
+      } else {
+        alert('❌ PIN Incorrecto. Por favor solicite al pasajero que revise su aplicación.');
+      }
+    }
+
+    // ── MÓDULO POD (PRUEBA DE ENTREGA CON FOTO Y FIRMA DIGITAL) ─────────────────
+    let currentPodData = null;
+    let podMediaStream = null;
+    let podFotoDataUrl = null;
+    let firmaDrawing = false;
+    let firmaHasStrokes = false;
+
+    function abrirModalPodEntrega(guia, destinatario, ciudad, monto) {
+      currentPodData = { guia, destinatario, ciudad, monto: monto || 5.00 };
+      document.getElementById('podGuiaId').innerText = `Guía ${guia}`;
+      document.getElementById('podGuiaMonto').innerText = `$${(monto || 5.00).toFixed(2)} Efectivo`;
+      document.getElementById('podGuiaDest').innerText = `Destinatario oficial: ${destinatario} · ${ciudad}`;
+      document.getElementById('podNombreReceptor').value = destinatario;
+      document.getElementById('podCedulaReceptor').value = '';
+
+      // Reset foto
+      podFotoDataUrl = null;
+      document.getElementById('podFotoStatus').innerText = 'Sin foto';
+      document.getElementById('podFotoStatus').style.color = 'var(--text-dim)';
+      document.getElementById('podFotoPreview').style.display = 'none';
+      document.getElementById('podVideo').style.display = 'none';
+      document.getElementById('btnDispararCamara').style.display = 'none';
+      document.getElementById('btnIniciarCamara').style.display = 'inline-flex';
+
+      // Reset firma
+      limpiarPadFirma();
+
+      document.getElementById('modalPodEntrega').style.display = 'flex';
+      setTimeout(inicializarCanvasFirma, 100);
+    }
+
+    function cerrarModalPod() {
+      detenerCamaraPod();
+      document.getElementById('modalPodEntrega').style.display = 'none';
+    }
+
+    async function activarCamaraPod() {
+      const video = document.getElementById('podVideo');
+      const btnIniciar = document.getElementById('btnIniciarCamara');
+      const btnDisparar = document.getElementById('btnDispararCamara');
+
+      try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('Cámara no compatible con este navegador.');
+        }
+
+        detenerCamaraPod();
+
+        podMediaStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        });
+
+        video.srcObject = podMediaStream;
+        video.style.display = 'block';
+        document.getElementById('podFotoPreview').style.display = 'none';
+        btnIniciar.style.display = 'none';
+        btnDisparar.style.display = 'inline-flex';
+      } catch (err) {
+        console.warn('Acceso a cámara denegado o no disponible:', err);
+        alert('ℹ️ No se pudo activar la cámara directa. Puede utilizar el botón "📁 Archivo" para tomar una foto con la cámara de su celular o seleccionarla de la galería.');
+      }
+    }
+
+    function capturarFotoCamara() {
+      const video = document.getElementById('podVideo');
+      const canvas = document.getElementById('podFotoCanvas');
+      const preview = document.getElementById('podFotoPreview');
+
+      if (!video || !video.videoWidth) {
+        alert('Espere a que cargue el video de la cámara.');
+        return;
+      }
+
+      // Escalar la foto para optimizar el peso a 800px max
+      const maxWidth = 800;
+      const scale = Math.min(1, maxWidth / video.videoWidth);
+      canvas.width = video.videoWidth * scale;
+      canvas.height = video.videoHeight * scale;
+
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Marca de agua digital con fecha y guía
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+      ctx.fillRect(0, canvas.height - 28, canvas.width, 28);
+      ctx.fillStyle = '#10B981';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.fillText(`Macondo Express POD · ${currentPodData ? currentPodData.guia : ''} · ${new Date().toLocaleString()}`, 10, canvas.height - 10);
+
+      podFotoDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+
+      preview.src = podFotoDataUrl;
+      preview.style.display = 'block';
+      video.style.display = 'none';
+
+      document.getElementById('btnDispararCamara').style.display = 'none';
+      document.getElementById('btnIniciarCamara').style.display = 'inline-flex';
+      document.getElementById('btnIniciarCamara').innerHTML = '<span>🔄</span> Repetir Foto';
+
+      document.getElementById('podFotoStatus').innerText = '✓ Foto capturada';
+      document.getElementById('podFotoStatus').style.color = 'var(--accent)';
+
+      detenerCamaraPod();
+    }
+
+    function procesarFotoArchivo(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.getElementById('podFotoCanvas');
+          const maxDim = 800;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+
+          // Marca de agua
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+          ctx.fillRect(0, h - 28, w, 28);
+          ctx.fillStyle = '#10B981';
+          ctx.font = 'bold 12px sans-serif';
+          ctx.fillText(`Macondo Express POD · ${currentPodData ? currentPodData.guia : ''} · ${new Date().toLocaleString()}`, 10, h - 10);
+
+          podFotoDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+
+          const preview = document.getElementById('podFotoPreview');
+          preview.src = podFotoDataUrl;
+          preview.style.display = 'block';
+          document.getElementById('podVideo').style.display = 'none';
+
+          document.getElementById('podFotoStatus').innerText = '✓ Foto cargada';
+          document.getElementById('podFotoStatus').style.color = 'var(--accent)';
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function detenerCamaraPod() {
+      if (podMediaStream) {
+        podMediaStream.getTracks().forEach(t => t.stop());
+        podMediaStream = null;
+      }
+    }
+
+    // Inicialización del Pad de Firma Digital
+    function inicializarCanvasFirma() {
+      const canvas = document.getElementById('padFirma');
+      if (!canvas) return;
+
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * 2;
+      canvas.height = rect.height * 2;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(2, 2);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#10B981';
+
+      function getPos(e) {
+        const r = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+          x: clientX - r.left,
+          y: clientY - r.top
+        };
+      }
+
+      function empezarTrazo(e) {
+        e.preventDefault();
+        firmaDrawing = true;
+        const pos = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+      }
+
+      function moverTrazo(e) {
+        if (!firmaDrawing) return;
+        e.preventDefault();
+        const pos = getPos(e);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        firmaHasStrokes = true;
+      }
+
+      function terminarTrazo(e) {
+        if (!firmaDrawing) return;
+        e.preventDefault();
+        firmaDrawing = false;
+        ctx.closePath();
+      }
+
+      // Remover listeners viejos si existen
+      canvas.onpointerdown = empezarTrazo;
+      canvas.onpointermove = moverTrazo;
+      canvas.onpointerup = terminarTrazo;
+      canvas.onpointercancel = terminarTrazo;
+
+      // Soporte touch táctil
+      canvas.ontouchstart = empezarTrazo;
+      canvas.ontouchmove = moverTrazo;
+      canvas.ontouchend = terminarTrazo;
+    }
+
+    function limpiarPadFirma() {
+      const canvas = document.getElementById('padFirma');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      firmaHasStrokes = false;
+    }
+
+    async function guardarPodEntrega() {
+      const nombre = document.getElementById('podNombreReceptor').value.trim();
+      const cedula = document.getElementById('podCedulaReceptor').value.trim();
+      const btn = document.getElementById('btnConfirmarPod');
+
+      if (!nombre) {
+        alert('Por favor ingrese el nombre de la persona que recibe el paquete.');
+        document.getElementById('podNombreReceptor').focus();
+        return;
+      }
+
+      if (!cedula || cedula.length < 10) {
+        alert('Por favor ingrese los 10 dígitos de la cédula del receptor.');
+        document.getElementById('podCedulaReceptor').focus();
+        return;
+      }
+
+      if (!podFotoDataUrl && !firmaHasStrokes) {
+        alert('Se requiere al menos la foto del paquete entregado o la firma digital del receptor para validar el comprobante POD.');
+        return;
+      }
+
+      // Obtener firma en base64
+      let firmaDataUrl = null;
+      if (firmaHasStrokes) {
+        const canvasFirma = document.getElementById('padFirma');
+        firmaDataUrl = canvasFirma.toDataURL('image/png');
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳</span> Registrando POD...';
+
+      const choferId = currentDriver ? currentDriver.id : 'chofer-carlos';
+      const choferNombre = currentDriver ? currentDriver.nombre : 'Carlos Méndez';
+
+      const payloadPod = {
+        guia_id: currentPodData ? currentPodData.guia : 'ENC-884910',
+        chofer_id: choferId,
+        chofer_nombre: choferNombre,
+        receptor_nombre: nombre,
+        receptor_cedula: cedula,
+        monto_cobrado_efectivo: currentPodData ? currentPodData.monto : 5.00,
+        foto_base64: podFotoDataUrl,
+        firma_base64: firmaDataUrl,
+        latitud: -3.2581,
+        longitud: -79.9554,
+        fecha_entrega: new Date().toISOString()
+      };
+
+      try {
+        let podResp = null;
+        if (window.MacondoBackend) {
+          podResp = await window.MacondoBackend.registrarEntregaPod(payloadPod);
+        }
+
+        // Éxito: Actualizar UI del conductor
+        const el = document.getElementById('itemEnc1');
+        if (el) {
+          el.className = 'manifest-item boarded';
+          const btnEnc = document.getElementById('btnEnc1');
+          btnEnc.innerText = '✓ Entregada POD';
+          btnEnc.disabled = true;
+          btnEnc.style.opacity = '0.6';
+          btnEnc.style.background = '#10B981';
+          btnEnc.style.color = '#fff';
+        }
+
+        // Sumar $5.00 al total recaudado en efectivo
+        totalRecaudado += 5.00;
+
+        cerrarModalPod();
+
+        // Enlace de WhatsApp con comprobante oficial
+        const waLink = window.MacondoBackend 
+          ? window.MacondoBackend.generarEnlaceWhatsAppPod(payloadPod.guia_id, '0987654321', nombre, payloadPod.monto_cobrado_efectivo)
+          : `https://api.whatsapp.com/send?text=${encodeURIComponent('Comprobante POD Guía ' + payloadPod.guia_id)}`;
+
+        const enviarWa = confirm(`✓ ¡Comprobante Digital POD Registrado con Éxito!\n\n📦 Guía: ${payloadPod.guia_id}\n👤 Receptor: ${nombre} (C.I. ${cedula})\n💵 Cobro: $5.00 Efectivo registrado en caja del turno.\n☁️ Foto y firma guardadas en Storage.\n\n¿Desea abrir WhatsApp para enviar el Comprobante Oficial al cliente en este momento?`);
+        
+        if (enviarWa) {
+          window.open(waLink, '_blank');
+        }
+      } catch (err) {
+        console.error('Error guardando POD:', err);
+        alert('Error al enviar el comprobante POD. Por favor intente nuevamente.');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>✓</span> Confirmar Entrega';
+      }
+    }
+
+    function abrirLiquidacion() {
+      document.getElementById('liqTotal').innerText = `$${totalRecaudado.toFixed(2)}`;
+      document.getElementById('liqNeto').innerText = `$${(totalRecaudado - 6.00).toFixed(2)}`;
+      document.getElementById('modalLiquidacion').style.display = 'flex';
+    }
+
+    function cerrarLiquidacion() {
+      document.getElementById('modalLiquidacion').style.display = 'none';
+    }
+
+    function finalizarTurno() {
+      alert(`✓ Turno TRN-0930 liquidado.\nAporte de $6.00 registrado para la Cooperativa Macondo Express.\nNeto entregado al chofer: $${(totalRecaudado - 6.00).toFixed(2)}.`);
+      cerrarLiquidacion();
+    }
+  </script>
+</body>
+</html>

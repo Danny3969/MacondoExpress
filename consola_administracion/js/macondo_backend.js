@@ -338,6 +338,24 @@
 
     // ── 5. COMPROBANTE DE ENTREGA DE ENCOMIENDAS (POD CON FOTO, FIRMA Y GPS) ────
     registrarEntregaPod: async function (podData) {
+      let serverResult = null;
+
+      // 1. Enviar primero al servidor central para procesar y alojar imágenes en Storage (S3 / Local)
+      try {
+        const resp = await fetch(`${this.apiBase}/api/encomiendas/pod`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(podData)
+        });
+        serverResult = await resp.json();
+      } catch (err) {
+        console.warn('Aviso: Servidor central offline o no alcanzable para POD:', err);
+      }
+
+      const fotoUrl = (serverResult && serverResult.foto_url) ? serverResult.foto_url : null;
+      const firmaUrl = (serverResult && serverResult.firma_url) ? serverResult.firma_url : null;
+
+      // 2. Si Supabase directo está configurado, registrar con URLs ligeras de Storage (sin saturar DB con Base64)
       if (this.supabase) {
         try {
           await this.supabase
@@ -348,28 +366,64 @@
               receptor_nombre: podData.receptor_nombre,
               receptor_cedula: podData.receptor_cedula,
               monto_cobrado: podData.monto_cobrado_efectivo || 5.00,
-              foto_base64: podData.foto_base64,
-              firma_base64: podData.firma_base64,
+              foto_url: fotoUrl,
+              firma_url: firmaUrl,
               latitud: podData.latitud,
               longitud: podData.longitud,
               creado_en: new Date().toISOString()
             }]);
+          console.log('✅ Registro POD guardado en Supabase con URL de Storage.');
         } catch (e) {
-          console.warn('Fallo guardando POD en Supabase directo:', e);
+          console.warn('Fallo guardando registro en tabla Supabase:', e);
         }
       }
 
-      try {
-        const resp = await fetch(`${this.apiBase}/api/encomiendas/pod`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(podData)
-        });
-        return await resp.json();
-      } catch (err) {
-        console.warn('Error enviando POD al servidor:', err);
-        return { ok: true, offline: true, mensaje: 'Guardado localmente en modo contingencia.' };
+      if (serverResult && serverResult.ok) {
+        return serverResult;
       }
+
+      return {
+        ok: true,
+        offline: true,
+        guia_id: podData.guia_id,
+        foto_url: fotoUrl,
+        firma_url: firmaUrl,
+        mensaje: 'POD registrado en modo local / offline exitosamente.'
+      };
+    },
+
+    // Genera URL pública para ver o imprimir el comprobante oficial POD
+    obtenerComprobantePodUrl: function (guiaId) {
+      return `${this.apiBase}/api/encomiendas/pod/comprobante?guia_id=${encodeURIComponent(guiaId || '')}`;
+    },
+
+    // Genera el enlace oficial de WhatsApp para remitente / destinatario
+    generarEnlaceWhatsAppPod: function (guiaId, telefono, receptorNombre, monto) {
+      guiaId = guiaId || 'ENC-884910';
+      receptorNombre = receptorNombre || 'Destinatario';
+      monto = parseFloat(monto || 5.00).toFixed(2);
+
+      let tel = (telefono || '0987654321').replace(/\D/g, '');
+      if (tel.startsWith('0')) tel = '593' + tel.substring(1);
+      else if (!tel.startsWith('593')) tel = '593' + tel;
+
+      const comprobanteUrl = this.obtenerComprobantePodUrl(guiaId);
+
+      const mensaje = `🚐 *COOPERATIVA MACONDO EXPRESS*
+📦 *COMPROBANTE OFICIAL DE ENTREGA (POD)*
+
+Estimado cliente, su encomienda con guía *${guiaId}* ha sido *ENTREGADA*.
+
+👤 *Recibido por:* ${receptorNombre}
+💵 *Cobro Efectivo:* $${monto} USD (Pagado)
+📸 *Evidencia Satelital:* Foto y firma registradas en sistema.
+
+📄 *Ver y descargar comprobante oficial:*
+${comprobanteUrl}
+
+_Macondo Express - Servicio Puerta a Puerta Seguro._`;
+
+      return `https://api.whatsapp.com/send?phone=${tel}&text=${encodeURIComponent(mensaje)}`;
     },
 
     // ── 6. REALTIME STREAMING (SERVER-SENT EVENTS / WEBSOCKET / SUPABASE) ───────

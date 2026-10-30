@@ -12,6 +12,7 @@ En este directorio se almacenan de manera versionada todas las compilaciones gen
 
 | Versión | Fecha y Hora | Commit Git | Componentes Empaquetados | Estado |
 |---|---|---|---|---|
+| **`v1.8.3_Auth_Storage_POD`** | 30/10/2026, 9:48:15 a. m. | `a36e850` | Pasajero, Conductor, Consola Admin, Suite | ✅ Compilado & Verificado |
 | **`v1.8.2_POD`** | 29/10/2026, 5:34:22 p. m. | `e3ca217` | Pasajero, Conductor, Consola Admin, Suite | ✅ Compilado & Verificado |
 | **`v1.8.1_Realtime`** | 29/10/2026, 4:56:01 p. m. | `0e78c8a` | Pasajero, Conductor, Consola Admin, Suite | ✅ Compilado & Verificado |
 | **`v1.8.0_Oficial`** | 29/10/2026, 1:09:29 p. m. | `37cddd4` | Pasajero, Conductor, Consola Admin, Suite | ✅ Compilado & Verificado |

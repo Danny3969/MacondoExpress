@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Descargas Oficiales · Macondo Express v1.8.0</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #090D16;
+      --card-bg: #131B2E;
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent-gold: #F59E0B;
+      --accent-emerald: #10B981;
+      --accent-blue: #3B82F6;
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1.25rem 4rem;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.12) 0%, transparent 60%),
+        radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.08) 0%, transparent 50%);
+    }
+    header {
+      text-align: center;
+      max-width: 680px;
+      margin-bottom: 2.5rem;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.85rem;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 9999px;
+      color: var(--accent-gold);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--accent-emerald);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--accent-emerald);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      margin-bottom: 0.75rem;
+      background: linear-gradient(135deg, #FFFFFF 30%, #CBD5E1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p.lead {
+      color: var(--text-muted);
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      max-width: 1060px;
+      width: 100%;
+      margin-bottom: 3rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 1.25rem;
+      padding: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(245, 158, 11, 0.4);
+    }
+    .card-tag {
+      position: absolute;
+      top: 1.25rem;
+      right: 1.25rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.06);
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .icon-box {
+      width: 54px;
+      height: 54px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+      margin-bottom: 1.25rem;
+    }
+    .icon-pasajero {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.05));
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: var(--accent-gold);
+    }
+    .icon-conductor {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.05));
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--accent-emerald);
+    }
+    .icon-suite {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.05));
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: var(--accent-blue);
+    }
+    .card h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    .card p.desc {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.45;
+      margin-bottom: 1.5rem;
+      flex-grow: 1;
+    }
+    .meta-list {
+      list-style: none;
+      border-top: 1px solid var(--card-border);
+      border-bottom: 1px solid var(--card-border);
+      padding: 0.85rem 0;
+      margin-bottom: 1.5rem;
+      font-size: 0.82rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .meta-item {
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-muted);
+    }
+    .meta-val {
+      color: var(--text-main);
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .btn-download {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background: linear-gradient(135deg, var(--accent-gold), #D97706);
+      color: #000;
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 0.9rem 1.25rem;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: filter 0.15s ease, transform 0.1s ease;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+    }
+    .btn-download:hover {
+      filter: brightness(1.1);
+      transform: scale(1.02);
+    }
+    .btn-conductor {
+      background: linear-gradient(135deg, var(--accent-emerald), #059669);
+      color: #FFF;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+    }
+    .btn-suite {
+      background: linear-gradient(135deg, var(--accent-blue), #2563EB);
+      color: #FFF;
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+    }
+    .install-guide {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--card-border);
+      border-radius: 1.25rem;
+      padding: 1.75rem;
+      max-width: 820px;
+      width: 100%;
+    }
+    .install-guide h3 {
+      font-size: 1.15rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--accent-gold);
+    }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+    }
+    .step-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      padding: 1rem;
+    }
+    .step-num {
+      font-weight: 800;
+      color: var(--accent-gold);
+      font-size: 1.25rem;
+      margin-bottom: 0.25rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .step-title {
+      font-weight: 700;
+      font-size: 0.88rem;
+      margin-bottom: 0.25rem;
+    }
+    .step-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+    footer {
+      margin-top: 3rem;
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+    footer a {
+      color: var(--accent-gold);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="badge">
+      <span class="badge-dot"></span>
+      Repositorio Oficial de Producción
+    </div>
+    <h1>Descarga de Aplicaciones Macondo Express</h1>
+    <p class="lead">Instala directamente en tu dispositivo Android los APKs oficiales compilados y optimizados para la ruta Babahoyo - Guayaquil (E25).</p>
+  </header>
+
+  <div class="grid">
+    <!-- APLICACIÓN CLIENTES -->
+    <div class="card">
+      <span class="card-tag">APK · CLIENTES</span>
+      <div class="icon-box icon-pasajero">🚐</div>
+      <h2>Macondo Express</h2>
+      <p class="desc">Aplicación para Pasajeros y Clientes. Reserva tu asiento puerta a puerta ($12 efectivo), obtén tu PIN de abordaje seguro y viaja protegido con botón SOS.</p>
+      <ul class="meta-list">
+        <li class="meta-item"><span>Versión:</span><span class="meta-val">1.8.0 Oficial</span></li>
+        <li class="meta-item"><span>Tamaño:</span><span class="meta-val">4.99 MB</span></li>
+        <li class="meta-item"><span>Compatibilidad:</span><span class="meta-val">Android 8.0+</span></li>
+        <li class="meta-item"><span>Economía:</span><span class="meta-val">Efectivo ($12/cupo)</span></li>
+      </ul>
+      <a href="/apks/MacondoExpress.apk" download="MacondoExpress.apk" class="btn-download">
+        <span>⬇️ Descargar Macondo Express</span>
+      </a>
+    </div>
+
+    <!-- APLICACIÓN CONDUCTOR -->
+    <div class="card">
+      <span class="card-tag">APK · CONDUCTOR</span>
+      <div class="icon-box icon-conductor">🚘</div>
+      <h2>Macondo Express Conductor</h2>
+      <p class="desc">Herramienta de trabajo para choferes. Turnos asignados, recolección óptima (TSP), botón "En Ruta" con GPS en vivo, encomiendas QR con foto/firma y modo offline.</p>
+      <ul class="meta-list">
+        <li class="meta-item"><span>Versión:</span><span class="meta-val">1.8.0 Oficial</span></li>
+        <li class="meta-item"><span>Tamaño:</span><span class="meta-val">4.99 MB</span></li>
+        <li class="meta-item"><span>Compatibilidad:</span><span class="meta-val">Android 8.0+</span></li>
+        <li class="meta-item"><span>Funciones:</span><span class="meta-val">En Ruta + POD + GPS</span></li>
+      </ul>
+      <a href="/apks/MacondoExpress_Conductor.apk" download="MacondoExpress_Conductor.apk" class="btn-download btn-conductor">
+        <span>⬇️ Descargar Conductor</span>
+      </a>
+    </div>
+
+    <!-- SUITE INTEGRADA -->
+    <div class="card">
+      <span class="card-tag">APK · SUPERVISOR</span>
+      <div class="icon-box icon-suite">🎛️</div>
+      <h2>Macondo Express Suite</h2>
+      <p class="desc">Lanzador integral para supervisores y directivos. Permite alternar entre los roles de Pasajero, Conductor y Consola en una sola instalación.</p>
+      <ul class="meta-list">
+        <li class="meta-item"><span>Versión:</span><span class="meta-val">1.8.0 Oficial</span></li>
+        <li class="meta-item"><span>Tamaño:</span><span class="meta-val">4.99 MB</span></li>
+        <li class="meta-item"><span>Compatibilidad:</span><span class="meta-val">Android 8.0+</span></li>
+        <li class="meta-item"><span>Modo:</span><span class="meta-val">3 en 1 Integrado</span></li>
+      </ul>
+      <a href="/apks/MacondoExpress_Suite.apk" download="MacondoExpress_Suite.apk" class="btn-download btn-suite">
+        <span>⬇️ Descargar Suite Completa</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- GUÍA DE INSTALACIÓN EN ANDROID -->
+  <div class="install-guide">
+    <h3>📱 ¿Cómo instalar en tu teléfono Android?</h3>
+    <div class="steps">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div class="step-title">Descarga el APK</div>
+        <div class="step-desc">Toca el botón de descarga de la aplicación que necesitas arriba.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div class="step-title">Permitir Instalación</div>
+        <div class="step-desc">Si el teléfono pregunta, presiona "Detalles" o "Ajustes" y activa <b>"Permitir desde esta fuente"</b>.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div class="step-title">Instalar y Abrir</div>
+        <div class="step-desc">Toca <b>"Instalar"</b> y listo. Ya puedes iniciar sesión con tu número de teléfono.</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Operado por <b>Macondo Express S.A.</b> · Corredor Vial E25 (Babahoyo - Guayaquil)</p>
+    <p style="margin-top: 0.5rem;"><a href="/">Ir a la Consola de Administración Central &rarr;</a></p>
+  </footer>
+
+</body>
+</html>

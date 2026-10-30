@@ -1,0 +1,51 @@
+{
+  "version": "v1.8.3_Auth_Storage_POD",
+  "fechaCompilacion": "2026-10-30T14:48:15.285Z",
+  "gitCommit": "a36e850",
+  "flutterStatus": "No instalado en PATH (usando distribución Standalone Web/PWA + Códigos Fuente listos para build)",
+  "apksAndroid": [
+    {
+      "nombre": "MacondoExpress_v1.8.3_Auth_Storage_POD.apk",
+      "tamanoMB": "4.83 MB",
+      "sha256": "691ee261757d34248915cb171f4807fdeb3207287b49253618e06dac053920a4"
+    },
+    {
+      "nombre": "MacondoExpress_Conductor_v1.8.3_Auth_Storage_POD.apk",
+      "tamanoMB": "4.83 MB",
+      "sha256": "2effadfe93d8e5145a7719f8c9335bf1077990135f0acbec17e34b8093455725"
+    },
+    {
+      "nombre": "MacondoExpress_Suite_v1.8.3_Auth_Storage_POD.apk",
+      "tamanoMB": "4.83 MB",
+      "sha256": "828981ec037b51142c060f60e7a4b10eb594f9a925a1a5937302504f665046b9"
+    }
+  ],
+  "artefactos": {
+    "clientes": {
+      "carpeta": "MacondoExpress_v1.8.3_Auth_Storage_POD",
+      "hashIndexHtml": "deb387fbfebac8c9688c5c7442aba5f2500c289d30000c54e97db3ed206b5c15",
+      "lanzador": "Lanzar_AppPasajero.command"
+    },
+    "conductor": {
+      "carpeta": "MacondoExpress_Conductor_v1.8.3_Auth_Storage_POD",
+      "hashIndexHtml": "dd2f918c240ab38ff7c511bce765f9711366db07c8e7cbfbb262da0014cc02d4",
+      "lanzador": "Lanzar_AppConductor.command"
+    },
+    "administracion": {
+      "carpeta": "MacondoExpress_Administracion_v1.8.3_Auth_Storage_POD",
+      "hashIndexHtml": "1df62605a481887261ff36d050140ade22c3e1126d04e78974795de851e4c09c",
+      "lanzador": "Lanzar_ConsolaAdmin.command"
+    },
+    "suiteCompleta": {
+      "carpeta": "MacondoExpress_Suite_v1.8.3_Auth_Storage_POD",
+      "lanzador": "Lanzar_Suite_Macondo.command"
+    }
+  },
+  "especificaciones": {
+    "rutas": "Guayaquil ⇄ Machala",
+    "limiteCapacidad": "4 Pasajeros Estricto por Auto",
+    "seguridad": "PIN 4 dígitos + Validación Cédula M10",
+    "liquidacion": "$6.00 cuota cooperativa por turno finalizado",
+    "transitoANT": "Resolución N° 0482-2025"
+  }
+}
